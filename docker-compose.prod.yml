@@ -1,0 +1,62 @@
+# Продакшен-стек: nginx (SPA + прокси /api) → Go backend → MongoDB.
+# Наружу опубликован только фронтенд (:80); Mongo и backend доступны лишь внутри сети.
+#
+#   cp deploy/prod.env.example deploy/prod.env      # пароли MongoDB
+#   cp backend/.env.example backend/.env            # JWT_SECRET, почта, ALLOWED_ORIGINS
+#   docker compose --env-file deploy/prod.env -f docker-compose.prod.yml up -d --build
+services:
+  mongodb:
+    image: mongo:7
+    container_name: vr-mongo-prod
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER:?задайте MONGO_ROOT_USER в deploy/prod.env}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:?задайте MONGO_ROOT_PASSWORD в deploy/prod.env}
+    volumes:
+      - mongo-data:/data/db
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: vr-backend-prod
+    env_file:
+      - backend/.env
+    environment:
+      - APP_ENV=production
+      - MONGO_URI=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/?authSource=admin
+      # X-Forwarded-For принимается только от nginx (подсеть сети internal).
+      - TRUSTED_PROXIES=172.28.0.0/24
+    networks: [internal]
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: .
+    container_name: vr-frontend-prod
+    ports:
+      - "80:80"
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  internal:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+volumes:
+  mongo-data:
