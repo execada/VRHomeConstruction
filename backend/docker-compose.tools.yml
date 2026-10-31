@@ -1,0 +1,20 @@
+# mongo-express на http://localhost:8081/mongo-express/ (только с этой машины).
+# Логин и пароль — MONGO_EXPRESS_USER / MONGO_EXPRESS_PASSWORD в backend/.env.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.tools.yml up -d mongo-express
+services:
+  mongo-express:
+    image: mongo-express:latest
+    container_name: vr-mongo-express
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://mongodb:27017/vr_home_construction
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:-admin}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD:?задайте MONGO_EXPRESS_PASSWORD в backend/.env}
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_SITE_BASEURL=/mongo-express/
+      - ME_CONFIG_OPTIONS_EDITORTHEME=default
+    depends_on:
+      - mongodb
+    restart: unless-stopped
