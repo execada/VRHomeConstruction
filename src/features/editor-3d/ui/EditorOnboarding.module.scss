@@ -1,0 +1,88 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 9, 14, 0.62);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1200;
+  animation: vrhc-fade-in .2s ease both;
+}
+
+.card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--ed-surface);
+  border: 1px solid var(--ed-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-lg);
+  padding: 26px 26px 22px;
+  color: var(--ed-text);
+  animation: vrhc-pop-in .24s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.head {
+  margin-bottom: 18px;
+
+  h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ed-text-2);
+  }
+}
+
+.steps {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  li {
+    display: flex;
+    gap: 12px;
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--ed-text-2);
+
+    strong { color: var(--ed-text); font-weight: 700; }
+  }
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  background: var(--ed-surface-2);
+  border: 1px solid var(--ed-border);
+}
+
+.start {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: var(--brand-gradient);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--sh-brand);
+  transition: filter .15s, transform .15s;
+
+  &:hover { filter: brightness(1.06); transform: translateY(-1px); }
+}

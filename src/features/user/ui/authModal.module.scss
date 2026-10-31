@@ -1,0 +1,47 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.error,
+.success {
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.error {
+  border: 1px solid var(--danger-bd);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.success {
+  border: 1px solid var(--success-bd);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.switchMode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.link {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: var(--fs-sm);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

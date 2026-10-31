@@ -1,0 +1,58 @@
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.preview {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: var(--r-sm);
+  border: 2px solid transparent;
+  background-color: var(--surface);
+  background-size: cover;
+  background-position: center;
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.tile:hover .preview {
+  transform: translateY(-1px);
+}
+
+.selected .preview {
+  border-color: var(--accent);
+}
+
+.name {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--text-2);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.credit {
+  font-size: 11px;
+  color: var(--text-3);
+}
