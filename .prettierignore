@@ -1,0 +1,13 @@
+node_modules/
+node_modules.nosync/
+public/assets/
+dist/
+build/
+coverage/
+.next/
+.nuxt/
+*.min.js
+*.min.css
+package-lock.json
+yarn.lock
+pnpm-lock.yaml.legacy-backup/

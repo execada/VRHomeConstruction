@@ -1,0 +1,74 @@
+# package-lock.json должен быть в VCS — он фиксирует версии для npm ci.
+node_modules/
+# iCloud: зависимости хранятся вне синхронизации (node_modules -> node_modules.nosync)
+node_modules.nosync/
+coverage/
+dist/
+build/
+
+# Environment
+.env
+.env.*
+!.env.example
+deploy/prod.env
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Logs
+*.log
+
+# Node caches
+.parcel-cache/
+.next/
+.nuxt/
+.vite
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Go
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+coverage.out
+
+# Vendor
+vendor/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Docker
+docker-compose.override.yml
+
+# Build artifacts
+/*.log
+
+# Sensitive
+secrets.yml
+credentials.json
+
+# Optional: local backend binary
+/backend/server
+
+# Runtime logs from run.sh
+.run/
+
+
+# Архив заменённых файлов (нет git)
+.legacy-backup/
+e2e/.env.e2e.local
+
+# Playwright: сохранённая сессия тестового аккаунта и отчёты
+e2e/.auth/
+e2e/results/
+e2e/report/
