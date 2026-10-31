@@ -1,0 +1,16 @@
+.avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  user-select: none;
+
+  svg {
+    color: var(--text-2);
+  }
+}

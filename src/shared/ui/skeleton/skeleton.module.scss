@@ -1,0 +1,52 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--card);
+}
+
+.preview {
+  aspect-ratio: 16 / 10;
+  background: var(--surface);
+  animation: vrhc-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+
+.line,
+.lineShort {
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  animation: vrhc-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.line {
+  width: 60%;
+}
+
+.lineShort {
+  width: 40%;
+}
+
+@keyframes vrhc-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}

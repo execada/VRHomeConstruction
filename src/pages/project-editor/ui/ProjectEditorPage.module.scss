@@ -1,0 +1,34 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 100vh;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text-2);
+  text-align: center;
+}
+
+.stateTitle {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text);
+}

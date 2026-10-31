@@ -1,0 +1,96 @@
+/**
+ * 3D-вьюпорт редактора: Canvas с настройками графики, WebXR, камеры, сцена,
+ * приём перетаскивания моделей из каталога.
+ * Смена сглаживания пересоздаёт WebGL-контекст (это параметр создания контекста).
+ * @module widgets/scene-viewport/ui/SceneViewport
+ */
+
+import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
+import cn from 'classnames';
+import { Canvas } from '@react-three/fiber';
+import { XR } from '@react-three/xr';
+import { CameraRig } from '@/features/camera/ui/CameraRig';
+import { GraphicsFeature } from '@/features/graphics';
+import { computeDpr } from '@/features/graphics/lib/presets';
+import { SceneContent } from '@/features/editor-3d/ui/scene/SceneContent';
+import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
+import { interaction, interactionStore, MODEL_DRAG_TYPE } from '@/features/editor-3d/model/interactionStore';
+import { sceneBridge } from '@/features/editor-3d/model/sceneBridge';
+import type { VrStore } from '@/features/vr/lib/createVrStore';
+import { SceneLoader } from './SceneLoader';
+import { FpsBadge, ViewportHint, ViewportToolbar } from './ViewportOverlays';
+import styles from './SceneViewport.module.scss';
+
+interface SceneViewportProps {
+  xrStore: VrStore;
+  /** Сохранить проект (VR-меню) */
+  onSave: () => void;
+}
+
+/** Обработчики перетаскивания модели из каталога в сцену. */
+function useCatalogDrop() {
+  const commands = useSceneCommands();
+  const [active, setActive] = useState(false);
+
+  const preview = (e: React.DragEvent) => {
+    const { placingPath, placingAngle } = interactionStore.getState();
+    const point = sceneBridge.screenToFloor(e.clientX, e.clientY);
+    if (placingPath && point) interaction.setGhost(commands.furniture.previewPlacement(placingPath, point, placingAngle));
+  };
+
+  return {
+    active,
+    handlers: {
+      onDragOver: (e: React.DragEvent) => {
+        if (!e.dataTransfer.types.includes(MODEL_DRAG_TYPE)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        setActive(true);
+        preview(e);
+      },
+      onDragLeave: () => {
+        setActive(false);
+        interaction.setGhost(null);
+      },
+      onDrop: (e: React.DragEvent) => {
+        e.preventDefault();
+        setActive(false);
+        const path = e.dataTransfer.getData(MODEL_DRAG_TYPE);
+        const { ghost, placingName } = interactionStore.getState();
+        if (path && ghost) commands.furniture.place(path, placingName ?? '', ghost.center, ghost.angle);
+        interaction.reset();
+      },
+    },
+  };
+}
+
+export const SceneViewport: React.FC<SceneViewportProps> = ({ xrStore, onSave }) => {
+  const graphics = useSelector(GraphicsFeature.selectors.selectGraphics);
+  const commands = useSceneCommands();
+  const drop = useCatalogDrop();
+  const dpr = computeDpr(typeof window === 'undefined' ? 1 : window.devicePixelRatio, graphics.resolutionScale);
+  const shadows = graphics.shadows ? (graphics.preset === 'high' ? 'soft' : 'percentage') : false;
+
+  return (
+    <div className={cn(styles.viewport, drop.active && styles.dropActive)} {...drop.handlers}>
+      <Canvas
+        key={graphics.antialias ? 'aa' : 'no-aa'}
+        shadows={shadows}
+        dpr={dpr}
+        gl={{ antialias: graphics.antialias, powerPreference: 'high-performance', preserveDrawingBuffer: false }}
+        camera={{ position: [6, 5, 6], fov: 50, near: 0.05, far: 900 }}
+        onPointerMissed={() => commands.select(null)}
+      >
+        <XR store={xrStore}>
+          <CameraRig />
+          <SceneContent onSave={onSave} />
+        </XR>
+      </Canvas>
+      <SceneLoader />
+      <ViewportHint />
+      <ViewportToolbar />
+      <FpsBadge />
+    </div>
+  );
+};

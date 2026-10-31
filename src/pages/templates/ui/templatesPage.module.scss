@@ -1,0 +1,32 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.title {
+  color: var(--text);
+  font-size: var(--fs-2xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.lead {
+  margin-top: -12px;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hint {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}

@@ -1,0 +1,101 @@
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 24px;
+  padding: 40px 32px 28px;
+}
+
+.profile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.fields {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 200px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldLabel {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fieldValue {
+  overflow-wrap: anywhere;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+}
+
+.fieldAction {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: var(--fs-sm);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.hint {
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+
+.divider {
+  width: 100%;
+  margin: 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.select {
+  align-self: flex-start;
+  min-width: 180px;
+  height: 36px;
+  margin-top: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--input-bg);
+  color: var(--text);
+
+  &:focus-visible {
+    border-color: var(--accent);
+    box-shadow: var(--ring);
+    outline: none;
+  }
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.licenses {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+
+  &:hover {
+    color: var(--text-2);
+  }
+}

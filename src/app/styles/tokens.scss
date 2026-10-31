@@ -1,0 +1,132 @@
+/* ============================================================================
+   Дизайн-токены (Figma «VR Home constructor»): светлая и тёмная темы.
+   Тема задаётся атрибутом data-theme на <html> (см. app/providers/ThemeProvider).
+   Старые имена переменных сохранены как алиасы для совместимости модулей.
+   ========================================================================== */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Палитра Figma */
+  --bg: #faf8f5;
+  --surface: #f2efe9;
+  --card: #f7f4ee;
+  --text: #2c2a26;
+  --text-2: #7a756d;
+  --text-3: #a39d93;
+  --accent: #b8543b;
+  --accent-hover: #a2472f;
+  --accent-2: #8a9a6b;
+  --accent-3: #7b8ea8;
+  --border: #e2dac2;
+  --border-strong: #d4c9ab;
+
+  /* Производные */
+  --on-accent: #fff;
+  --accent-soft: rgb(184 84 59 / 10%);
+  --accent-2-soft: rgb(138 154 107 / 16%);
+  --hover: rgb(44 42 38 / 5%);
+  --overlay: rgb(30 26 20 / 42%);
+  --glass: rgb(250 248 245 / 86%);
+  --input-bg: #fffdf9;
+  --success: #5f7f45;
+  --success-bg: #eef3e6;
+  --success-bd: #cfdcbc;
+  --danger: #c0392b;
+  --danger-bg: #fbecea;
+  --danger-bd: #f1c8c2;
+  --warning: #b7791f;
+
+  /* Тени */
+  --sh-sm: 0 1px 2px rgb(44 42 38 / 6%), 0 1px 3px rgb(44 42 38 / 4%);
+  --sh-md: 0 6px 18px rgb(44 42 38 / 8%);
+  --sh-lg: 0 18px 40px rgb(44 42 38 / 14%);
+  --ring: 0 0 0 3px rgb(184 84 59 / 28%);
+
+  /* Радиусы */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-pill: 999px;
+
+  /* Типографика */
+  --font: inter, -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, ubuntu, sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+
+  /* Фон иллюстраций и превью */
+  --illustration-bg: linear-gradient(160deg, #eef0f4 0%, #dfe3ea 100%);
+
+  /* Размеры оболочки */
+  --rail-width: 72px;
+  --rail-width-expanded: 220px;
+  --header-height: 68px;
+
+  /* Алиасы старых имён (модули до редизайна) */
+  --surface-2: var(--card);
+  --surface-3: var(--surface);
+  --brand-400: #c86d55;
+  --brand-500: var(--accent);
+  --brand-600: var(--accent-hover);
+  --brand-700: #8c3c27;
+  --brand-gradient: linear-gradient(135deg, #b8543b 0%, #c9785b 100%);
+  --brand-gradient-soft: linear-gradient(135deg, #f7ece6 0%, #f3efe6 100%);
+  --on-brand: var(--on-accent);
+  --sh-brand: 0 10px 24px rgb(184 84 59 / 28%);
+  --ed-bg: var(--bg);
+  --ed-surface: var(--card);
+  --ed-surface-2: var(--surface);
+  --ed-surface-3: #e9e3d6;
+  --ed-border: var(--border);
+  --ed-text: var(--text);
+  --ed-text-2: var(--text-2);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0b0b0c;
+  --surface: #151412;
+  --card: #1a1815;
+  --text: #f7f3ea;
+  --text-2: #a8a29a;
+  --text-3: #7d776f;
+  --accent: #c9a96e;
+  --accent-hover: #d8bb84;
+  --accent-2: #7b8ea8;
+  --accent-3: #8a9a6b;
+  --border: #262320;
+  --border-strong: #35312c;
+  --on-accent: #17140f;
+  --accent-soft: rgb(201 169 110 / 14%);
+  --accent-2-soft: rgb(123 142 168 / 18%);
+  --hover: rgb(247 243 234 / 6%);
+  --overlay: rgb(0 0 0 / 60%);
+  --glass: rgb(21 20 18 / 86%);
+  --input-bg: #11100e;
+  --success: #9fbf7f;
+  --success-bg: #1d2418;
+  --success-bd: #33402a;
+  --danger: #ef7a6b;
+  --danger-bg: #2a1714;
+  --danger-bd: #4a2620;
+  --warning: #e2b25c;
+  --sh-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --sh-md: 0 8px 22px rgb(0 0 0 / 45%);
+  --sh-lg: 0 20px 48px rgb(0 0 0 / 55%);
+  --ring: 0 0 0 3px rgb(201 169 110 / 32%);
+  --brand-400: #d8bb84;
+  --brand-700: #a88a52;
+  --brand-gradient: linear-gradient(135deg, #c9a96e 0%, #b48e52 100%);
+  --brand-gradient-soft: linear-gradient(135deg, #22201b 0%, #1c1a16 100%);
+  --sh-brand: 0 10px 24px rgb(201 169 110 / 22%);
+  --ed-surface-3: #23211d;
+  --illustration-bg: linear-gradient(160deg, #262420 0%, #1c1a17 100%);
+}
