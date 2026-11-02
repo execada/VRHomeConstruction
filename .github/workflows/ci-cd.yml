@@ -1,0 +1,153 @@
+# CI на каждый push и pull request; CD — выкатка на сервер после зелёного CI в main.
+name: CI/CD
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Фронтенд
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Линтеры (ESLint, Stylelint, Knip)
+        run: npm run lint
+      - name: Типы
+        run: npm run typecheck
+      - name: Тесты с покрытием
+        run: npm run test:coverage
+      - name: Сборка
+        run: npm run build
+
+  backend:
+    name: Бэкенд
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mongo:
+        image: mongo:7
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Форматирование
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - name: Тесты (race, репозитории на MongoDB)
+        run: go test -race ./...
+        env:
+          MONGO_TEST_URI: mongodb://localhost:27017
+      - name: Уязвимости зависимостей
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    timeout-minutes: 30
+    services:
+      mongo:
+        image: mongo:7
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - run: npm ci
+      - name: Браузер Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Бэкенд (разработка, коды в лог)
+        working-directory: backend
+        run: |
+          go build -o "$RUNNER_TEMP/vrhome-server" ./cmd/server
+          SMTP_LOG_ONLY=true MONGO_URI=mongodb://localhost:27017 \
+            nohup "$RUNNER_TEMP/vrhome-server" >"$RUNNER_TEMP/backend.log" 2>&1 &
+          for _ in $(seq 1 30); do curl -fsS http://localhost:8080/api/health && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/backend.log"; exit 1
+      - name: Тестовый аккаунт
+        run: bash .github/scripts/e2e-account.sh "$RUNNER_TEMP/backend.log"
+      - name: Сценарии
+        run: npm run test:e2e
+      - name: Отчёт о падении
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            e2e/report
+            e2e/results
+          retention-days: 7
+
+  deploy:
+    name: Деплой
+    runs-on: ubuntu-latest
+    needs: [frontend, backend, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://${{ vars.DEPLOY_DOMAIN }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    timeout-minutes: 20
+    env:
+      DOMAIN: ${{ vars.DEPLOY_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - run: npm ci
+      - name: Архив релиза
+        run: echo "BUNDLE=$(./deploy/server/bundle.sh)" >>"$GITHUB_ENV"
+      - name: Выкатка (только приложение, с проверкой здоровья и откатом)
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" >~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" >~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$DEPLOY_HOST" <"$BUNDLE"
+      - name: Проверка сайта
+        run: curl -fsS --retry 5 --retry-delay 3 "https://$DOMAIN/api/health"

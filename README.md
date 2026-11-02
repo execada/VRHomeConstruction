@@ -2,6 +2,8 @@
 
 **Проектируй. Визуализируй. Живи.**
 
+[![CI/CD](https://github.com/execada/VRHomeConstruction/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/execada/VRHomeConstruction/actions/workflows/ci-cd.yml)
+
 ![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
@@ -34,6 +36,7 @@ VR Home Construction — наш веб-конструктор интерьера
 - [Запуск](#запуск)
 - [Продакшен-деплой](#продакшен-деплой)
 - [Деплой на сервер с Caddy](#деплой-на-сервер-с-caddy)
+- [CI/CD](#cicd)
 - [Переменные окружения](#переменные-окружения)
 - [Безопасность](#безопасность)
 - [Тесты и качество](#тесты-и-качество)
@@ -521,6 +524,44 @@ HTTPS работает без своего домена; свой домен —
 Brevo: в `/opt/vrhome/backend.env` нужны `BREVO_API_KEY` и `BREVO_FROM`, после чего
 `ALLOW_LOG_ONLY_MAIL=true` удаляется и бэкенд перезапускается
 (`cd /opt/vrhome && docker compose up -d`).
+
+### Администратор
+
+Администратор входит по логину, а не по почте. Создать его (или задать новый пароль) —
+одной командой на сервере; пароль вводится скрыто и в истории команд не остаётся:
+
+```bash
+ssh -t root@45.12.255.39 docker exec -it vrhome-backend /app/server create-admin --login execada
+```
+
+Почту можно указать сразу (`--email`) или позже в настройках профиля.
+
+## CI/CD
+
+Каждый push и pull request проверяет GitHub Actions ([ci-cd.yml](.github/workflows/ci-cd.yml)).
+После зелёного CI в `main` новая версия сама выкатывается на сервер.
+
+```mermaid
+flowchart LR
+    push(["push или pull request"]) --> fe["Фронтенд<br/>линтеры, типы, тесты, сборка"]
+    push --> be["Бэкенд<br/>vet, тесты на MongoDB, govulncheck"]
+    fe --> e2e["E2E<br/>Playwright, бэкенд, MongoDB"]
+    be --> e2e
+    e2e -->|"только main"| deploy["Деплой<br/>архив релиза"]
+    deploy -->|"SSH, пользователь deploy"| server["remote-deploy<br/>проверка здоровья, откат"]
+```
+
+- **E2E в CI** поднимает MongoDB и бэкенд, регистрирует тестовый аккаунт через API (код берётся
+  из лога бэкенда) и прогоняет все сценарии Playwright; при падении отчёт сохраняется в артефактах.
+- **Деплой** идёт не от root: у пользователя `deploy` нет пароля, shell и доступа к Docker, его ключ
+  привязан к одной команде, а через `sudo` он может выполнить только `remote-deploy` без аргументов —
+  обновить статику и бэкенд. Compose-файл и сайт Caddy меняются только ручным
+  `deploy/server/deploy.sh` с ключом администратора, поэтому доступ к `main` не даёт root на сервере.
+- **Откат автоматический**: если новая версия не отвечает на `/api/health`, возвращаются прежние
+  статика и бинарник; на сервере хранятся три последних релиза (`/opt/vrhome/releases`).
+- Секреты — в окружении GitHub `production`: `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_HOST`;
+  домен — переменная `DEPLOY_DOMAIN`. Пользователь на новом сервере создаётся скриптом
+  [deploy/server/setup-ci-user.sh](deploy/server/setup-ci-user.sh).
 
 ## Переменные окружения
 
