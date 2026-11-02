@@ -31,6 +31,7 @@ VR Home Construction — мой веб-конструктор интерьера
 - [Структура проекта](#структура-проекта)
 - [Запуск](#запуск)
 - [Продакшен-деплой](#продакшен-деплой)
+- [Деплой на сервер с Caddy](#деплой-на-сервер-с-caddy)
 - [Переменные окружения](#переменные-окружения)
 - [Безопасность](#безопасность)
 - [Тесты и качество](#тесты-и-качество)
@@ -487,6 +488,37 @@ curl http://localhost/api/health             # {"status":"ok"}
 Если перед nginx стоит балансировщик или CDN, его адреса нужно добавить в `TRUSTED_PROXIES`,
 а при работе по HTTPS — включить HSTS в [deploy/security-headers.conf](deploy/security-headers.conf).
 
+## Деплой на сервер с Caddy
+
+Если на сервере уже работает Caddy (как у меня), nginx не нужен: Caddy раздаёт фронтенд
+как статику, выпускает HTTPS-сертификат и проксирует `/api` на бэкенд, а бэкенд и MongoDB
+работают в Docker. Всё собирается на машине разработчика — серверу не нужны Node и Go,
+и он почти не тратит место на диске.
+
+```bash
+SERVER=root@45.12.255.39 DOMAIN=vrhome.45.12.255.39.nip.io ./deploy/server/deploy.sh
+```
+
+```mermaid
+flowchart LR
+    internet(["Интернет"]) -->|"443, HTTPS"| caddy["Caddy<br/>сертификат, CSP, статика"]
+    caddy -->|"/api"| backend["vrhome-backend<br/>127.0.0.1:8085"]
+    caddy -->|"файлы"| web[("/opt/vrhome/web")]
+    backend --> mongo[("vrhome-mongo<br/>без внешнего порта")]
+    backend -.->|"HTTPS API"| brevo["Brevo"]
+```
+
+Скрипт собирает фронтенд и бэкенд (linux/amd64), загружает их в `/opt/vrhome`, при первом
+запуске создаёт на сервере секреты (пароль MongoDB, `JWT_SECRET`) и подключает сайт в Caddy
+отдельным файлом. Повторный запуск обновляет версию без потери данных.
+`nip.io` превращает IP в имя (`vrhome.45.12.255.39.nip.io` → `45.12.255.39`), поэтому
+HTTPS работает без своего домена; свой домен — это просто другое значение `DOMAIN`.
+
+**Почта.** Многие хостинги закрывают исходящий SMTP. Тогда коды отправляются через HTTPS API
+Brevo: в `/opt/vrhome/backend.env` нужны `BREVO_API_KEY` и `BREVO_FROM`, после чего
+`ALLOW_LOG_ONLY_MAIL=true` удаляется и бэкенд перезапускается
+(`cd /opt/vrhome && docker compose up -d`).
+
 ## Переменные окружения
 
 Шаблон — [backend/.env.example](backend/.env.example). Сам `.env` в репозиторий не попадает.
@@ -501,7 +533,9 @@ curl http://localhost/api/health             # {"status":"ok"}
 | `TRUSTED_PROXIES` | прокси, которым можно верить в `X-Forwarded-For` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | отправка кодов по SMTP |
 | `SMTP_LOG_ONLY` | не отправлять письма, печатать код в лог (только разработка) |
+| `BREVO_API_KEY`, `BREVO_FROM` | отправка кодов через Brevo (HTTPS, работает при закрытом SMTP) |
 | `RESEND_API_KEY`, `RESEND_FROM` | отправка кодов через Resend |
+| `ALLOW_LOG_ONLY_MAIL` | `true` — запустить production без почты, коды в лог (временно) |
 | `MONGO_EXPRESS_USER`, `MONGO_EXPRESS_PASSWORD` | вход в mongo-express (только локально) |
 
 ## Безопасность
