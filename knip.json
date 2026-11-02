@@ -1,19 +1,37 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["scripts/*.cjs"],
-  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.cjs"],
+  "entry": [
+    "scripts/*.cjs"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.cjs"
+  ],
   "ignoreExportsUsedInFile": true,
   "rsbuild": {
-    "config": ["rsbuild.config.ts"]
+    "config": [
+      "rsbuild.config.ts"
+    ]
   },
   "vitest": {
-    "config": ["vitest.config.ts"],
-    "entry": ["src/**/*.test.{ts,tsx}"]
+    "config": [
+      "vitest.config.ts"
+    ],
+    "entry": [
+      "src/**/*.test.{ts,tsx}"
+    ]
   },
   "eslint": {
-    "config": ["eslint.config.js"]
+    "config": [
+      "eslint.config.js"
+    ]
   },
   "stylelint": {
-    "config": ["stylelint.config.mjs"]
-  }
+    "config": [
+      "stylelint.config.mjs"
+    ]
+  },
+  "ignoreBinaries": [
+    "gofmt"
+  ]
 }
