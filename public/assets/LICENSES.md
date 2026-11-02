@@ -11,6 +11,8 @@ Downloaded on 2026-10-28 via the public Poly Haven API (api.polyhaven.com); file
 | lilienstein | HDRI | Andreas Mischok | https://polyhaven.com/a/lilienstein | CC0 1.0 |
 | sunny_vondelpark | HDRI | Greg Zaal | https://polyhaven.com/a/sunny_vondelpark | CC0 1.0 |
 | lythwood_field | HDRI | Greg Zaal | https://polyhaven.com/a/lythwood_field | CC0 1.0 |
+| sunset_jhbcentral | HDRI | Greg Zaal, Dimitrios Savva | https://polyhaven.com/a/sunset_jhbcentral | CC0 1.0 |
+| shanghai_bund | HDRI | Greg Zaal | https://polyhaven.com/a/shanghai_bund | CC0 1.0 |
 | laminate_floor_02 | PBR texture | Dario Barresi, Charlotte Baglioni | https://polyhaven.com/a/laminate_floor_02 | CC0 1.0 |
 | wood_floor | PBR texture | Dimitrios Savva | https://polyhaven.com/a/wood_floor | CC0 1.0 |
 | plank_flooring_04 | PBR texture | Dimitrios Savva | https://polyhaven.com/a/plank_flooring_04 | CC0 1.0 |

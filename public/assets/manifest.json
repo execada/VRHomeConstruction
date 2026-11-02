@@ -45,6 +45,24 @@
       "source": "https://polyhaven.com/a/lythwood_field",
       "license": "CC0",
       "author": "Greg Zaal"
+    },
+    {
+      "id": "sunset_jhbcentral",
+      "label": "Мегаполис на закате",
+      "file": "/assets/hdri/sunset_jhbcentral/sunset_jhbcentral_2k.hdr",
+      "thumbnail": "/assets/hdri/sunset_jhbcentral/thumb.jpg",
+      "source": "https://polyhaven.com/a/sunset_jhbcentral",
+      "license": "CC0",
+      "author": "Greg Zaal, Dimitrios Savva"
+    },
+    {
+      "id": "shanghai_bund",
+      "label": "Мегаполис ночью",
+      "file": "/assets/hdri/shanghai_bund/shanghai_bund_2k.hdr",
+      "thumbnail": "/assets/hdri/shanghai_bund/thumb.jpg",
+      "source": "https://polyhaven.com/a/shanghai_bund",
+      "license": "CC0",
+      "author": "Greg Zaal"
     }
   ],
   "textures": [
