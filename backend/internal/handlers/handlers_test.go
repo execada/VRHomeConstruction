@@ -461,3 +461,23 @@ func TestMeRequiresUserInContext(t *testing.T) {
 	r.GET("/auth/me", h.Me)
 	expectError(t, do(r, http.MethodGet, "/auth/me", ""), http.StatusUnauthorized, "unauthorized")
 }
+
+func TestLoginByAdminUsername(t *testing.T) {
+	r, users, _ := authEngine(t)
+	hash, err := bcrypt.GenerateFromPassword([]byte("admin-pass"), bcrypt.MinCost)
+	if err != nil {
+		t.Fatalf("bcrypt: %v", err)
+	}
+	users.byID["a1"] = &models.User{ID: "a1", Name: "Админ", Username: "execada", Role: models.RoleAdmin, PasswordHash: string(hash)}
+
+	w := do(r, http.MethodPost, "/auth/login", `{"email":"ExecAda","password":"admin-pass"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	user, _ := decode(t, w)["user"].(map[string]interface{})
+	if user["username"] != "execada" || user["role"] != "admin" {
+		t.Fatalf("the response must expose login and role, got %v", user)
+	}
+	expectError(t, do(r, http.MethodPost, "/auth/login", `{"email":"execada","password":"wrong-pass"}`),
+		http.StatusUnauthorized, "invalid email or password")
+}

@@ -57,6 +57,7 @@ var (
 // UpdateName/UpdateEmail возвращают обновлённого пользователя или nil, если его нет.
 type userRepository interface {
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
+	FindByUsername(ctx context.Context, username string) (*models.User, error)
 	FindByID(ctx context.Context, id string) (*models.User, error)
 	Insert(ctx context.Context, user *models.User) error
 	UpdateName(ctx context.Context, id, name string) (*models.User, error)
@@ -165,31 +166,47 @@ func (s *AuthService) VerifyCode(ctx context.Context, req models.VerifyCodeReque
 	return s.buildAuthResponse(user)
 }
 
-// Login выполняет вход по email и паролю без кода подтверждения.
-// После maxLoginFailures неудач на адрес вход блокируется на loginFailureWindow.
+// Login выполняет вход по почте (или логину администратора) и паролю без кода подтверждения.
+// После maxLoginFailures неудач на адрес/логин вход блокируется на loginFailureWindow.
 func (s *AuthService) Login(ctx context.Context, req models.LoginRequest) (*models.AuthResponse, error) {
-	email := normalizeEmail(req.Email)
-	if !s.failures.Allow(email) {
+	identifier := normalizeEmail(req.Email)
+	if !s.failures.Allow(identifier) {
 		return nil, ErrTooManyLoginAttempts
 	}
 
-	user, err := s.users.FindByEmail(ctx, email)
+	user, err := s.findByLogin(ctx, identifier)
 	if err != nil {
-		return nil, fmt.Errorf("find user by email: %w", err)
+		return nil, err
 	}
 	if user == nil {
 		// Сравнение с фиктивным хэшем: время ответа не выдаёт, зарегистрирован ли адрес.
 		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash(), []byte(req.Password))
-		s.failures.Fail(email)
+		s.failures.Fail(identifier)
 		return nil, ErrInvalidCredentials
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		s.failures.Fail(email)
+		s.failures.Fail(identifier)
 		return nil, ErrInvalidCredentials
 	}
 
-	s.failures.Reset(email)
+	s.failures.Reset(identifier)
 	return s.buildAuthResponse(user)
+}
+
+// findByLogin ищет по почте, если в строке есть «@», иначе — по логину администратора.
+func (s *AuthService) findByLogin(ctx context.Context, identifier string) (*models.User, error) {
+	if strings.Contains(identifier, "@") {
+		user, err := s.users.FindByEmail(ctx, identifier)
+		if err != nil {
+			return nil, fmt.Errorf("find user by email: %w", err)
+		}
+		return user, nil
+	}
+	user, err := s.users.FindByUsername(ctx, identifier)
+	if err != nil {
+		return nil, fmt.Errorf("find user by username: %w", err)
+	}
+	return user, nil
 }
 
 func (s *AuthService) createUserFromVerification(ctx context.Context, record *models.VerificationRecord) (*models.User, error) {

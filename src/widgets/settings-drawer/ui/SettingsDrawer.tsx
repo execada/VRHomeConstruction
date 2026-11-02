@@ -29,6 +29,13 @@ const ProfileField: React.FC<{ label: string; value: string; action: string; onA
   </div>
 );
 
+const ProfileInfo: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className={styles.field}>
+    <span className={styles.fieldLabel}>{label}</span>
+    <span className={styles.fieldValue}>{value}</span>
+  </div>
+);
+
 const ThemeSelect: React.FC = () => {
   const dispatch = useDispatch();
   const mode = useSelector(ThemeFeature.selectors.selectThemeMode);
@@ -51,6 +58,8 @@ export const SettingsDrawer: React.FC<{ onClose: () => void }> = ({ onClose }) =
   const isAuth = useSelector(UserFeature.selectors.selectUserIsAuth);
   const name = useSelector(UserFeature.selectors.selectUserName) ?? '';
   const email = useSelector(UserFeature.selectors.selectUserEmail) ?? '';
+  const username = useSelector(UserFeature.selectors.selectUserUsername);
+  const isAdmin = useSelector(UserFeature.selectors.selectUserIsAdmin);
   const [dialog, setDialog] = useState<'name' | 'email' | null>(null);
   const closeDialog = () => setDialog(null);
 
@@ -58,11 +67,17 @@ export const SettingsDrawer: React.FC<{ onClose: () => void }> = ({ onClose }) =
     <Drawer label="Настройки" side="left" onClose={onClose}>
       <div className={styles.content}>
         <div className={styles.profile}>
-          <Avatar name={isAuth ? name || email : undefined} size={96} />
+          <Avatar name={isAuth ? name || email || username : undefined} size={96} />
           {isAuth ? (
             <div className={styles.fields}>
               <ProfileField label="Имя" value={name || 'Без имени'} action="Сменить имя" onAction={() => setDialog('name')} />
-              <ProfileField label="Почта" value={email} action="Сменить почту" onAction={() => setDialog('email')} />
+              {username && <ProfileInfo label="Логин" value={isAdmin ? `${username} · администратор` : username} />}
+              <ProfileField
+                label="Почта"
+                value={email || 'Не указана'}
+                action={email ? 'Сменить почту' : 'Указать почту'}
+                onAction={() => setDialog('email')}
+              />
             </div>
           ) : (
             <div className={styles.fields}>

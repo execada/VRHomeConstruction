@@ -29,6 +29,12 @@ const (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "create-admin" {
+		if err := runCreateAdmin(os.Args[2:], os.Stdin, os.Stdout); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}

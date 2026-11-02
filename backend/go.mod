@@ -10,6 +10,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	go.mongodb.org/mongo-driver v1.17.10
 	golang.org/x/crypto v0.58.0
+	golang.org/x/term v0.47.0
 )
 
 require (

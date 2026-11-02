@@ -6,8 +6,13 @@
 export interface User {
   id: string;
   name: string;
+  /** Почта; у администратора, который входит по логину, может быть пустой. */
   email: string;
   avatar?: string;
+  /** Логин для входа вместо почты (только у администратора). */
+  username?: string;
+  /** Роль: `admin` — администратор. */
+  role?: string;
 }
 
 export type AuthMode = 'login' | 'register';

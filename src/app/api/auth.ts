@@ -24,7 +24,7 @@ export interface SendCodeResult {
 
 function toUser(raw: unknown): User {
   const u = userSchema.parse(raw);
-  return { id: u.id, name: u.name, email: u.email, avatar: u.avatar ?? undefined };
+  return { id: u.id, name: u.name, email: u.email, avatar: u.avatar ?? undefined, username: u.username, role: u.role };
 }
 
 function toAuthResponse(raw: unknown): AuthResponse {

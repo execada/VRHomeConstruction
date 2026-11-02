@@ -1,12 +1,16 @@
 package repositories
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/execada/VRHomeConstruction/backend/internal/database"
 	"github.com/execada/VRHomeConstruction/backend/internal/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const maxAttempts = 5
@@ -170,5 +174,70 @@ func TestVerificationRepoConsumeAttemptIsAtomic(t *testing.T) {
 	rec, err := repo.FindValid(ctx, key.Email, key.Purpose)
 	if err != nil || rec.Attempts != maxAttempts {
 		t.Fatalf("the counter must stop at %d, got %+v (%v)", maxAttempts, rec, err)
+	}
+}
+
+func TestUserRepoFindsAdminByUsername(t *testing.T) {
+	ctx := requireDB(t, "users")
+	repo := NewUserRepo(testDB)
+	admin := &models.User{ID: "a1", Name: "Админ", Username: "execada", Role: models.RoleAdmin, PasswordHash: "h1"}
+	if err := repo.Insert(ctx, admin); err != nil {
+		t.Fatalf("insert admin: %v", err)
+	}
+
+	got, err := repo.FindByUsername(ctx, " ExecAda ")
+	if err != nil || got == nil || got.ID != "a1" || got.Email != "" {
+		t.Fatalf("lookup by username: %+v (%v)", got, err)
+	}
+	updated, err := repo.UpdateCredentials(ctx, "a1", "h2", models.RoleAdmin)
+	if err != nil || updated.PasswordHash != "h2" || updated.Role != models.RoleAdmin {
+		t.Fatalf("UpdateCredentials: %+v (%v)", updated, err)
+	}
+	if missing, err := repo.FindByUsername(ctx, "ghost"); err != nil || missing != nil {
+		t.Fatalf("an unknown login must be nil, got %+v (%v)", missing, err)
+	}
+}
+
+// Разреженные индексы: несколько пользователей без почты (или без логина) уживаются,
+// но повторный логин и повторная почта по-прежнему запрещены.
+func TestUserIndexesAreSparseButUnique(t *testing.T) {
+	ctx := requireDB(t, "users")
+	repo := NewUserRepo(testDB)
+	for _, u := range []*models.User{
+		{ID: "a1", Name: "A", Username: "first"},
+		{ID: "a2", Name: "B", Username: "second"},
+		{ID: "u1", Name: "C", Email: "c@example.com"},
+		{ID: "u2", Name: "D", Email: "d@example.com"},
+	} {
+		if err := repo.Insert(ctx, u); err != nil {
+			t.Fatalf("insert %s: %v", u.ID, err)
+		}
+	}
+	if err := repo.Insert(ctx, &models.User{ID: "a3", Name: "E", Username: "first"}); !mongo.IsDuplicateKeyError(err) {
+		t.Fatalf("a duplicate login must be rejected, got %v", err)
+	}
+	if err := repo.Insert(ctx, &models.User{ID: "u3", Name: "F", Email: "c@example.com"}); !mongo.IsDuplicateKeyError(err) {
+		t.Fatalf("a duplicate email must be rejected, got %v", err)
+	}
+}
+
+// Старый неразреженный индекс users.email_1 пересоздаётся разреженным при старте.
+func TestEnsureIndexesMigratesLegacyEmailIndex(t *testing.T) {
+	ctx := requireDB(t)
+	db := testDB.Client().Database(testDB.Name() + "_legacy")
+	t.Cleanup(func() { _ = db.Drop(context.Background()) })
+	legacy := mongo.IndexModel{Keys: bson.D{{Key: "email", Value: 1}}, Options: options.Index().SetUnique(true)}
+	if _, err := db.Collection("users").Indexes().CreateOne(ctx, legacy); err != nil {
+		t.Fatalf("create legacy index: %v", err)
+	}
+
+	if err := database.EnsureIndexes(ctx, db); err != nil {
+		t.Fatalf("EnsureIndexes: %v", err)
+	}
+	repo := NewUserRepo(db)
+	for _, id := range []string{"a1", "a2"} {
+		if err := repo.Insert(ctx, &models.User{ID: id, Name: id, Username: "login-" + id}); err != nil {
+			t.Fatalf("users without email must coexist after migration: %v", err)
+		}
 	}
 }

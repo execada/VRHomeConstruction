@@ -39,7 +39,7 @@ function* handleLogin() {
     const form = yield* select(selectors.selectAuthForm);
 
     if (!form.email.trim() || !form.password) {
-      yield* put(actions.setError('Введите email и пароль'));
+      yield* put(actions.setError('Введите почту (или логин) и пароль'));
       return;
     }
 

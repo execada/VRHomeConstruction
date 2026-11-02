@@ -34,6 +34,19 @@ func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*models.User,
 	return &user, nil
 }
 
+// FindByUsername ищет администратора по логину (регистр и пробелы по краям не важны).
+func (r *UserRepo) FindByUsername(ctx context.Context, username string) (*models.User, error) {
+	var user models.User
+	err := r.collection.FindOne(ctx, bson.M{"username": normalizeEmail(username)}).Decode(&user)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find user by username: %w", err)
+	}
+	return &user, nil
+}
+
 func (r *UserRepo) FindByID(ctx context.Context, id string) (*models.User, error) {
 	var user models.User
 	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
@@ -60,6 +73,11 @@ func (r *UserRepo) UpdateName(ctx context.Context, id, name string) (*models.Use
 	return r.updateFields(ctx, id, bson.M{"name": name})
 }
 
+// UpdateCredentials задаёт новый хэш пароля и роль (nil — пользователя нет).
+func (r *UserRepo) UpdateCredentials(ctx context.Context, id, passwordHash, role string) (*models.User, error) {
+	return r.updateFields(ctx, id, bson.M{"passwordHash": passwordHash, "role": role})
+}
+
 // UpdateEmail меняет email. Занятый адрес даёт ошибку уникального индекса
 // (mongo.IsDuplicateKeyError) — её обрабатывает сервис.
 func (r *UserRepo) UpdateEmail(ctx context.Context, id, email string) (*models.User, error) {
@@ -83,6 +101,7 @@ func (r *UserRepo) updateFields(ctx context.Context, id string, fields bson.M) (
 	return &user, nil
 }
 
+// normalizeEmail приводит почту или логин к виду, в котором они хранятся.
 func normalizeEmail(email string) string {
 	return strings.ToLower(strings.TrimSpace(email))
 }

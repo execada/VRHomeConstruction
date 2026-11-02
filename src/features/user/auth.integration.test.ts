@@ -106,6 +106,21 @@ describe('вход', () => {
     expect(selectors.selectUserAuthData(store.getState())).toEqual(user);
   });
 
+  it('администратор входит по логину', async () => {
+    const admin = { id: 'a1', name: 'Админ', email: '', username: 'execada', role: 'admin' };
+    api.login.mockResolvedValue({ user: admin, token: 'jwt' });
+    const store = setup();
+    store.dispatch(actions.setFormField({ field: 'email', value: ' execada ' }));
+    store.dispatch(actions.setFormField({ field: 'password', value: 'admin-pass' }));
+
+    store.dispatch(actions.loginRequested());
+    await flush();
+
+    expect(api.login).toHaveBeenCalledWith('execada', 'admin-pass');
+    expect(selectors.selectUserIsAdmin(store.getState())).toBe(true);
+    expect(selectors.selectUserUsername(store.getState())).toBe('execada');
+  });
+
   it('сообщает о блокировке после неудачных попыток', async () => {
     api.login.mockRejectedValue(new ApiRequestError(429, 'too many login attempts, try again later'));
     const store = setup();

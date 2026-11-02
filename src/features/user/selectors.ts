@@ -20,6 +20,8 @@ const selectUserError = createSelector(root, (user) => user?.error);
 const selectUserName = createSelector(root, (user) => user?.authData?.name);
 const selectUserEmail = createSelector(root, (user) => user?.authData?.email);
 const selectUserAvatar = createSelector(root, (user) => user?.authData?.avatar);
+const selectUserUsername = createSelector(root, (user) => user?.authData?.username);
+const selectUserIsAdmin = createSelector(root, (user) => user?.authData?.role === 'admin');
 const selectIsAuthModalOpen = createSelector(root, (user) => user?.isAuthModalOpen ?? false);
 const selectAuthMode = createSelector(root, (user) => user?.authMode ?? 'login');
 const selectAuthForm = createSelector(
@@ -39,6 +41,8 @@ export const selectors = {
   selectUserName,
   selectUserEmail,
   selectUserAvatar,
+  selectUserUsername,
+  selectUserIsAdmin,
   selectIsAuthModalOpen,
   selectAuthMode,
   selectAuthForm,

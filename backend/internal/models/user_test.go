@@ -28,3 +28,11 @@ func TestUserToPublicOmitsPasswordHash(t *testing.T) {
 	}
 	// UserPublic не содержит поля PasswordHash — это гарантируется типом на этапе компиляции.
 }
+
+func TestUserToPublicExposesLoginAndRole(t *testing.T) {
+	u := &User{ID: "a1", Name: "Админ", Username: "execada", Role: RoleAdmin, PasswordHash: "secret"}
+	pub := u.ToPublic()
+	if pub.Username != "execada" || pub.Role != RoleAdmin || pub.Email != "" {
+		t.Fatalf("unexpected public user %+v", pub)
+	}
+}

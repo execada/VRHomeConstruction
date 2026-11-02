@@ -312,18 +312,58 @@ func (f *fakeLayoutRepo) Delete(_ context.Context, id, userID string) (bool, err
 // --- user repo fake ---
 
 type fakeUserRepo struct {
-	byEmail map[string]*models.User
-	byID    map[string]*models.User
+	byEmail    map[string]*models.User
+	byID       map[string]*models.User
+	byUsername map[string]*models.User
 
-	findByEmailErr error
-	findByIDErr    error
-	insertErr      error
-	updateErr      error
-	updateEmailErr error
+	findByEmailErr    error
+	findByUsernameErr error
+	findByIDErr       error
+	insertErr         error
+	updateErr         error
+	updateEmailErr    error
 }
 
 func newFakeUserRepo() *fakeUserRepo {
-	return &fakeUserRepo{byEmail: map[string]*models.User{}, byID: map[string]*models.User{}}
+	return &fakeUserRepo{byEmail: map[string]*models.User{}, byID: map[string]*models.User{}, byUsername: map[string]*models.User{}}
+}
+
+func (f *fakeUserRepo) FindByUsername(_ context.Context, username string) (*models.User, error) {
+	if f.findByUsernameErr != nil {
+		return nil, f.findByUsernameErr
+	}
+	if u, ok := f.byUsername[emailKey(username)]; ok {
+		out := *u
+		return &out, nil
+	}
+	return nil, nil
+}
+
+// UpdateCredentials меняет пароль и роль в новой копии пользователя.
+func (f *fakeUserRepo) UpdateCredentials(_ context.Context, id, passwordHash, role string) (*models.User, error) {
+	if f.updateErr != nil {
+		return nil, f.updateErr
+	}
+	u, ok := f.byID[id]
+	if !ok {
+		return nil, nil
+	}
+	updated := *u
+	updated.PasswordHash, updated.Role = passwordHash, role
+	f.store(&updated)
+	out := updated
+	return &out, nil
+}
+
+// store раскладывает пользователя по индексам фейка (пустая почта/логин не индексируются).
+func (f *fakeUserRepo) store(u *models.User) {
+	f.byID[u.ID] = u
+	if u.Email != "" {
+		f.byEmail[emailKey(u.Email)] = u
+	}
+	if u.Username != "" {
+		f.byUsername[emailKey(u.Username)] = u
+	}
 }
 
 func emailKey(email string) string { return strings.ToLower(strings.TrimSpace(email)) }
@@ -352,8 +392,7 @@ func (f *fakeUserRepo) Insert(_ context.Context, u *models.User) error {
 	if f.insertErr != nil {
 		return f.insertErr
 	}
-	f.byEmail[emailKey(u.Email)] = u
-	f.byID[u.ID] = u
+	f.store(u)
 	return nil
 }
 

@@ -22,12 +22,12 @@ export const CredentialsFields: React.FC<{ form: AuthForm; isRegister: boolean; 
       <TextField label="Имя" value={form.name} onChange={(v) => onChange('name', v)} placeholder="Ваше имя" autoComplete="name" maxLength={60} disabled={disabled} autoFocus />
     )}
     <TextField
-      label="Почта"
-      type="email"
+      label={isRegister ? 'Почта' : 'Почта или логин'}
+      type={isRegister ? 'email' : 'text'}
       value={form.email}
       onChange={(v) => onChange('email', v)}
-      placeholder="email@example.com"
-      autoComplete="email"
+      placeholder={isRegister ? 'email@example.com' : 'email@example.com или логин'}
+      autoComplete={isRegister ? 'email' : 'username'}
       maxLength={254}
       disabled={disabled}
       autoFocus={!isRegister}

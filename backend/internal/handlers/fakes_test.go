@@ -153,6 +153,15 @@ func (r *memUserRepo) FindByEmail(_ context.Context, email string) (*models.User
 	return nil, nil
 }
 
+func (r *memUserRepo) FindByUsername(_ context.Context, username string) (*models.User, error) {
+	for _, u := range r.byID {
+		if u.Username != "" && u.Username == strings.ToLower(strings.TrimSpace(username)) {
+			return u, nil
+		}
+	}
+	return nil, nil
+}
+
 func (r *memUserRepo) FindByID(_ context.Context, id string) (*models.User, error) {
 	return r.byID[id], nil
 }

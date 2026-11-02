@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layoutSchema, toProject, toProjectDetails } from './schemas';
+import { layoutSchema, toProject, toProjectDetails, userSchema } from './schemas';
 
 const raw = (extra: Record<string, unknown> = {}) => ({
   _id: 'p1',
@@ -33,5 +33,18 @@ describe('API schemas', () => {
 
   it('отклоняет ответ без идентификатора', () => {
     expect(() => toProject({ name: 'x', createdAt: '2026-01-01' })).toThrow();
+  });
+});
+
+describe('userSchema', () => {
+  it('принимает администратора без почты, с логином и ролью', () => {
+    const u = userSchema.parse({ id: 'a1', name: 'Админ', username: 'execada', role: 'admin' });
+    expect(u).toMatchObject({ email: '', username: 'execada', role: 'admin' });
+  });
+
+  it('обычный пользователь — без логина и роли', () => {
+    const u = userSchema.parse({ id: 'u1', name: 'Анна', email: 'anna@example.com' });
+    expect(u.username).toBeUndefined();
+    expect(u.role).toBeUndefined();
   });
 });

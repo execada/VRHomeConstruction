@@ -61,8 +61,10 @@ export const layoutSchema = z.object({
 export const userSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
-  email: z.string(),
+  email: z.string().optional().default(''),
   avatar: z.string().nullable().optional(),
+  username: z.string().max(64).optional(),
+  role: z.string().max(32).optional(),
 });
 
 /** Ответ входа и регистрации: пользователь и токен сессии. */
