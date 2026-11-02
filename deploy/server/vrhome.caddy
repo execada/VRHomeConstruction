@@ -1,0 +1,47 @@
+# VR Home Construction — сайт для Caddy (подключается из /etc/caddy/Caddyfile через import).
+# __DOMAIN__ подставляет deploy.sh. Caddy сам выпускает и продлевает HTTPS-сертификат.
+__DOMAIN__ {
+	encode zstd gzip
+
+	# Всё грузится со своего origin; data:/blob: — превью и буферы GLB; WASM — декодер meshopt;
+	# jsdelivr (только профили WebXR) — модели контроллеров и рук для VR.
+	# У ответов API свои заголовки (их ставит бэкенд).
+	@pages not path /api/*
+	header @pages {
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' data: blob: https://cdn.jsdelivr.net/npm/@webxr-input-profiles/; worker-src 'self' blob:; font-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "xr-spatial-tracking=(self), camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8085
+	}
+
+	# JS/CSS с хэшем в имени — навсегда; остальная статика — на час; отсутствующий файл — 404.
+	@hashed path_regexp ^/assets/.+\.[0-9a-f]{8,}\.(js|css)$
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+	handle /assets/* {
+		root * __WEB_ROOT__
+		header ?Cache-Control "public, max-age=3600"
+		file_server
+	}
+
+	handle /models/* {
+		root * __WEB_ROOT__
+		header Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	# SPA: любые адреса — index.html, который не кешируется (после деплоя сразу новые ассеты).
+	handle {
+		root * __WEB_ROOT__
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

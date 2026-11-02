@@ -1,0 +1,53 @@
+# Сервер с Caddy: MongoDB и бэкенд в Docker, фронтенд — статика, которую раздаёт Caddy.
+# Наружу ничего не опубликовано: бэкенд слушает только 127.0.0.1:8085 (за Caddy),
+# MongoDB доступна только бэкенду внутри сети compose. Запускается из deploy.sh.
+services:
+  mongodb:
+    image: mongo:7
+    container_name: vrhome-mongo
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER:?нет MONGO_ROOT_USER в .env}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:?нет MONGO_ROOT_PASSWORD в .env}
+    volumes:
+      - mongo-data:/data/db
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: vrhome-backend:latest
+    container_name: vrhome-backend
+    env_file:
+      - backend.env
+    environment:
+      - APP_ENV=production
+      - PORT=8080
+      - MONGO_URI=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/?authSource=admin
+      # Caddy ходит в опубликованный порт через шлюз сети — X-Forwarded-For принимаем только от него.
+      - TRUSTED_PROXIES=172.31.250.1
+    ports:
+      - "127.0.0.1:8085:8080"
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.31.250.0/24
+          gateway: 172.31.250.1
+
+volumes:
+  mongo-data:
