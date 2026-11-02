@@ -8,13 +8,15 @@
 ![three.js](https://img.shields.io/badge/three.js-WebXR-000000?logo=threedotjs&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?logo=mongodb&logoColor=white)
 
-VR Home Construction — мой веб-конструктор интерьера. В браузере можно собрать комнату с нуля
+VR Home Construction — наш веб-конструктор интерьера. В браузере можно собрать комнату с нуля
 или из шаблона, расставить мебель, подобрать отделку и свет, а потом надеть шлем
 (Meta Quest 3/3+ или PC VR) и пройтись по комнате в виртуальной реальности. Ничего не нужно
 устанавливать: всё работает в браузере, проекты сохраняются на сервере автоматически.
 
-Я писал фронтенд на React + three.js, бэкенд на Go с MongoDB. Ниже рассказываю, как
-устроен проект, как связаны его части и как его запустить.
+Проект мы делаем вдвоём: бэкенд на Go с MongoDB, безопасность, инфраструктуру и деплой
+веду я ([execada](https://github.com/execada)), а фронтенд на React + three.js — интерфейс,
+3D-редактор и VR — [dineredKo](https://github.com/dineredKo). Ниже рассказываю, как устроен
+проект, как связаны его части и как его запустить.
 
 ## Содержание
 
@@ -36,6 +38,7 @@ VR Home Construction — мой веб-конструктор интерьера
 - [Безопасность](#безопасность)
 - [Тесты и качество](#тесты-и-качество)
 - [Управление](#управление)
+- [Авторы](#авторы)
 
 ## Что умеет
 
@@ -100,7 +103,7 @@ flowchart LR
 
 ### Фронтенд
 
-Фронтенд я разложил по Feature-Sliced Design: каждый слой может использовать только слои
+Фронтенд разложен по Feature-Sliced Design: каждый слой может использовать только слои
 ниже себя. Так фичи не зависят друг от друга по кругу, а страницы собираются из готовых блоков.
 
 ```mermaid
@@ -441,7 +444,7 @@ flowchart LR
 
 ## Запуск
 
-Нужны Docker, Node.js 20.19+ (я работаю на 24) и npm. Для публичной ссылки — ngrok 3.x
+Нужны Docker, Node.js 20.19+ (проверено на 24) и npm. Для публичной ссылки — ngrok 3.x
 с настроенным authtoken.
 
 ```bash
@@ -599,6 +602,9 @@ Brevo: в `/opt/vrhome/backend.env` нужны `BREVO_API_KEY` и `BREVO_FROM`, 
 HDRI, PBR-текстуры и модели в `public/assets` — CC0 с Poly Haven; авторы и ссылки перечислены
 в [public/assets/LICENSES.md](public/assets/LICENSES.md).
 
----
+## Авторы
 
-Автор — [execada](https://github.com/execada).
+| Автор | Зона ответственности |
+|---|---|
+| [execada](https://github.com/execada) | бэкенд (Go, MongoDB), безопасность, инфраструктура, CI/CD и деплой |
+| [dineredKo](https://github.com/dineredKo) | фронтенд: интерфейс, 3D-редактор (three.js), VR (WebXR) |
