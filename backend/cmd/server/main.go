@@ -144,8 +144,12 @@ func logMailMode(cfg *config.Config) {
 	switch {
 	case cfg.ResendAPIKey != "":
 		log.Printf("Email: Resend API (from %s)", cfg.ResendFrom)
+	case cfg.BrevoAPIKey != "":
+		log.Printf("Email: Brevo API (from %s)", cfg.BrevoFrom)
 	case cfg.SMTP.Enabled:
 		log.Printf("Email: SMTP %s:%s", cfg.SMTP.Host, cfg.SMTP.Port)
+	case cfg.IsProduction():
+		log.Println("WARN: почта не настроена (ALLOW_LOG_ONLY_MAIL=true) — коды подтверждения печатаются в лог ([CODE]); подключите BREVO_API_KEY, RESEND_API_KEY или SMTP")
 	default:
 		log.Println("Email: только логи (dev) — код подтверждения печатается в консоль ([CODE])")
 	}

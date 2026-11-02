@@ -40,6 +40,13 @@ type Config struct {
 	SMTP           SMTPConfig
 	ResendAPIKey   string
 	ResendFrom     string
+	// Brevo — отправка через HTTPS API (работает, когда хостинг закрыл исходящий SMTP);
+	// BrevoFrom — подтверждённый в Brevo отправитель: «Имя <адрес>» или просто адрес.
+	BrevoAPIKey string
+	BrevoFrom   string
+	// AllowLogOnlyMail — явное решение оператора запустить production без почты:
+	// коды подтверждения пишутся в лог (временно, пока не подключена отправка).
+	AllowLogOnlyMail bool
 }
 
 func (c *Config) IsProduction() bool {
@@ -56,9 +63,9 @@ type SMTPConfig struct {
 	LogOnly  bool
 }
 
-// MailConfigured — настроена настоящая отправка писем (Resend или SMTP не в режиме логов).
+// MailConfigured — настроена настоящая отправка писем (Resend, Brevo или SMTP не в режиме логов).
 func (c *Config) MailConfigured() bool {
-	return c.ResendAPIKey != "" || c.SMTP.Enabled
+	return c.ResendAPIKey != "" || c.BrevoAPIKey != "" || c.SMTP.Enabled
 }
 
 func Load() *Config {
@@ -72,7 +79,11 @@ func Load() *Config {
 		TrustedProxies: splitList(os.Getenv("TRUSTED_PROXIES")),
 		ResendAPIKey:   os.Getenv("RESEND_API_KEY"),
 		ResendFrom:     envOr("RESEND_FROM", "VR Home <onboarding@resend.dev>"),
+		BrevoAPIKey:    strings.TrimSpace(os.Getenv("BREVO_API_KEY")),
+		BrevoFrom:      strings.TrimSpace(os.Getenv("BREVO_FROM")),
 		SMTP:           loadSMTP(),
+		// Только явное true/1: опечатка не должна включать коды в логах.
+		AllowLogOnlyMail: isTrue(os.Getenv("ALLOW_LOG_ONLY_MAIL")),
 	}
 
 	// В dev без CORS-списка разрешаем всех (удобно для локальной разработки);
@@ -100,8 +111,11 @@ func (c *Config) Validate() error {
 	if err := checkJWTSecret(c.JWTSecret); err != nil {
 		problems = append(problems, err.Error())
 	}
+	if c.BrevoAPIKey != "" && c.BrevoFrom == "" {
+		problems = append(problems, "для BREVO_API_KEY нужен BREVO_FROM — подтверждённый в Brevo адрес отправителя")
+	}
 	if c.IsProduction() {
-		if !c.MailConfigured() {
+		if !c.MailConfigured() && !c.AllowLogOnlyMail {
 			problems = append(problems, "в production нужна настоящая почта (RESEND_API_KEY или SMTP_* без SMTP_LOG_ONLY) — иначе коды подтверждения попадали бы в логи")
 		}
 		for _, o := range c.AllowedOrigins {
@@ -129,6 +143,14 @@ func checkJWTSecret(secret string) error {
 		return errors.New("JWT_SECRET похож на заглушку — сгенерируйте случайный (openssl rand -base64 48)")
 	}
 	return nil
+}
+
+func isTrue(raw string) bool {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "1", "true":
+		return true
+	}
+	return false
 }
 
 // parseEnv: пусто/development/dev/local — разработка; любое другое значение — production

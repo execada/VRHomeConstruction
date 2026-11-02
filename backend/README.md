@@ -15,7 +15,7 @@ Go 1.26 + Gin + MongoDB, слои `handlers → services → repositories`.
 | `internal/services` | бизнес-логика и валидация (интерфейсы хранилищ объявлены здесь же) |
 | `internal/repositories` | MongoDB: все записи — с фильтром по владельцу |
 | `internal/database` | подключение и индексы |
-| `internal/email` | отправка кодов: SMTP, Resend или только лог (разработка) |
+| `internal/email` | отправка кодов: SMTP, Brevo, Resend или только лог |
 | `internal/auth` | выпуск и проверка JWT (HS256, с обязательным сроком действия) |
 
 ## Запуск

@@ -12,7 +12,8 @@ func clearEnv(t *testing.T) {
 	for _, k := range []string{
 		"APP_ENV", "PORT", "MONGO_URI", "JWT_SECRET", "ALLOWED_ORIGINS", "TRUSTED_PROXIES",
 		"SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM",
-		"SMTP_LOG_ONLY", "RESEND_API_KEY", "RESEND_FROM",
+		"SMTP_LOG_ONLY", "RESEND_API_KEY", "RESEND_FROM", "ALLOW_LOG_ONLY_MAIL",
+		"BREVO_API_KEY", "BREVO_FROM",
 	} {
 		t.Setenv(k, "")
 	}
@@ -135,5 +136,51 @@ func TestProductionWithoutOriginsDisablesCORS(t *testing.T) {
 	}
 	if cfg.JWTSecretGenerated {
 		t.Fatal("production must never generate a secret")
+	}
+}
+
+// ALLOW_LOG_ONLY_MAIL — явное решение оператора, когда хостинг закрыл исходящий SMTP:
+// production стартует с кодами в логах. Без флага сервер по-прежнему не запускается.
+func TestProductionLogOnlyMailNeedsExplicitOptIn(t *testing.T) {
+	clearEnv(t)
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("JWT_SECRET", strongSecret)
+	if err := Load().Validate(); err == nil {
+		t.Fatal("production without mail must not start by default")
+	}
+
+	for _, value := range []string{"true", "1", " TRUE "} {
+		t.Setenv("ALLOW_LOG_ONLY_MAIL", value)
+		cfg := Load()
+		if !cfg.AllowLogOnlyMail {
+			t.Fatalf("%q must enable the opt-in", value)
+		}
+		if err := cfg.Validate(); err != nil {
+			t.Fatalf("explicit opt-in must allow log-only mail, got %v", err)
+		}
+	}
+
+	t.Setenv("ALLOW_LOG_ONLY_MAIL", "yes please")
+	if Load().AllowLogOnlyMail {
+		t.Fatal("only true/1 enable the opt-in")
+	}
+}
+
+func TestBrevoMailConfig(t *testing.T) {
+	clearEnv(t)
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("JWT_SECRET", strongSecret)
+	t.Setenv("BREVO_API_KEY", "xkeysib-test")
+
+	if err := Load().Validate(); err == nil || !strings.Contains(err.Error(), "BREVO_FROM") {
+		t.Fatalf("a Brevo key without a sender must be rejected, got %v", err)
+	}
+	t.Setenv("BREVO_FROM", " VR Home <noreply@example.com> ")
+	cfg := Load()
+	if !cfg.MailConfigured() || cfg.BrevoFrom != "VR Home <noreply@example.com>" {
+		t.Fatalf("Brevo must count as configured mail, got %+v", cfg)
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("valid Brevo production config rejected: %v", err)
 	}
 }
