@@ -7,7 +7,9 @@
 
 import type { z } from 'zod';
 import { DEFAULT_ENVIRONMENT } from '@/features/environment/constants';
+import type { FurnitureItem } from '@/features/furniture/types';
 import type { WallSide } from '../../types';
+import { normalizeSupportLinks } from '../supportLinks';
 import { isWallSide } from '../walls';
 import { createEmptyScene } from './build';
 import { migrateDimensions, migrateV1 } from './migrate';
@@ -78,6 +80,14 @@ function salvageV2(raw: Record<string, unknown>): { doc: SceneDocument; dropped:
 }
 
 /**
+ * Связи предметов с опорами: недопустимые чинятся (опоры нет — предмет на пол),
+ * а предметы, уже стоящие на верхе опоры (старые проекты, шаблоны), получают связь.
+ */
+function withSupportLinks(doc: SceneDocument): SceneDocument {
+  return { ...doc, furniture: normalizeSupportLinks(doc.furniture as FurnitureItem[]) };
+}
+
+/**
  * Разобрать roomData проекта.
  * @param raw - данные из недоверенного источника
  * @returns документ v2 (с признаком миграции и числом отброшенных элементов) или ошибка
@@ -86,15 +96,15 @@ export function parseSceneDocument(raw: unknown): SceneParseResult {
   if (!isObject(raw)) return { ok: false, error: 'В проекте нет данных комнаты' };
 
   if (raw.schemaVersion === undefined || raw.schemaVersion === 1) {
-    return { ok: true, doc: migrateV1(raw), migrated: true, dropped: 0 };
+    return { ok: true, doc: withSupportLinks(migrateV1(raw)), migrated: true, dropped: 0 };
   }
   if (raw.schemaVersion !== 2) {
     return { ok: false, error: 'Проект создан в более новой версии приложения — обновите страницу' };
   }
 
   const strict = sceneDocumentSchema.safeParse(raw);
-  if (strict.success) return { ok: true, doc: strict.data, migrated: false, dropped: 0 };
+  if (strict.success) return { ok: true, doc: withSupportLinks(strict.data), migrated: false, dropped: 0 };
 
   const { doc, dropped } = salvageV2(raw);
-  return { ok: true, doc, migrated: false, dropped };
+  return { ok: true, doc: withSupportLinks(doc), migrated: false, dropped };
 }
