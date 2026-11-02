@@ -98,6 +98,8 @@ export const furnitureSchema = z.object({
   height: z.number().positive().max(20).optional(),
   locked: z.boolean().optional(),
   color: hexColorSchema.nullable().optional(),
+  /** Опора, на поверхности которой стоит предмет (необязательное поле: старые документы v2 валидны) */
+  supportId: id.optional(),
 });
 
 export const lightSchema = z.object({

@@ -32,6 +32,16 @@ export const { actions, name, reducer } = createSlice({
         state.selectedFurniture = action.payload;
       }
     },
+    /**
+     * Обновить несколько предметов одним действием — опору вместе с предметами на её поверхности
+     * (один шаг истории). `id` — главный предмет, по нему история склеивает перетаскивание.
+     */
+    updateFurnitureItems(state, action: PayloadAction<{ id: string; items: FurnitureItem[] }>) {
+      const byId = new Map(action.payload.items.map((i) => [i.id, i] as const));
+      state.items = state.items.map((i) => byId.get(i.id) ?? i);
+      const selected = state.selectedFurniture && byId.get(state.selectedFurniture.id);
+      if (selected) state.selectedFurniture = selected;
+    },
     /** Дублировать предмет (со смещением, новая копия выделяется) */
     duplicateFurniture(state, action: PayloadAction<string>) {
       const item = state.items.find(i => i.id === action.payload);

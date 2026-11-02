@@ -132,6 +132,23 @@ describe('parseSceneDocument', () => {
   });
 });
 
+describe('support links in the document', () => {
+  const desk = { id: 'desk', name: 'Письменный стол', modelPath: 'primitive:desk', position: [0, 0, 0], rotation: [0, 0, 0], scale: 1, height: 0.75 };
+  const lamp = { id: 'lamp', name: 'Настольная лампа', modelPath: 'primitive:desk', position: [0.3, 0.75, 0], rotation: [0, 0, 0], scale: 1 };
+
+  it('keeps supportId as an optional field of v2 (old documents stay valid)', () => {
+    const withLink = { ...createEmptyScene(), furniture: [desk, { ...lamp, supportId: 'desk' }] };
+    const parsed = sceneDocumentSchema.safeParse(withLink);
+    expect(parsed.success && parsed.data.furniture[1].supportId).toBe('desk');
+    expect(sceneDocumentSchema.safeParse({ ...createEmptyScene(), furniture: [desk, lamp] }).success).toBe(true);
+  });
+
+  it('rejects malformed support ids', () => {
+    const bad = { ...createEmptyScene(), furniture: [desk, { ...lamp, supportId: 'x'.repeat(65) }] };
+    expect(sceneDocumentSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
 describe('model path validation', () => {
   it.each([
     ['primitive:sofa', true],
