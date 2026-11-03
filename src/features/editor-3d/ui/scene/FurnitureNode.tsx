@@ -15,7 +15,7 @@ import type { ModelSizes } from '@/features/furniture/lib/modelLook';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { add2, snapAngle, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { useSceneCommands } from '../../model/useSceneCommands';
-import { ROTATE_STEP } from '../../model/interactionStore';
+import { interactionStore, ROTATE_STEP } from '../../model/interactionStore';
 import { itemSizes } from '../../lib/placement';
 import { furnitureRole } from '../../lib/supportRole';
 import { HELPER_DATA, NO_RAYCAST, rayToFloor, toRay3 } from './pointer';
@@ -109,6 +109,9 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
       <group
         {...drag}
         onPointerOver={(e) => {
+          // Пока размещается модель из каталога, мебель не перехватывает указатель: иначе R3F
+          // не передаёт движение плоскости размещения и призрак не встаёт на столешницы и полки.
+          if (interactionStore.getState().mode === 'placing') return;
           e.stopPropagation();
           setHovered(true);
         }}

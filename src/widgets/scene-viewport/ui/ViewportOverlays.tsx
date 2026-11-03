@@ -63,7 +63,7 @@ export const ViewportHint: React.FC = () => {
   if (mode === 'placing') {
     content = (
       <>
-        «{placingName}»: кликните по полу, чтобы поставить · <Kbd>R</Kbd> поворот · <Kbd>Shift</Kbd>+клик — ещё один · <Kbd>Esc</Kbd> отмена
+        «{placingName}»: кликните по полу, столу или полке, чтобы поставить · <Kbd>R</Kbd> поворот · <Kbd>Shift</Kbd>+клик — ещё один · <Kbd>Esc</Kbd> отмена
       </>
     );
   } else if (tool === 'window' || tool === 'door') {

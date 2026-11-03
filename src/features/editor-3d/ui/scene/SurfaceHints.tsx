@@ -8,6 +8,7 @@
 
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { Edges } from '@react-three/drei';
 import { selectors as furnitureSelectors } from '@/features/furniture/selectors';
 import { furnitureSizesCache } from '@/features/furniture/sizesCache';
 import { surfacesStore } from '@/features/furniture/surfacesCache';
@@ -20,9 +21,10 @@ import { furnitureRole } from '../../lib/supportRole';
 import { roomSurfaces, surfacesFitting, type SupportSurface } from '../../lib/surfaces';
 import { HELPER_DATA, NO_RAYCAST } from './pointer';
 
-const HINT_COLOR = '#c9a96e';
-const HINT_OPACITY = 0.16;
-const ACTIVE_OPACITY = 0.42;
+/** Холодный цвет: хорошо виден на дереве, ткани и светлых столешницах. */
+const HINT_COLOR = '#3b8beb';
+const HINT_OPACITY = 0.2;
+const ACTIVE_OPACITY = 0.45;
 /** Подъём площадки над поверхностью, чтобы она не мерцала вместе со столешницей. */
 const LIFT = 0.004;
 const SAME_LEVEL = 0.02;
@@ -59,6 +61,7 @@ const HintPlane: React.FC<{ surface: SupportSurface; active: boolean }> = ({ sur
   >
     <planeGeometry args={[surface.area.half[0] * 2, surface.area.half[1] * 2]} />
     <meshBasicMaterial color={HINT_COLOR} transparent opacity={active ? ACTIVE_OPACITY : HINT_OPACITY} depthWrite={false} toneMapped={false} />
+    <Edges color={HINT_COLOR} transparent opacity={active ? 1 : 0.6} raycast={NO_RAYCAST} />
   </mesh>
 );
 
