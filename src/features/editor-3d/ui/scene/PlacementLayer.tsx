@@ -1,6 +1,7 @@
 /**
  * Размещение модели из каталога: полупрозрачный «призрак» следует за курсором по полу,
- * сразу «прижат» к полу и к ближайшей стене, краснеет, если места нет.
+ * сразу «прижат» к полу и к ближайшей стене, краснеет, если места нет. Небольшие предметы
+ * (лампа, ваза, книги) встают на столешницу или полку, на которую указывает курсор.
  * Клик ставит предмет; Shift+клик — поставить и продолжить; Esc — отмена; R — поворот.
  * @module editor-3d/ui/scene/PlacementLayer
  */
@@ -12,7 +13,7 @@ import { useExternalStore } from '@/shared/lib/externalStore';
 import { selectors as editorSelectors } from '../../selectors';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { interaction, interactionStore } from '../../model/interactionStore';
-import { HELPER_DATA, isClick, rayToFloor, type SceneMouseEvent, type ScenePointerEvent } from './pointer';
+import { HELPER_DATA, isClick, rayToFloor, toRay3, type SceneMouseEvent, type ScenePointerEvent } from './pointer';
 
 const GHOST_LOOK = { ghost: true };
 const INVALID_LOOK = { ghost: true, invalid: true };
@@ -24,7 +25,9 @@ const PlacementSurface: React.FC<{ path: string }> = ({ path }) => {
 
   const update = (e: ScenePointerEvent) => {
     const hit = rayToFloor(e.ray);
-    if (hit) interaction.setGhost(commands.furniture.previewPlacement(path, hit, interactionStore.getState().placingAngle));
+    const { placingAngle, placingName } = interactionStore.getState();
+    const options = { name: placingName ?? '', aim: { ray: toRay3(e.ray) } };
+    if (hit) interaction.setGhost(commands.furniture.previewPlacement(path, hit, placingAngle, options));
   };
 
   const commit = (e: SceneMouseEvent) => {
@@ -32,7 +35,8 @@ const PlacementSurface: React.FC<{ path: string }> = ({ path }) => {
     e.stopPropagation();
     const state = interactionStore.getState();
     if (!state.ghost) return;
-    const id = commands.furniture.place(path, state.placingName ?? '', state.ghost.center, state.ghost.angle);
+    const { center, angle, supportId, elevation } = state.ghost;
+    const id = commands.furniture.place(path, state.placingName ?? '', center, angle, { supportId, elevation });
     if (id && !e.shiftKey) interaction.reset();
   };
 
@@ -43,7 +47,7 @@ const PlacementSurface: React.FC<{ path: string }> = ({ path }) => {
         <meshBasicMaterial visible={false} />
       </mesh>
       {ghost && (
-        <group position={[ghost.center[0], 0, ghost.center[1]]} rotation={[0, ghost.angle, 0]} userData={HELPER_DATA}>
+        <group position={[ghost.center[0], ghost.elevation, ghost.center[1]]} rotation={[0, ghost.angle, 0]} userData={HELPER_DATA}>
           <NormalizedModel path={path} look={ghost.valid ? GHOST_LOOK : INVALID_LOOK} />
         </group>
       )}

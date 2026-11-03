@@ -1,7 +1,8 @@
 /**
- * Предмет мебели в сцене: нормализованная модель, перетаскивание по полу,
- * кольцо поворота и рамка выделения. Все ограничения (стены, перегородки,
- * другая мебель, сетка, магнит к стенам) применяют команды сцены.
+ * Предмет мебели в сцене: нормализованная модель, перетаскивание по полу и по поверхностям
+ * опор (луч указателя или контроллера VR выбирает столешницу или полку), кольцо поворота
+ * и рамка выделения. Все ограничения (стены, перегородки, другая мебель, края поверхностей,
+ * сетка, магнит к стенам) применяют команды сцены. Опоры измеряют свои поверхности по мешам.
  * @module editor-3d/ui/scene/FurnitureNode
  */
 
@@ -16,7 +17,8 @@ import { add2, snapAngle, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { ROTATE_STEP } from '../../model/interactionStore';
 import { itemSizes } from '../../lib/placement';
-import { HELPER_DATA, NO_RAYCAST, rayToFloor } from './pointer';
+import { furnitureRole } from '../../lib/supportRole';
+import { HELPER_DATA, NO_RAYCAST, rayToFloor, toRay3 } from './pointer';
 import { useDragGesture } from './useDragGesture';
 
 const SELECTED_COLOR = '#c9a96e';
@@ -61,6 +63,7 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
   const commands = useSceneCommands();
   const [hovered, setHovered] = useState(false);
   const sizes = itemSizes(item);
+  const isSupport = furnitureRole(item) === 'support';
   const look = useMemo(() => (item.color ? { tint: item.color } : undefined), [item.color]);
 
   useEffect(() => {
@@ -82,20 +85,20 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
     [dispatch, item.id, item.halfWidth, item.halfDepth, item.height],
   );
 
-  // Тянем в горизонтальной плоскости на высоте точки захвата: схваченная точка
-  // остаётся под курсором (без параллакса для высоких предметов).
-  const drag = useDragGesture<{ offset: Vec2; planeY: number }>({
+  // Тянем в горизонтальной плоскости на высоте точки захвата над низом предмета: схваченная
+  // точка остаётся под курсором (без параллакса), даже когда предмет переходит со стола на пол.
+  // Луч указателя (или контроллера VR) выбирает поверхность опоры, на которую смотрит пользователь.
+  const drag = useDragGesture<{ offset: Vec2; lift: number }>({
     id: item.id,
     onStart: (e) => {
       commands.select({ kind: 'furniture', id: item.id });
       if (item.locked) return null;
-      const planeY = e.point.y;
-      const hit = rayToFloor(e.ray, planeY);
-      return hit ? { offset: sub2([item.position[0], item.position[2]], hit), planeY } : null;
+      const hit = rayToFloor(e.ray, e.point.y);
+      return hit ? { offset: sub2([item.position[0], item.position[2]], hit), lift: e.point.y - item.position[1] } : null;
     },
     onMove: (e, ctx) => {
-      const hit = rayToFloor(e.ray, ctx.planeY);
-      if (hit) commands.furniture.move(item.id, add2(hit, ctx.offset));
+      const hit = rayToFloor(e.ray, item.position[1] + ctx.lift);
+      if (hit) commands.furniture.move(item.id, add2(hit, ctx.offset), { ray: toRay3(e.ray), offset: ctx.offset });
     },
   });
 
@@ -112,7 +115,7 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
         onPointerOut={() => setHovered(false)}
       >
         <group scale={item.scale}>
-          <NormalizedModel path={item.modelPath} look={look} onMeasured={onMeasured} />
+          <NormalizedModel path={item.modelPath} look={look} onMeasured={onMeasured} measureSurfaces={isSupport} />
         </group>
       </group>
       {(selected || hovered) && (

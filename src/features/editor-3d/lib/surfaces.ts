@@ -13,6 +13,7 @@ import { add2, length2, normalizeAngle, pointInObb, rotateLocal, sub2, toLocal, 
 import type { ModelSurface } from '@/features/furniture/lib/surfaceScan';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { itemSizes, resolvePlacement, type PlacementObstacle } from './placement';
+import { furnitureRole } from './supportRole';
 
 /** Точка или вектор в пространстве [x, y, z]. */
 export type Vec3 = readonly [number, number, number];
@@ -89,8 +90,39 @@ export function supportSurfaces(support: FurnitureItem, measured: readonly Model
   return model.map((surface) => toWorld(support, surface, ceiling));
 }
 
+/**
+ * Поверхности всех опор комнаты (предметы на опорах сами опорами не бывают).
+ * @param items - мебель комнаты
+ * @param measured - измеренные поверхности модели по её пути (undefined — верх габарита)
+ * @param ceiling - высота потолка
+ * @param excludeId - предмет, чьи поверхности не нужны (сам перемещаемый предмет)
+ */
+export function roomSurfaces(
+  items: readonly FurnitureItem[],
+  measured: (path: string) => readonly ModelSurface[] | undefined,
+  ceiling: number,
+  excludeId: string | null,
+): SupportSurface[] {
+  return items
+    .filter((i) => i.id !== excludeId && !i.supportId && furnitureRole(i) === 'support')
+    .flatMap((support) => supportSurfaces(support, measured(support.modelPath), ceiling));
+}
+
 const fits = (surface: SupportSurface, height: number) => height <= surface.clearance + HEIGHT_EPSILON;
 const areaOf = (surface: SupportSurface) => surface.area.half[0] * surface.area.half[1];
+
+/**
+ * Поверхности, на которые предмет помещается по высоте и по размеру (в каком-нибудь повороте).
+ * @param surfaces - поверхности опор
+ * @param half - половины размеров футпринта предмета
+ * @param height - высота предмета
+ */
+export function surfacesFitting(surfaces: readonly SupportSurface[], half: Vec2, height: number): SupportSurface[] {
+  const [small, large] = [Math.min(...half), Math.max(...half)];
+  return surfaces.filter(
+    (s) => fits(s, height) && Math.min(...s.area.half) >= small - HEIGHT_EPSILON && Math.max(...s.area.half) >= large - HEIGHT_EPSILON,
+  );
+}
 
 /** Порядок выбора среди поверхностей под точкой: помещается → предпочтительная → выше → больше. */
 function rank(surfaces: SupportSurface[], height: number, prefer: SurfacePreference | null): SupportSurface[] {

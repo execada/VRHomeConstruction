@@ -8,19 +8,34 @@
 
 import React, { Suspense, memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Box3, Group, Vector3 } from 'three';
+import { Box3, Group, Matrix4, Vector3, type Object3D } from 'three';
 import { ErrorBoundary } from '@/shared/ui/error-boundary/ErrorBoundary';
 import { furnitureSizesCache } from '../sizesCache';
+import { furnitureSurfacesCache } from '../surfacesCache';
 import { applyLook, hasLook, prepareModel, type ModelLook, type ModelSizes } from '../lib/modelLook';
+import { measureSurfaces as scanModelSurfaces } from '../lib/modelSurfaces';
 import { PrimitiveFurniture } from './PrimitiveFurniture';
 import { PRIMITIVE_PREFIX } from '../lib/preload';
-
 
 interface NormalizedModelProps {
   path: string;
   look?: ModelLook;
   /** Габариты измерены (при scale = 1) */
   onMeasured?: (sizes: ModelSizes) => void;
+  /** Измерить поверхности модели (для опор: столешница, полки) — один раз на путь модели */
+  measureSurfaces?: boolean;
+}
+
+type ModelProps = Required<Pick<NormalizedModelProps, 'path' | 'look'>> & Pick<NormalizedModelProps, 'onMeasured' | 'measureSurfaces'>;
+
+/** Измерить поверхности модели и сохранить в кеш (ошибка геометрии не роняет сцену). */
+function cacheSurfaces(path: string, root: Object3D, frame: Matrix4): void {
+  try {
+    furnitureSurfacesCache.set(path, scanModelSurfaces(root, frame));
+  } catch (error) {
+    console.warn(`Не удалось измерить поверхности модели ${path}`, error);
+    furnitureSurfacesCache.set(path, []);
+  }
 }
 
 /** Сообщить габариты модели (кэш по пути + колбэк). */
@@ -32,13 +47,16 @@ function useReportSizes(path: string, sizes: ModelSizes | null, onMeasured?: (si
   }, [path, sizes, onMeasured]);
 }
 
-const GltfModel: React.FC<Required<Pick<NormalizedModelProps, 'path' | 'look'>> & Pick<NormalizedModelProps, 'onMeasured'>> = ({
-  path,
-  look,
-  onMeasured,
-}) => {
+const GltfModel: React.FC<ModelProps> = ({ path, look, onMeasured, measureSurfaces }) => {
   const { scene } = useGLTF(path);
   const prepared = useMemo(() => prepareModel(scene), [scene]);
+
+  // Исходная сцена glTF в сцену не добавляется (рендерится клон): её мировые координаты —
+  // координаты модели, а сдвиг нормализации ставит низ на y = 0.
+  useEffect(() => {
+    if (!measureSurfaces || furnitureSurfacesCache.has(path)) return;
+    cacheSurfaces(path, scene, new Matrix4().makeTranslation(...prepared.offset));
+  }, [measureSurfaces, path, scene, prepared]);
   const lookKey = `${look.tint ?? ''}|${look.ghost ? 1 : 0}|${look.invalid ? 1 : 0}`;
 
   useLayoutEffect(() => {
@@ -52,11 +70,7 @@ const GltfModel: React.FC<Required<Pick<NormalizedModelProps, 'path' | 'look'>> 
   return <primitive object={prepared.object} position={prepared.offset} />;
 };
 
-const PrimitiveModel: React.FC<Required<Pick<NormalizedModelProps, 'path' | 'look'>> & Pick<NormalizedModelProps, 'onMeasured'>> = ({
-  path,
-  look,
-  onMeasured,
-}) => {
+const PrimitiveModel: React.FC<ModelProps> = ({ path, look, onMeasured, measureSurfaces }) => {
   const ref = useRef<Group>(null);
   const [sizes, setSizes] = React.useState<ModelSizes | null>(null);
 
@@ -65,6 +79,14 @@ const PrimitiveModel: React.FC<Required<Pick<NormalizedModelProps, 'path' | 'loo
     const size = new Box3().setFromObject(ref.current).getSize(new Vector3());
     setSizes({ halfWidth: size.x / 2, halfDepth: size.z / 2, height: size.y });
   }, [path]);
+
+  // Процедурная модель уже нормализована: измеряем относительно её корня, где бы она ни стояла.
+  useEffect(() => {
+    const root = ref.current;
+    if (!root || !measureSurfaces || furnitureSurfacesCache.has(path)) return;
+    root.updateWorldMatrix(true, true);
+    cacheSurfaces(path, root, root.matrixWorld.clone().invert());
+  }, [measureSurfaces, path]);
 
   useReportSizes(path, sizes, onMeasured);
 
@@ -89,14 +111,14 @@ const ModelPlaceholder: React.FC<{ path: string; broken?: boolean }> = ({ path, 
 const NO_LOOK: ModelLook = {};
 
 /** Нормализованная модель мебели. */
-export const NormalizedModel: React.FC<NormalizedModelProps> = memo(({ path, look = NO_LOOK, onMeasured }) => {
+export const NormalizedModel: React.FC<NormalizedModelProps> = memo(({ path, look = NO_LOOK, onMeasured, measureSurfaces }) => {
   if (path.startsWith(PRIMITIVE_PREFIX)) {
-    return <PrimitiveModel path={path} look={look} onMeasured={onMeasured} />;
+    return <PrimitiveModel path={path} look={look} onMeasured={onMeasured} measureSurfaces={measureSurfaces} />;
   }
   return (
     <ErrorBoundary fallback={<ModelPlaceholder path={path} broken />} context={`модель ${path}`} resetKey={path}>
       <Suspense fallback={<ModelPlaceholder path={path} />}>
-        <GltfModel path={path} look={look} onMeasured={onMeasured} />
+        <GltfModel path={path} look={look} onMeasured={onMeasured} measureSurfaces={measureSurfaces} />
       </Suspense>
     </ErrorBoundary>
   );

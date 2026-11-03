@@ -3,7 +3,16 @@ import { obbCorners, obbOverlap, pointInObb, type Obb } from '@/shared/lib/math/
 import type { ModelSurface } from '@/features/furniture/lib/surfaceScan';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { buildObstacles } from './placement';
-import { findSurfaceSpot, placeOnSurface, supportSurfaces, surfaceAtPoint, surfaceByRay, type SupportSurface } from './surfaces';
+import {
+  findSurfaceSpot,
+  placeOnSurface,
+  roomSurfaces,
+  supportSurfaces,
+  surfaceAtPoint,
+  surfaceByRay,
+  surfacesFitting,
+  type SupportSurface,
+} from './surfaces';
 
 const item = (id: string, extra: Partial<FurnitureItem> = {}): FurnitureItem => ({
   id,
@@ -122,6 +131,27 @@ describe('placeOnSurface', () => {
     const [, shelf] = supportSurfaces(item('shelf', { halfWidth: 0.44, halfDepth: 0.16, height: 1.8 }), shelfLevels);
     expect(placeOnSurface(lamp([0, 0]), 0.9, shelf, []).valid).toBe(false);
     expect(placeOnSurface({ center: [0, 0], half: [0.5, 0.2], angle: 0 }, 0.1, shelf, []).valid).toBe(false);
+  });
+});
+
+describe('surfaces of the room', () => {
+  const desk = item('desk', { name: 'Письменный стол' });
+  const shelf = item('shelf', { name: 'Стеллаж', modelPath: 'primitive:shelf', position: [1.5, 0, 0], halfWidth: 0.44, halfDepth: 0.16, height: 1.8 });
+  const lampOnDesk = item('lamp', { name: 'Настольная лампа', supportId: 'desk', position: [0, 0.75, 0], halfWidth: 0.1, halfDepth: 0.3, height: 0.9 });
+  const sofa = item('sofa', { name: 'Диван', modelPath: 'primitive:sofa', position: [-1.5, 0, 0] });
+
+  it('collects the surfaces of every support except the excluded item', () => {
+    const measured = (path: string) => (path === 'primitive:shelf' ? shelfLevels : undefined);
+    const surfaces = roomSurfaces([desk, shelf, lampOnDesk, sofa], measured, 2.7, 'lamp');
+    expect(surfaces.map((s) => s.supportId)).toEqual(['desk', 'shelf', 'shelf', 'shelf']);
+    expect(roomSurfaces([desk, shelf], measured, 2.7, 'desk').every((s) => s.supportId === 'shelf')).toBe(true);
+  });
+
+  it('keeps only the surfaces an item fits on in some orientation', () => {
+    const surfaces = roomSurfaces([desk, shelf], (p) => (p === 'primitive:shelf' ? shelfLevels : undefined), 2.7, null);
+    expect(surfacesFitting(surfaces, [0.1, 0.3], 0.9).map((s) => s.y)).toEqual([0.75, 1.72]);
+    expect(surfacesFitting(surfaces, [0.3, 0.1], 0.3)).toHaveLength(4);
+    expect(surfacesFitting(surfaces, [0.5, 0.5], 0.1)).toHaveLength(0);
   });
 });
 

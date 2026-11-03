@@ -34,9 +34,11 @@ function useCatalogDrop() {
   const [active, setActive] = useState(false);
 
   const preview = (e: React.DragEvent) => {
-    const { placingPath, placingAngle } = interactionStore.getState();
+    const { placingPath, placingAngle, placingName } = interactionStore.getState();
     const point = sceneBridge.screenToFloor(e.clientX, e.clientY);
-    if (placingPath && point) interaction.setGhost(commands.furniture.previewPlacement(placingPath, point, placingAngle));
+    const ray = sceneBridge.screenToRay(e.clientX, e.clientY);
+    const options = { name: placingName ?? '', aim: ray ? { ray } : {} };
+    if (placingPath && point) interaction.setGhost(commands.furniture.previewPlacement(placingPath, point, placingAngle, options));
   };
 
   return {
@@ -58,7 +60,8 @@ function useCatalogDrop() {
         setActive(false);
         const path = e.dataTransfer.getData(MODEL_DRAG_TYPE);
         const { ghost, placingName } = interactionStore.getState();
-        if (path && ghost) commands.furniture.place(path, placingName ?? '', ghost.center, ghost.angle);
+        const aim = ghost ? { supportId: ghost.supportId, elevation: ghost.elevation } : {};
+        if (path && ghost) commands.furniture.place(path, placingName ?? '', ghost.center, ghost.angle, aim);
         interaction.reset();
       },
     },

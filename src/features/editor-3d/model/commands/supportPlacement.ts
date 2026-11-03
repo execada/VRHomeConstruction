@@ -18,10 +18,10 @@ import {
   type PlacementObstacle,
 } from '../../lib/placement';
 import { carryWith, itemsOn, withoutSupport } from '../../lib/supportLinks';
-import { furnitureRole } from '../../lib/supportRole';
 import {
   findSurfaceSpot,
   placeOnSurface,
+  roomSurfaces,
   supportSurfaces,
   surfaceAtPoint,
   surfaceByRay,
@@ -61,12 +61,8 @@ export function createSupportPlacement(ctx: CommandContext) {
   const editor = () => ctx.getState().editor;
 
   /** Поверхности опор комнаты, кроме самого предмета. */
-  function surfacesExcept(itemId: string): SupportSurface[] {
-    const ceiling = editor().dimensions.height;
-    return items()
-      .filter((i) => i.id !== itemId && !i.supportId && furnitureRole(i) === 'support')
-      .flatMap((s) => supportSurfaces(s, furnitureSurfacesCache.get(s.modelPath), ceiling));
-  }
+  const surfacesExcept = (itemId: string): SupportSurface[] =>
+    roomSurfaces(items(), furnitureSurfacesCache.get, editor().dimensions.height, itemId);
 
   /** Поверхность для предмета: по лучу, по призраку или по точке плана (null — ставить на пол). */
   function target(item: FurnitureItem, center: Vec2, aim: SurfaceAim): SurfaceTarget | null {
