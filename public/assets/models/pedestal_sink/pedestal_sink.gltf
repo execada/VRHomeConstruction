@@ -1,0 +1,186 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.1",
+    "version": "2.0",
+    "copyright": "loafbrr"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 59,
+      "max": [
+        0.003311451291665435,
+        0.02114105224609375,
+        0.0031720101833343506
+      ],
+      "min": [
+        4.888057674179436e-7,
+        -0.0031730548944324255,
+        -0.0031740146223455667
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 59,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 150,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2004,
+      "bufferView": 1,
+      "byteOffset": 300
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 594,
+      "max": [
+        0.25000008940696716,
+        0.854631245136261,
+        0.15250015258789062
+      ],
+      "min": [
+        -0.24999989569187164,
+        0,
+        -0.15249986946582794
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 594,
+      "bufferView": 2,
+      "byteOffset": 12
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 1416,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1416,
+      "byteLength": 4308,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 5724,
+      "byteLength": 14256,
+      "byteStride": 24,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "pedestal_sink.bin",
+      "byteLength": 19980
+    }
+  ],
+  "materials": [
+    {
+      "name": "ceramic_glazed",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.92,
+          0.92,
+          0.9,
+          1
+        ],
+        "roughnessFactor": 0.12,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "chrome",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.95,
+          0.95,
+          0.95,
+          1
+        ],
+        "roughnessFactor": 0.08
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Sink_C_Faucet",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 2
+        }
+      ]
+    },
+    {
+      "name": "Sink_C",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 4,
+            "NORMAL": 5
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Sink_C_Faucet",
+      "translation": [
+        0.014857113361358643,
+        0.776710033416748,
+        -0.11724185943603516
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "Sink_C",
+      "mesh": 1,
+      "children": [
+        0
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        1
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_materials_unlit"
+  ]
+}

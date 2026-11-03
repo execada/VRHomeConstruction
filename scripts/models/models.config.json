@@ -239,6 +239,68 @@
       "id": "wall_clock",
       "label": "Настенные часы",
       "category": "decor"
+    },
+    {
+      "source": "local",
+      "id": "glam_velvet_sofa",
+      "label": "Диван бархатный",
+      "category": "seating",
+      "file": "glam_velvet_sofa.gltf",
+      "credit": {
+        "author": "Eric Chadwick, Wayfair LLC",
+        "license": "CC-BY 4.0",
+        "url": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/GlamVelvetSofa",
+        "attribution": "\"Glam Velvet Sofa\" by Eric Chadwick, (c) 2021 Wayfair LLC, from the Khronos glTF Sample Assets",
+        "changes": "textures converted to JPEG, punctual light removed, model recentred"
+      }
+    },
+    {
+      "source": "local",
+      "id": "sheen_velvet_chair",
+      "label": "Кресло бархатное",
+      "category": "seating",
+      "file": "sheen_velvet_chair.gltf",
+      "credit": {
+        "author": "Eric Chadwick, Wayfair LLC",
+        "license": "CC0",
+        "url": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SheenChair"
+      }
+    },
+    {
+      "source": "local",
+      "id": "toilet_close_coupled",
+      "label": "Унитаз-компакт",
+      "category": "bathroom",
+      "file": "toilet_close_coupled.gltf",
+      "credit": {
+        "author": "loafbrr",
+        "license": "CC0",
+        "url": "https://opengameart.org/content/toilets"
+      }
+    },
+    {
+      "source": "local",
+      "id": "pedestal_sink",
+      "label": "Раковина на пьедестале",
+      "category": "bathroom",
+      "file": "pedestal_sink.gltf",
+      "credit": {
+        "author": "loafbrr",
+        "license": "CC0",
+        "url": "https://opengameart.org/content/toilets"
+      }
+    },
+    {
+      "source": "local",
+      "id": "wall_sink",
+      "label": "Раковина подвесная",
+      "category": "bathroom",
+      "file": "wall_sink.gltf",
+      "credit": {
+        "author": "loafbrr",
+        "license": "CC0",
+        "url": "https://opengameart.org/content/toilets"
+      }
     }
   ]
 }

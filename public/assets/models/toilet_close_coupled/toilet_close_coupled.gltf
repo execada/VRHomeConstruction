@@ -1,0 +1,369 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.1",
+    "version": "2.0",
+    "copyright": "loafbrr"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1164,
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1500,
+      "bufferView": 0,
+      "byteOffset": 2328
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2442,
+      "bufferView": 0,
+      "byteOffset": 5328
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 240,
+      "bufferView": 0,
+      "byteOffset": 10212
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 804,
+      "bufferView": 0,
+      "byteOffset": 10692
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 90,
+      "max": [
+        0.009422054514288902,
+        0.009421695955097675,
+        0.012812403962016106
+      ],
+      "min": [
+        -0.04424605146050453,
+        -0.009457368403673172,
+        -4.77152411804127e-7
+      ],
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 90,
+      "bufferView": 1,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 318,
+      "max": [
+        0.2083030492067337,
+        0.029939450323581696,
+        0.43487465381622314
+      ],
+      "min": [
+        -0.21079713106155396,
+        -0.005571288056671619,
+        -0.005310399923473597
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 318,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 490,
+      "max": [
+        0.20954987406730652,
+        0.019104525446891785,
+        0.2195376455783844
+      ],
+      "min": [
+        -0.20954987406730652,
+        -0.0010852236300706863,
+        -0.23338153958320618
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 490,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 707,
+      "max": [
+        0.20954987406730652,
+        0.38005611300468445,
+        0.234949991106987
+      ],
+      "min": [
+        -0.20955011248588562,
+        0,
+        -0.35892608761787415
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 347,
+      "max": [
+        0.15052330493927002,
+        0.663266658782959,
+        -0.25760260224342346
+      ],
+      "min": [
+        -0.15052339434623718,
+        -2.9802322387695312e-8,
+        -0.39944109320640564
+      ],
+      "bufferView": 5,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 347,
+      "bufferView": 5,
+      "byteOffset": 12
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 12300,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 12300,
+      "byteLength": 2160,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 14460,
+      "byteLength": 7632,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 22092,
+      "byteLength": 11760,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 33852,
+      "byteLength": 8484,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 42336,
+      "byteLength": 8328,
+      "byteStride": 24,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "toilet_close_coupled.bin",
+      "byteLength": 50664
+    }
+  ],
+  "materials": [
+    {
+      "name": "ceramic_glazed",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.92,
+          0.92,
+          0.9,
+          1
+        ],
+        "roughnessFactor": 0.12,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "seat_plastic",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.94,
+          0.94,
+          0.92,
+          1
+        ],
+        "roughnessFactor": 0.32,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "chrome",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.95,
+          0.95,
+          0.95,
+          1
+        ],
+        "roughnessFactor": 0.08
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Toilet_Elongated_A_Flusher",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 3
+        }
+      ]
+    },
+    {
+      "name": "Toilet_Elongated_A_Seat_Cover",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 7,
+            "NORMAL": 8
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 0
+        }
+      ]
+    },
+    {
+      "name": "Toilet_Elongated_A_Seat",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 1
+        }
+      ]
+    },
+    {
+      "name": "Toilet_Elongated_A",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 11
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 2
+        },
+        {
+          "attributes": {
+            "POSITION": 12,
+            "NORMAL": 13
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Toilet_Elongated_A_Flusher",
+      "translation": [
+        -0.10189676284790039,
+        0.6102042198181152,
+        -0.2677774429321289
+      ],
+      "mesh": 0
+    },
+    {
+      "name": "Toilet_Elongated_A_Seat_Cover",
+      "translation": [
+        0.0012469291687011719,
+        0.00557100772857666,
+        -0.21533679962158203
+      ],
+      "mesh": 1
+    },
+    {
+      "name": "Toilet_Elongated_A_Seat",
+      "translation": [
+        0,
+        0.3800564110279083,
+        0.010897636413574219
+      ],
+      "mesh": 2,
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "Toilet_Elongated_A",
+      "translation": [
+        1.1175870895385742e-7,
+        2.9802322387695312e-8,
+        0.08224555104970932
+      ],
+      "mesh": 3,
+      "children": [
+        0,
+        2
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        3
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_materials_unlit"
+  ]
+}

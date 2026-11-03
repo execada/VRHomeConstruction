@@ -958,6 +958,91 @@
       "source": "https://polyhaven.com/a/wall_clock",
       "license": "CC0",
       "author": "PierreB3D"
+    },
+    {
+      "id": "glam_velvet_sofa",
+      "label": "Диван бархатный",
+      "category": "seating",
+      "file": "/assets/models/glam_velvet_sofa/glam_velvet_sofa.gltf",
+      "thumbnail": "/assets/models/glam_velvet_sofa/thumb.jpg",
+      "sizeBytes": 1000245,
+      "dimensions": {
+        "width": 2.188,
+        "height": 0.788,
+        "depth": 1.023
+      },
+      "triangles": 4196,
+      "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/GlamVelvetSofa",
+      "license": "CC-BY 4.0",
+      "author": "Eric Chadwick, Wayfair LLC"
+    },
+    {
+      "id": "sheen_velvet_chair",
+      "label": "Кресло бархатное",
+      "category": "seating",
+      "file": "/assets/models/sheen_velvet_chair/sheen_velvet_chair.gltf",
+      "thumbnail": "/assets/models/sheen_velvet_chair/thumb.jpg",
+      "sizeBytes": 2747036,
+      "dimensions": {
+        "width": 0.827,
+        "height": 0.686,
+        "depth": 0.57
+      },
+      "triangles": 39808,
+      "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SheenChair",
+      "license": "CC0",
+      "author": "Eric Chadwick, Wayfair LLC"
+    },
+    {
+      "id": "toilet_close_coupled",
+      "label": "Унитаз-компакт",
+      "category": "bathroom",
+      "file": "/assets/models/toilet_close_coupled/toilet_close_coupled.gltf",
+      "thumbnail": "/assets/models/toilet_close_coupled/thumb.jpg",
+      "sizeBytes": 57575,
+      "dimensions": {
+        "width": 0.419,
+        "height": 0.663,
+        "depth": 0.634
+      },
+      "triangles": 2050,
+      "source": "https://opengameart.org/content/toilets",
+      "license": "CC0",
+      "author": "loafbrr"
+    },
+    {
+      "id": "pedestal_sink",
+      "label": "Раковина на пьедестале",
+      "category": "bathroom",
+      "file": "/assets/models/pedestal_sink/pedestal_sink.gltf",
+      "thumbnail": "/assets/models/pedestal_sink/thumb.jpg",
+      "sizeBytes": 23239,
+      "dimensions": {
+        "width": 0.5,
+        "height": 0.855,
+        "depth": 0.305
+      },
+      "triangles": 718,
+      "source": "https://opengameart.org/content/toilets",
+      "license": "CC0",
+      "author": "loafbrr"
+    },
+    {
+      "id": "wall_sink",
+      "label": "Раковина подвесная",
+      "category": "bathroom",
+      "file": "/assets/models/wall_sink/wall_sink.gltf",
+      "thumbnail": "/assets/models/wall_sink/thumb.jpg",
+      "sizeBytes": 20015,
+      "dimensions": {
+        "width": 0.5,
+        "height": 0.326,
+        "depth": 0.305
+      },
+      "triangles": 606,
+      "source": "https://opengameart.org/content/toilets",
+      "license": "CC0",
+      "author": "loafbrr"
     }
   ]
 }
