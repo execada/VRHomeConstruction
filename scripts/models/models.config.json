@@ -1,0 +1,112 @@
+{
+  "models": [
+    {
+      "source": "polyhaven",
+      "id": "Sofa_01",
+      "label": "Диван",
+      "category": "seating"
+    },
+    {
+      "source": "polyhaven",
+      "id": "modern_arm_chair_01",
+      "label": "Кресло",
+      "category": "seating"
+    },
+    {
+      "source": "polyhaven",
+      "id": "dining_chair_02",
+      "label": "Стул мягкий",
+      "category": "seating"
+    },
+    {
+      "source": "polyhaven",
+      "id": "painted_wooden_chair_01",
+      "label": "Стул деревянный",
+      "category": "seating"
+    },
+    {
+      "source": "polyhaven",
+      "id": "modern_coffee_table_01",
+      "label": "Журнальный столик",
+      "category": "tables"
+    },
+    {
+      "source": "polyhaven",
+      "id": "wooden_table_02",
+      "label": "Обеденный стол",
+      "category": "tables"
+    },
+    {
+      "source": "polyhaven",
+      "id": "GothicBed_01",
+      "label": "Кровать",
+      "category": "bedroom"
+    },
+    {
+      "source": "polyhaven",
+      "id": "side_table_01",
+      "label": "Прикроватная тумба",
+      "category": "bedroom"
+    },
+    {
+      "source": "polyhaven",
+      "id": "wooden_display_shelves_01",
+      "label": "Стеллаж",
+      "category": "storage"
+    },
+    {
+      "source": "polyhaven",
+      "id": "modern_wooden_cabinet",
+      "label": "ТВ-тумба",
+      "category": "storage"
+    },
+    {
+      "source": "polyhaven",
+      "id": "drawer_cabinet",
+      "label": "Комод со стеллажом",
+      "category": "storage"
+    },
+    {
+      "source": "polyhaven",
+      "id": "modern_ceiling_lamp_01",
+      "label": "Подвесной светильник",
+      "category": "lighting"
+    },
+    {
+      "source": "polyhaven",
+      "id": "desk_lamp_arm_01",
+      "label": "Настольная лампа",
+      "category": "lighting"
+    },
+    {
+      "source": "polyhaven",
+      "id": "potted_plant_01",
+      "label": "Растение в кашпо",
+      "category": "plants"
+    },
+    {
+      "source": "polyhaven",
+      "id": "potted_plant_02",
+      "label": "Комнатное растение",
+      "category": "plants"
+    },
+    {
+      "source": "polyhaven",
+      "id": "potted_plant_04",
+      "label": "Суккулент",
+      "category": "plants"
+    },
+    {
+      "source": "polyhaven",
+      "id": "ceramic_vase_02",
+      "label": "Керамическая ваза",
+      "category": "decor"
+    },
+    {
+      "source": "polyhaven",
+      "id": "standing_picture_frame_01",
+      "label": "Фоторамка",
+      "category": "decor"
+    }
+  ]
+}

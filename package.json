@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "generate-models": "node scripts/generate-model-list.cjs",
+    "models:sync": "node --import ./scripts/models/register-ts.mjs scripts/models/sync-models.mjs",
+    "models:check": "node --import ./scripts/models/register-ts.mjs scripts/models/sync-models.mjs --check",
     "predev": "npm run generate-models",
     "dev": "rsbuild dev",
     "prebuild": "npm run generate-models",

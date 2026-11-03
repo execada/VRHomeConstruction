@@ -39,6 +39,8 @@ const MODEL_CATEGORY_LABELS: Record<ModelCategory, string> = {
   plants: 'Растения',
   decor: 'Декор',
   kitchen: 'Кухня',
+  bathroom: 'Ванная',
+  appliances: 'Техника',
 };
 
 /** Названия пользовательских моделей по имени файла. */

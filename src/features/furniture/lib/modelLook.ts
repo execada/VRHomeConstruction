@@ -1,10 +1,19 @@
 /**
- * Подготовка glTF-модели к сцене: клон на экземпляр, нормализация по габаритам
- * (низ на y = 0, центр по X/Z), тени, внешний вид (тонирование, призрак, ошибка).
+ * Подготовка glTF-модели к сцене: клон на экземпляр, нормализация (реальные метры,
+ * ось «вверх» Y, поправки манифеста — см. normalization), низ на y = 0 и центр по X/Z,
+ * тени, внешний вид (тонирование, призрак, ошибка).
  * @module furniture/lib/modelLook
  */
 
-import { Box3, Color, Light, Material, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import { Box3, Color, Group, Light, Material, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import {
+  isIdentityNormalization,
+  resolveNormalization,
+  validateSize,
+  type Normalization,
+  type NormalizeOptions,
+  type SizeIssue,
+} from './normalization';
 
 /** Габариты модели при scale = 1. */
 export interface ModelSizes {
@@ -19,6 +28,10 @@ export interface PreparedModel {
   /** Смещение, при котором низ модели на полу, а центр — в начале координат */
   offset: [number, number, number];
   sizes: ModelSizes;
+  /** Применённая нормализация (единицы, ось, масштаб, поворот) */
+  normalization: Normalization;
+  /** Размеры вне ожидаемого диапазона категории (после нормализации) */
+  issues: SizeIssue[];
 }
 
 /** Внешний вид модели. */
@@ -34,8 +47,8 @@ export interface ModelLook {
 const INVALID_COLOR = new Color('#e5484d');
 const MIN_SIZE = 0.02;
 
-/** Клонировать сцену glTF, выключить встроенный свет, включить тени, измерить габариты. */
-export function prepareModel(scene: Object3D): PreparedModel {
+/** Клон сцены: встроенный свет выключен, тени включены. */
+function cloneForScene(scene: Object3D): Object3D {
   const object = scene.clone(true);
   object.traverse((child) => {
     if (child instanceof Light) child.visible = false;
@@ -45,7 +58,35 @@ export function prepareModel(scene: Object3D): PreparedModel {
     }
   });
   object.updateMatrixWorld(true);
-  const box = new Box3().setFromObject(object);
+  return object;
+}
+
+/** Обёртка, применяющая поворот осей и масштаб нормализации к клону. */
+function wrapNormalized(object: Object3D, n: Normalization): Object3D {
+  const root = new Group();
+  root.name = 'normalized';
+  root.add(object);
+  // Порядок YXZ: сначала исправление оси «вверх» (X), затем поворот фасадом к +Z (Y).
+  root.rotation.set(n.rotationX, n.rotationY, 0, 'YXZ');
+  root.scale.setScalar(n.scale);
+  root.updateMatrixWorld(true);
+  return root;
+}
+
+/**
+ * Клонировать сцену glTF, выключить встроенный свет, включить тени, нормализовать
+ * габариты (единицы, ось «вверх», поправки манифеста) и измерить результат.
+ * @param scene - сцена glTF (общая для всех экземпляров, не изменяется)
+ * @param options - категория модели и поправки из манифеста
+ */
+export function prepareModel(scene: Object3D, options: NormalizeOptions = {}): PreparedModel {
+  const clone = cloneForScene(scene);
+  const raw = new Box3().setFromObject(clone);
+  const rawSize = raw.isEmpty() ? new Vector3(1, 1, 1) : raw.getSize(new Vector3());
+  const normalization = raw.isEmpty() ? resolveNormalization(rawSize) : resolveNormalization(rawSize, options);
+  const identity = isIdentityNormalization(normalization);
+  const object = identity ? clone : wrapNormalized(clone, normalization);
+  const box = identity ? raw : new Box3().setFromObject(object);
   const size = box.isEmpty() ? new Vector3(1, 1, 1) : box.getSize(new Vector3());
   const center = box.isEmpty() ? new Vector3() : box.getCenter(new Vector3());
   return {
@@ -56,6 +97,8 @@ export function prepareModel(scene: Object3D): PreparedModel {
       halfDepth: Math.max(MIN_SIZE, size.z / 2),
       height: Math.max(MIN_SIZE, size.y),
     },
+    normalization,
+    issues: box.isEmpty() ? [] : validateSize(size, options.category),
   };
 }
 

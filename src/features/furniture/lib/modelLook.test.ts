@@ -31,6 +31,47 @@ describe('prepareModel', () => {
   it('handles empty scenes', () => {
     expect(prepareModel(new Group()).sizes.height).toBe(1);
   });
+
+  it('converts centimetre models to metres and keeps the bottom on the floor', () => {
+    const root = new Group();
+    const mesh = new Mesh(new BoxGeometry(200, 80, 90), new MeshStandardMaterial());
+    mesh.position.set(10, 40, 0);
+    root.add(mesh);
+    const prepared = prepareModel(root, { category: 'seating' });
+    expect(prepared.normalization.unit).toBe('cm');
+    expect(prepared.sizes.height).toBeCloseTo(0.8);
+    expect(prepared.sizes.halfWidth).toBeCloseTo(1);
+    expect(prepared.sizes.halfDepth).toBeCloseTo(0.45);
+    expect(prepared.offset[0]).toBeCloseTo(-0.1);
+    expect(prepared.offset[1]).toBeCloseTo(0);
+  });
+
+  it('applies manifest overrides: target height and facing', () => {
+    const root = new Group();
+    root.add(new Mesh(new BoxGeometry(1, 2, 0.5), new MeshStandardMaterial()));
+    const prepared = prepareModel(root, { category: 'storage', rule: { targetHeight: 1, rotationY: 90 } });
+    expect(prepared.sizes.height).toBeCloseTo(1);
+    expect(prepared.sizes.halfWidth).toBeCloseTo(0.125);
+    expect(prepared.sizes.halfDepth).toBeCloseTo(0.25);
+    expect(prepared.object.scale.x).toBeCloseTo(0.5);
+  });
+
+  it('stands Z-up models upright', () => {
+    const root = new Group();
+    root.add(new Mesh(new BoxGeometry(0.9, 0.05, 1.8), new MeshStandardMaterial()));
+    const prepared = prepareModel(root, { category: 'kitchen' });
+    expect(prepared.normalization.upAxis).toBe('z');
+    expect(prepared.sizes.height).toBeCloseTo(1.8);
+    expect(prepared.sizes.halfDepth).toBeCloseTo(0.025);
+    expect(prepared.offset[1]).toBeCloseTo(0.9);
+  });
+
+  it('reports implausible sizes that could not be corrected', () => {
+    const root = new Group();
+    root.add(new Mesh(new BoxGeometry(0.4, 3.5, 0.4), new MeshStandardMaterial()));
+    expect(prepareModel(root, { category: 'tables' }).issues).toHaveLength(1);
+    expect(prepareModel(scene()).issues).toEqual([]);
+  });
 });
 
 describe('applyLook', () => {

@@ -48,6 +48,12 @@ export const textureEntrySchema = z.object({
   ...credit,
 });
 
+/**
+ * Стабильные категории моделей (значения не переименовываются — на них опирается логика):
+ * `tables` и `storage` — опоры, на которые ставят предметы; `lighting`, `decor`, `plants` —
+ * светильники, декор и растения (мелкие узнаются по `dimensions`); `seating`, `bedroom`,
+ * `kitchen`, `bathroom` (сантехника), `appliances` (бытовая техника и электроника).
+ */
 export const modelCategorySchema = z.enum([
   'seating',
   'tables',
@@ -57,7 +63,41 @@ export const modelCategorySchema = z.enum([
   'plants',
   'bedroom',
   'kitchen',
+  'bathroom',
+  'appliances',
 ]);
+
+/** Единицы длины исходной модели. */
+export const lengthUnitSchema = z.enum(['m', 'cm', 'mm', 'in']);
+
+/** Ось «вверх» исходной модели (glTF — Y; экспорт без конвертации осей — Z). */
+export const upAxisSchema = z.enum(['y', 'z']);
+
+const targetSize = z.number().min(0.005).max(10);
+
+/**
+ * Ручные поправки нормализации (поверх автоматического определения при загрузке):
+ * единицы, ось «вверх», поворот фасадом к +Z (градусы, кратно 90) и один целевой размер
+ * (равномерное масштабирование до высоты, ширины или глубины в метрах).
+ */
+export const normalizeRuleSchema = z
+  .object({
+    unit: lengthUnitSchema.optional(),
+    upAxis: upAxisSchema.optional(),
+    rotationY: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]).optional(),
+    targetHeight: targetSize.optional(),
+    targetWidth: targetSize.optional(),
+    targetDepth: targetSize.optional(),
+  })
+  .refine(
+    (r) => [r.targetHeight, r.targetWidth, r.targetDepth].filter((v) => v !== undefined).length <= 1,
+    'Допустим только один целевой размер',
+  );
+
+const meters = z.number().positive().max(10);
+
+/** Реальные габариты после нормализации, м (x — ширина, y — высота, z — глубина). */
+export const modelDimensionsSchema = z.object({ width: meters, height: meters, depth: meters });
 
 export const modelEntrySchema = z.object({
   id: entryId,
@@ -66,6 +106,10 @@ export const modelEntrySchema = z.object({
   file: assetPath.refine((p) => /\.(gltf|glb)$/i.test(p), 'Ожидается .gltf/.glb'),
   thumbnail: assetPath,
   sizeBytes: z.number().int().nonnegative(),
+  normalize: normalizeRuleSchema.optional(),
+  dimensions: modelDimensionsSchema.optional(),
+  /** Число треугольников (бюджет для VR) */
+  triangles: z.number().int().nonnegative().optional(),
   ...credit,
 });
 
@@ -73,6 +117,9 @@ export type HdriEntry = z.infer<typeof hdriEntrySchema>;
 export type TextureEntry = z.infer<typeof textureEntrySchema>;
 export type ModelEntry = z.infer<typeof modelEntrySchema>;
 export type ModelCategory = z.infer<typeof modelCategorySchema>;
+export type LengthUnit = z.infer<typeof lengthUnitSchema>;
+export type UpAxis = z.infer<typeof upAxisSchema>;
+export type ModelNormalizeRule = z.infer<typeof normalizeRuleSchema>;
 
 /** Проверенный манифест. */
 export interface AssetManifest {
