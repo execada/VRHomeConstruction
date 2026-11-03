@@ -16,9 +16,11 @@ import {
   withSill,
   type OpeningHost,
 } from '../../lib/openings';
-import { isWallSide, wallFrame } from '../../lib/walls';
+import { cachedWallLayout } from '../../lib/layoutCache';
+import { isWallSide } from '../../lib/walls';
 import type { Opening, Partition } from '../../types';
 import { createId, type CommandContext } from './context';
+import { interiorWallHost, outerWallHost } from './layoutSync';
 
 /** Стена или перегородка с её проёмами. */
 interface HostInfo {
@@ -31,16 +33,16 @@ const OPENING_LABEL: Record<Opening['type'], string> = { window: 'окна', doo
 
 /** Создать команды проёмов. */
 export function createOpeningCommands(ctx: CommandContext) {
-  /** Найти стену/перегородку по id. */
+  /** Найти стену/перегородку по id (с зонами стыков, куда проёмы не заходят). */
   function hostInfo(hostId: string): HostInfo | null {
     const { editor } = ctx.getState();
+    const layout = cachedWallLayout(editor.dimensions, editor.partitions);
     if (isWallSide(hostId)) {
       if (editor.removedWalls.includes(hostId)) return null;
-      const frame = wallFrame(hostId, editor.dimensions);
-      return { host: { length: frame.length, height: frame.height }, list: editor.openings[hostId] ?? [], partition: null };
+      return { host: outerWallHost(hostId, editor.dimensions, layout), list: editor.openings[hostId] ?? [], partition: null };
     }
     const partition = editor.partitions.find((p) => p.id === hostId);
-    return partition ? { host: { length: partition.size[0], height: partition.size[1] }, list: partition.openings, partition } : null;
+    return partition ? { host: interiorWallHost(partition, layout), list: partition.openings, partition } : null;
   }
 
   /** Записать изменённый проём. */

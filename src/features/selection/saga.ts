@@ -17,10 +17,12 @@ function* dropStaleSelectionSaga() {
   const item = yield* select(selectors.selectSelectedItem);
   const partition = yield* select(selectors.selectSelectedPartitionLive);
   const opening = yield* select(selectors.selectSelectedOpeningLive);
+  const room = yield* select(selectors.selectSelectedRoom);
   const missing =
     (selection.kind === 'furniture' && !item) ||
     (selection.kind === 'partition' && !partition) ||
-    (selection.kind === 'opening' && !opening);
+    (selection.kind === 'opening' && !opening) ||
+    (selection.kind === 'room' && !room);
   if (missing) yield* put(actions.clearSelection());
 }
 

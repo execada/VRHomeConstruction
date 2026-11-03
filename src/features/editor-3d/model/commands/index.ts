@@ -11,6 +11,7 @@ import { createFurnitureCommands } from './furnitureCommands';
 import { createOpeningCommands } from './openingCommands';
 import { createPartitionCommands } from './partitionCommands';
 import { createRoomCommands } from './roomCommands';
+import { createRoomLabelCommands } from './roomLabelCommands';
 import type { CommandContext } from './context';
 
 /** Создать все команды сцены. */
@@ -19,6 +20,7 @@ export function createSceneCommands(ctx: CommandContext) {
   const openings = createOpeningCommands(ctx);
   const partitions = createPartitionCommands(ctx, furniture.settle);
   const room = createRoomCommands(ctx);
+  const rooms = createRoomLabelCommands(ctx);
   const current = () => ctx.getState().selection.current;
 
   return {
@@ -26,6 +28,8 @@ export function createSceneCommands(ctx: CommandContext) {
     openings,
     partitions,
     room,
+    /** Помещения, вычисленные по стенам (названия и виды) */
+    rooms,
 
     /** Выделить объект (null — снять выделение). */
     select(selection: SceneSelection | null): void {

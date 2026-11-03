@@ -122,7 +122,7 @@ describe('opening commands', () => {
 
   it('works on partitions and removes openings', () => {
     const { store, commands } = setup();
-    const pid = commands.partitions.add([0, 0]);
+    const pid = commands.partitions.add([0, 0])!;
     const door = commands.openings.add(pid, 'door')!;
     expect(store.getState().editor.partitions[0].openings).toHaveLength(1);
     commands.openings.move(pid, door.id, { u: 0.3, y: 5 });
@@ -168,7 +168,7 @@ describe('room and selection commands', () => {
 
   it('sets the construction material of an interior wall', () => {
     const { store, commands } = setup();
-    const id = commands.partitions.add([0, 0]);
+    const id = commands.partitions.add([0, 0])!;
     expect(store.getState().editor.partitions[0].material).toBe('drywall');
     commands.partitions.setMaterial(id, 'silicate');
     expect(store.getState().editor.partitions[0].material).toBe('silicate');
@@ -183,5 +183,68 @@ describe('room and selection commands', () => {
     commands.deleteSelection();
     expect(store.getState().furniture.items).toHaveLength(0);
     expect(store.getState().selection.current).toBeNull();
+  });
+});
+
+describe('interior walls and rooms', () => {
+  it('draws a wall between outer walls and splits the apartment into two rooms', () => {
+    const { store, commands } = setup();
+    const id = commands.partitions.draw([0.5, -2], [0.5, 2])!;
+    const wall = store.getState().editor.partitions[0];
+    expect(wall.id).toBe(id);
+    expect(wall.size[0]).toBeCloseTo(4);
+    expect(wall.material).toBe('drywall');
+    expect(wall.size[2]).toBeCloseTo(0.1);
+    expect(store.getState().selection.current).toEqual({ kind: 'partition', id });
+    expect(commands.rooms.at([-1, 0])?.area).toBeCloseTo(2.45 * 4);
+    expect(commands.rooms.at([1.5, 0])?.area).toBeCloseTo(1.45 * 4);
+  });
+
+  it('refuses walls that are too short and notifies', () => {
+    const { store, commands, notify } = setup();
+    expect(commands.partitions.draw([0, 0], [0.1, 0])).toBeNull();
+    expect(store.getState().editor.partitions).toHaveLength(0);
+    expect(notify).toHaveBeenCalled();
+  });
+
+  it('moves a door out of the zone where a new wall joins the outer wall', () => {
+    const { store, commands } = setup();
+    const door = commands.openings.add('back', 'door', 0)!;
+    expect(store.getState().editor.openings.back[0].id).toBe(door.id);
+    commands.partitions.draw([0, -2], [0, 2], { material: 'aerated' });
+    const moved = store.getState().editor.openings.back[0];
+    expect(Math.abs(moved.position[0]) - moved.width / 2).toBeGreaterThanOrEqual(0.1 - 1e-6);
+  });
+
+  it('keeps new openings out of joints on interior walls', () => {
+    const { store, commands } = setup();
+    const host = commands.partitions.draw([-2, 0], [2, 0])!;
+    commands.partitions.draw([0, 0], [0, 2]);
+    const w = commands.openings.add(host, 'window', 0)!;
+    const zone = 0.05;
+    expect(Math.abs(w.position[0]) - w.width / 2).toBeGreaterThanOrEqual(zone + 0.1 - 1e-4);
+    expect(store.getState().editor.partitions[0].openings).toHaveLength(1);
+  });
+
+  it('renames rooms and sets their kind, keeping labels through wall edits', () => {
+    const { store, commands } = setup();
+    const id = commands.partitions.draw([1, -2], [1, 2])!;
+    commands.rooms.rename([1.5, 0], 'Лоджия');
+    commands.rooms.setKind([1.5, 0], 'loggia');
+    expect(store.getState().editor.rooms).toHaveLength(1);
+    expect(commands.rooms.at([1.5, 0])).toMatchObject({ name: 'Лоджия', kind: 'loggia' });
+    commands.partitions.move(id, [1.2, 0]);
+    commands.partitions.endGesture();
+    expect(commands.rooms.at([1.6, 0])?.name).toBe('Лоджия');
+    expect(commands.rooms.at([-1, 0])?.name).toBe('Комната 1');
+  });
+
+  it('stretches attached walls and moves labels when the room is resized', () => {
+    const { store, commands } = setup();
+    commands.partitions.draw([1, -2], [1, 2]);
+    commands.rooms.rename([1.5, 0], 'Кухня');
+    commands.room.dragWall('front', 1);
+    expect(store.getState().editor.partitions[0].size[0]).toBeCloseTo(5);
+    expect(commands.rooms.at(store.getState().editor.rooms[0].anchor)?.name).toBe('Кухня');
   });
 });

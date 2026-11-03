@@ -12,6 +12,7 @@ import { SCENE_LIMITS } from '../../lib/scene/schema';
 import { actions as editorActions } from '../../slice';
 import type { FinishTarget, LightConfig, OuterWallSpec, RoomDimensions, SurfaceFinish, WallSide } from '../../types';
 import type { CommandContext } from './context';
+import { syncLayout } from './layoutSync';
 
 /** Ограничить размеры комнаты допустимыми значениями. */
 export function clampDimensions(dims: RoomDimensions): RoomDimensions {
@@ -31,14 +32,16 @@ export function createRoomCommands(ctx: CommandContext) {
    * чтобы остаться внутри и на своих местах относительно неподвижных стен.
    */
   function resize(next: RoomDimensions, anchor: ResizeAnchor = {}): void {
-    const { dimensions, openings, partitions } = editor();
+    const { dimensions, openings, partitions, rooms } = editor();
     const target = clampDimensions(next);
     if (target.width === dimensions.width && target.height === dimensions.height && target.depth === dimensions.depth) return;
-    const result = resizeRoom({ dimensions, openings, partitions, furniture: ctx.getState().furniture.items }, target, anchor);
+    const result = resizeRoom({ dimensions, openings, partitions, rooms, furniture: ctx.getState().furniture.items }, target, anchor);
     ctx.dispatch(editorActions.setDimensions(result.dimensions));
     ctx.dispatch(editorActions.setOpenings(result.openings));
     ctx.dispatch(editorActions.setPartitions(result.partitions));
+    ctx.dispatch(editorActions.setRooms(result.rooms ?? rooms));
     ctx.dispatch(furnitureActions.replaceFurniture(result.furniture));
+    syncLayout(ctx);
   }
 
   return {

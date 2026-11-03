@@ -38,8 +38,22 @@ describe('createPartition', () => {
 describe('clampPartition', () => {
   it('limits sizes and removes tilt', () => {
     const p = clampPartition({ ...base(), size: [100, 10, 2], rotation: [0.3, 0.2, 0.1] }, dims);
-    expect(p.size).toEqual([5, 2.8, 0.5]);
+    // Наклонная стена укорачивается так, чтобы её концы поместились в комнату.
+    expect(p.size[0] * Math.cos(0.2)).toBeCloseTo(5);
+    expect(p.size.slice(1)).toEqual([2.8, 0.5]);
     expect(p.rotation).toEqual([0, 0.2, 0]);
+  });
+
+  it('lets wall ends touch the outer walls but keeps parallel walls out of them', () => {
+    const across = partitionFromEndpoints(base(), [0, -2], [0, 2], dims);
+    expect(across.size[0]).toBeCloseTo(4);
+    const [a, b] = partitionEndpoints(across);
+    expect(a[1]).toBeCloseTo(-2);
+    expect(b[1]).toBeCloseTo(2);
+    const along = partitionFromEndpoints(base(), [-1, -2], [1, -2], dims);
+    expect(along.position[2]).toBeCloseTo(-2 + 0.05);
+    const diagonal = partitionFromEndpoints(base(), [-2.5, -2], [2.5, 2], dims);
+    expect(diagonal.size[0]).toBeCloseTo(Math.hypot(5, 4));
   });
 
   it('limits corner radius to half the thickness', () => {
