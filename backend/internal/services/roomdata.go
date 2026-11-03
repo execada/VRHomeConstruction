@@ -21,6 +21,7 @@ const (
 	maxFurnitureItems    = 500
 	maxPartitionItems    = 100
 	maxOpeningItems      = 300
+	maxRoomLabelItems    = 100 // названия помещений (документ сцены v3)
 	minRoomSide          = 1.0 // ширина и глубина, м
 	maxRoomSide          = 50.0
 	minRoomHeight        = 1.5
@@ -36,6 +37,7 @@ var roomArrayCaps = []struct {
 	{"furniture", maxFurnitureItems},
 	{"partitions", maxPartitionItems},
 	{"openings", maxOpeningItems},
+	{"rooms", maxRoomLabelItems},
 }
 
 var roomDimensionRanges = []struct {
