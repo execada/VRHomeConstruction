@@ -135,6 +135,20 @@ describe('migrateV2', () => {
     expect(result.doc.partitions[1].material).toBe('aerated');
   });
 
+  it('installs the old flat door leaf into v2 doorways (outer and interior walls)', () => {
+    const doc = {
+      ...v2Document(),
+      openings: [{ id: 'd', wallId: 'back', type: 'door', position: [0, 1.05], width: 0.9, height: 2.1 }],
+      partitions: [{ id: 'p', position: [0, 1.4, 0], rotation: [0, 0, 0], size: [2, 2.8, 0.1], openings: [{ id: 'pd', wallId: 'p', type: 'door', position: [0, 1.05], width: 0.8, height: 2.1 }] }],
+    };
+    const result = parseSceneDocument(doc);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.doc.openings[0].door).toMatchObject({ style: 'flush', open: false });
+    expect(result.doc.partitions[0].openings[0].door).toMatchObject({ style: 'flush' });
+    expect(parseSceneDocument(v1).ok && (parseSceneDocument(v1) as { doc: { openings: Array<{ type: string; door?: unknown }> } }).doc.openings.find((o) => o.type === 'door')?.door).toBeTruthy();
+  });
+
   it('salvages a v2 project with broken items after migration', () => {
     const broken = { ...v2Document(), furniture: [{ id: 'bad', modelPath: 'javascript:alert(1)' }] };
     const result = parseSceneDocument(broken);

@@ -7,6 +7,7 @@
 
 import { KNOWN_MODEL_SIZES } from '@/features/furniture/lib/knownSizes';
 import type { FurnitureItem } from '@/features/furniture/types';
+import { DEFAULT_DOOR, type DoorSpec } from '@/features/editor-3d/lib/doors';
 import { withSill } from '@/features/editor-3d/lib/openings';
 import type { Opening, RoomDimensions, SurfaceFinish, WallSide } from '@/features/editor-3d/types';
 
@@ -75,7 +76,29 @@ export function windowOn(id: string, wallId: string, u: number, width = 1.4, hei
   return withSill({ id, wallId, type: 'window', position: [u, 0], width, height }, sill);
 }
 
-/** Дверь на стене. */
-export function doorOn(id: string, wallId: string, u: number, width = 0.9, height = 2.1): Opening {
-  return withSill({ id, wallId, type: 'door', position: [u, 0], width, height }, 0);
+/**
+ * Дверь на стене (по умолчанию — с установленной закрытой дверью).
+ * @param id - идентификатор проёма
+ * @param wallId - стена или внутренняя стена
+ * @param u - центр вдоль стены
+ * @param width - ширина проёма
+ * @param height - высота проёма
+ * @param door - параметры двери; null — пустой проём без полотна
+ */
+export function doorOn(id: string, wallId: string, u: number, width = 0.9, height = 2.1, door: Partial<DoorSpec> | null = {}): Opening {
+  const opening = withSill({ id, wallId, type: 'door' as const, position: [u, 0] as [number, number], width, height }, 0);
+  return door === null ? opening : { ...opening, door: { ...DEFAULT_DOOR, ...door } };
+}
+
+/**
+ * Панорамное окно: от пола до потолка (или с низким парапетом).
+ * @param id - идентификатор проёма
+ * @param wallId - стена или внутренняя стена
+ * @param u - центр вдоль стены
+ * @param width - ширина остекления
+ * @param wallHeight - высота стены
+ * @param sill - высота парапета (0 — от пола)
+ */
+export function panoramicWindowOn(id: string, wallId: string, u: number, width: number, wallHeight: number, sill = 0): Opening {
+  return withSill({ id, wallId, type: 'window', position: [u, 0], width, height: wallHeight - sill }, sill);
 }

@@ -20,6 +20,7 @@ import { clampOpening } from '../openings';
 import { clampPartition } from '../partitions';
 import { isWallSide, wallFrame } from '../walls';
 import { createEmptyScene } from './build';
+import { LEGACY_DOOR } from '../doors';
 import { legacyPartitionMaterial } from './migrateV2';
 import { furnitureSchema, modelPathSchema, SCENE_LIMITS, SCENE_SCHEMA_VERSION, type SceneDocument } from './schema';
 
@@ -86,6 +87,7 @@ function migrateOpening(raw: Loose, hostHeight: number, mirrorU: boolean): Openi
     position: [mirrorU ? -u : u, y + hostHeight / 2],
     width: clamp(num(raw.width, 0.9), 0.1, 10),
     height: clamp(num(raw.height, 1.2), 0.1, 10),
+    ...(type === 'door' ? { door: LEGACY_DOOR } : {}),
   };
 }
 

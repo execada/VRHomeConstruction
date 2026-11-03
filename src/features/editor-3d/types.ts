@@ -8,9 +8,10 @@
  * @module editor-3d/types
  */
 
+import type { DoorSpec } from './lib/doors';
 import type { WallMaterialId } from './lib/wallMaterials';
 
-export type { WallMaterialId };
+export type { DoorSpec, WallMaterialId };
 
 /** Внутренние размеры комнаты, м. */
 export interface RoomDimensions {
@@ -42,6 +43,8 @@ export interface Opening {
   width: number;
   /** Высота проёма (метры) */
   height: number;
+  /** Дверь, установленная в дверной проём (нет — пустой проём, через него можно пройти) */
+  door?: DoorSpec;
 }
 
 /**

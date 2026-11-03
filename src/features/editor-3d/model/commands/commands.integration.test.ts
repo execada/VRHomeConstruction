@@ -248,3 +248,45 @@ describe('interior walls and rooms', () => {
     expect(commands.rooms.at(store.getState().editor.rooms[0].anchor)?.name).toBe('Кухня');
   });
 });
+
+describe('doors', () => {
+  it('installs a closed door into new door openings and toggles it', () => {
+    const { store, commands } = setup();
+    const door = commands.openings.add('back', 'door')!;
+    expect(store.getState().editor.openings.back[0].door).toMatchObject({ open: false, style: 'panel' });
+    commands.openings.toggleDoor('back', door.id);
+    expect(store.getState().editor.openings.back[0].door?.open).toBe(true);
+    commands.openings.setDoor('back', door.id, { style: 'glass', hinge: 'end', swing: 'back', color: '#123456' });
+    expect(store.getState().editor.openings.back[0].door).toEqual({ style: 'glass', hinge: 'end', swing: 'back', open: true, color: '#123456' });
+  });
+
+  it('removes the leaf to leave an empty doorway and reinstalls it', () => {
+    const { store, commands } = setup();
+    const door = commands.openings.add('left', 'door')!;
+    commands.openings.setDoor('left', door.id, null);
+    expect(store.getState().editor.openings.left[0].door).toBeUndefined();
+    commands.openings.toggleDoor('left', door.id);
+    expect(store.getState().editor.openings.left[0].door).toBeUndefined();
+    commands.openings.setDoor('left', door.id, { style: 'flush' });
+    expect(store.getState().editor.openings.left[0].door?.style).toBe('flush');
+  });
+
+  it('drops the door when a doorway becomes a window and ignores doors on windows', () => {
+    const { store, commands } = setup();
+    const door = commands.openings.add('front', 'door')!;
+    commands.openings.setType('front', door.id, 'window');
+    expect(store.getState().editor.openings.front[0].door).toBeUndefined();
+    commands.openings.setDoor('front', door.id, { open: true });
+    expect(store.getState().editor.openings.front[0].door).toBeUndefined();
+    commands.openings.setType('front', door.id, 'door');
+    expect(store.getState().editor.openings.front[0].door?.open).toBe(false);
+  });
+
+  it('puts doors into interior walls too', () => {
+    const { store, commands } = setup();
+    const wall = commands.partitions.draw([0, -2], [0, 2])!;
+    const door = commands.openings.add(wall, 'door')!;
+    commands.openings.toggleDoor(wall, door.id);
+    expect(store.getState().editor.partitions[0].openings[0].door?.open).toBe(true);
+  });
+});

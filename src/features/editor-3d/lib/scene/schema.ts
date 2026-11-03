@@ -5,11 +5,13 @@
  *
  * v3 по сравнению с v2: у каждой внешней стены своя толщина и материал (`outerWalls`
  * вместо общего `wallThickness`), у внутренних стен (перегородок) — материал; названия
- * и виды помещений (`rooms`: помещения вычисляются по стенам, подпись привязана к точке).
+ * и виды помещений (`rooms`: помещения вычисляются по стенам, подпись привязана к точке);
+ * двери как объекты в дверных проёмах (`door`: модель, петли, сторона открывания, открыта ли).
  * @module editor-3d/lib/scene/schema
  */
 
 import { z } from 'zod';
+import { DOOR_STYLE_IDS } from '../doors';
 import { WALL_MATERIAL_IDS } from '../wallMaterials';
 
 /** Текущая версия формата документа сцены. */
@@ -75,6 +77,14 @@ export const finishesSchema = z.object({
   walls: z.object({ front: finishSchema, back: finishSchema, left: finishSchema, right: finishSchema }),
 });
 
+export const doorSchema = z.object({
+  style: z.enum(DOOR_STYLE_IDS),
+  hinge: z.enum(['start', 'end']),
+  swing: z.enum(['front', 'back']),
+  open: z.boolean(),
+  color: hexColorSchema,
+});
+
 export const openingSchema = z.object({
   id,
   wallId: id,
@@ -83,6 +93,7 @@ export const openingSchema = z.object({
   /** До длины стены: панорамное остекление */
   width: z.number().positive().max(SCENE_LIMITS.width[1]),
   height: z.number().positive().max(SCENE_LIMITS.height[1]),
+  door: doorSchema.optional(),
 });
 
 export const partitionSchema = z.object({
