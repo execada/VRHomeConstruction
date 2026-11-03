@@ -424,12 +424,12 @@ flowchart LR
 │       ├── auth/                 выпуск и проверка JWT
 │       └── models/               структуры запросов и документов
 ├── public/
-│   ├── assets/                   CC0-ассеты: 5 HDRI, 16 PBR-текстур, 18 моделей,
+│   ├── assets/                   ассеты: HDRI, PBR-текстуры, 61 модель мебели (CC0, одна CC BY),
 │   │                             manifest.json и LICENSES.md
 │   └── models/                   дополнительные модели мебели
 ├── e2e/                          сценарии Playwright
 ├── deploy/                       nginx.conf, заголовки безопасности (CSP), шаблон prod.env
-├── scripts/                      генерация списка моделей
+├── scripts/                      список моделей и конвейер библиотеки моделей (scripts/models)
 ├── docker-compose.prod.yml       продакшен-стек
 ├── Dockerfile                    образ фронтенда: сборка → nginx
 └── run.sh / stop.sh              запуск всего проекта одной командой / остановка
@@ -560,7 +560,7 @@ Brevo: в `/opt/vrhome/backend.env` нужны `BREVO_API_KEY` и `BREVO_FROM`, 
 |---|---|
 | `npm run lint` — ESLint, Stylelint, Knip | 0 ошибок и предупреждений |
 | `npm run typecheck` | 0 ошибок |
-| `npm run test:coverage` — Vitest | 433 теста, ≈ 97 % строк |
+| `npm run test:coverage` — Vitest | 500 тестов, ≈ 98 % строк |
 | `npm run test:e2e` — Playwright | 9 сценариев: гость, вход, главная, папки, шаблоны, редактор, автосохранение |
 | `go test -race ./...` | все пакеты, ≈ 93 % покрытия, репозитории — на настоящей MongoDB |
 | `govulncheck ./...` | 0 уязвимостей в вызываемом коде |
@@ -576,6 +576,8 @@ Brevo: в `/opt/vrhome/backend.env` нужны `BREVO_API_KEY` и `BREVO_FROM`, 
 | `npm test` / `npm run test:coverage` | тесты Vitest / с покрытием |
 | `npm run test:e2e` | E2E-сценарии |
 | `npm run generate-models` | пересобрать список моделей из `public/models` |
+| `npm run models:sync` / `models:check` | скачать модели Poly Haven, измерить, обновить манифест и LICENSES.md / проверить, что они актуальны |
+| `npm run models:procedural` / `models:thumbs` | собрать процедурные модели / отрисовать превью |
 | `cd backend && go vet ./... && go test -race ./...` | проверки бэкенда |
 
 ## Управление
@@ -596,8 +598,32 @@ Brevo: в `/opt/vrhome/backend.env` нужны `BREVO_API_KEY` и `BREVO_FROM`, 
 
 ## Ассеты
 
-HDRI, PBR-текстуры и модели в `public/assets` — CC0 с Poly Haven; авторы и ссылки перечислены
+HDRI и PBR-текстуры в `public/assets` — CC0 с Poly Haven. Модели мебели (61) — фотореалистичные
+PBR-модели в метрах с текстурами 1K: 39 с Poly Haven (CC0), диван и кресло из Khronos glTF Sample
+Assets (CC BY 4.0 и CC0), унитаз и раковины с OpenGameArt (CC0) и 17 процедурных моделей проекта
+(кухонные модули, холодильник, ванна, душ, тумба с раковиной, стиральная машина, кровать, ковры,
+торшер, зеркало, телевизор) с CC0-текстурами Poly Haven. Авторы, ссылки и атрибуции —
 в [public/assets/LICENSES.md](public/assets/LICENSES.md).
+
+**Конвейер.** Модели описаны в `scripts/models/models.config.json`; `npm run models:sync`
+идемпотентно (по md5) скачивает glTF 1K с Poly Haven, измеряет габариты, проверяет их по категории
+и переписывает раздел `models` манифеста и таблицы в LICENSES.md. Новая модель Poly Haven —
+одна строка в конфиге; своя модель — папка в `public/assets/models/<id>/` и запись `local`
+с автором и лицензией, затем `npm run models:thumbs` и `npm run models:sync`.
+
+**Нормализация размеров.** У каждой модели в манифесте есть категория, реальные габариты
+(`dimensions`, м) и при необходимости поправки `normalize`: единицы (`unit`: m/cm/mm/dm/in),
+ось «вверх» (`upAxis`), поворот фасадом к +Z (`rotationY`) и один целевой размер
+(`targetHeight`/`targetWidth`/`targetDepth`). При загрузке модель нормализуется автоматически:
+если габариты неправдоподобны для категории, подбираются единицы и ось, затем применяются
+поправки, низ ставится на пол, центр — в начало координат; размеры вне диапазона категории
+видны в консоли дев-сборки и не проходят конвейер. Так нашлась `steel_frame_shelves_01`,
+которая в исходном файле в 10 раз больше реальной.
+
+**Совместимость.** Процедурные `primitive:*` из каталога убраны — их заменили модели, — но сцена
+по-прежнему рендерит их в старых проектах без миграции: позиции, повороты и размеры сохранённых
+предметов не меняются, инспектор показывает их названия. Пути `/models/*.glb` работают как прежде.
+Встроенные шаблоны собраны из новых моделей.
 
 ---
 
