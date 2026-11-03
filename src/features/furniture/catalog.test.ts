@@ -28,9 +28,9 @@ const sofa: ModelEntry = {
 describe('furniture catalog', () => {
   const catalog = buildCatalog([sofa]);
 
-  it('lists quality assets first, then primitives and user models', () => {
+  it('lists catalog models first, then user models; primitives are no longer offered', () => {
     expect(catalog[0]).toMatchObject({ path: sofa.file, category: 'Сидения', source: 'asset' });
-    expect(catalog.some((c) => c.source === 'primitive')).toBe(true);
+    expect(catalog.some((c) => c.source === 'primitive')).toBe(false);
     expect(catalog.some((c) => c.source === 'user')).toBe(true);
   });
 
@@ -54,8 +54,8 @@ describe('furniture catalog', () => {
     const ids = new Set(modelCategorySchema.options);
     catalog.forEach((item) => expect(ids.has(item.categoryId), item.path).toBe(true));
     expect(catalog[0]).toMatchObject({ categoryId: 'seating', dimensions: sofa.dimensions });
-    expect(catalog.find((c) => c.path === 'primitive:fridge')?.categoryId).toBe('kitchen');
-    expect(catalog.find((c) => c.path === 'primitive:rug')?.dimensions).toEqual({ width: 2, height: 0.022, depth: 1.4 });
+    expect(catalogEntry(catalog, 'primitive:fridge')?.categoryId).toBe('kitchen');
+    expect(catalogEntry(catalog, 'primitive:rug')?.dimensions).toEqual({ width: 2, height: 0.022, depth: 1.4 });
   });
 });
 
@@ -63,10 +63,16 @@ describe('legacy primitives', () => {
   const catalog = buildCatalog([sofa]);
 
   it('are no longer offered once catalog models replace them', () => {
-    const paths = catalog.map((c) => c.path);
-    expect(paths).not.toContain('primitive:sofa');
-    expect(paths).not.toContain('primitive:stool');
-    expect(paths).not.toContain('primitive:plant');
+    expect(catalog.filter((c) => c.path.startsWith('primitive:'))).toEqual([]);
+  });
+
+  it('keep a name, a stable category and real-world sizes for every kind', () => {
+    const kinds = ['sofa', 'stool', 'coffee_table', 'desk', 'shelf', 'kitchen_counter', 'fridge', 'washing_machine', 'tv_stand', 'floor_lamp', 'plant', 'rug', 'mirror'];
+    kinds.forEach((kind) => {
+      const entry = catalogEntry(catalog, `primitive:${kind}`);
+      expect(entry?.name, kind).toBeTruthy();
+      expect(entry?.dimensions?.height, kind).toBeGreaterThan(0);
+    });
   });
 
   it('still resolve for old projects', () => {

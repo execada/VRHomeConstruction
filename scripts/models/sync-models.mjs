@@ -29,6 +29,7 @@ import {
   polyhavenAuthors,
   renderAttributions,
   renderLicenseRows,
+  renderTextureRows,
   replaceBetweenMarkers,
 } from '../../src/features/assets/lib/modelSources.ts';
 import { formatSizeIssue, resolveNormalization, validateSize } from '../../src/features/furniture/lib/normalization.ts';
@@ -158,9 +159,10 @@ function replaceModelsSection(text, models) {
   return `${text.slice(0, start)}"models": ${body}${text.slice(end + 1)}`;
 }
 
-/** Новый текст LICENSES.md с актуальными таблицей и атрибуциями моделей. */
-function renderLicenses(text, entries, sources) {
-  const table = `${TABLE_HEAD}\n${renderLicenseRows(entries)}`;
+/** Новый текст LICENSES.md с актуальными таблицей (модели + текстуры их материалов) и атрибуциями. */
+function renderLicenses(text, entries, sources, textureCredits) {
+  const textures = renderTextureRows(textureCredits);
+  const table = `${TABLE_HEAD}\n${renderLicenseRows(entries)}${textures ? `\n${textures}` : ''}`;
   const withRows = replaceBetweenMarkers(text, MODELS_MARKERS[0], MODELS_MARKERS[1], table);
   return replaceBetweenMarkers(withRows, ATTRIBUTION_MARKERS[0], ATTRIBUTION_MARKERS[1], renderAttributions(sources));
 }
@@ -203,7 +205,8 @@ async function main() {
   const nextManifest = replaceModelsSection(manifestText, entries);
   const valid = parseManifest(JSON.parse(nextManifest)).models.length;
   if (valid !== entries.length) throw new Error(`Схема манифеста отклонила ${entries.length - valid} записей`);
-  const nextLicenses = renderLicenses(await readFile(LICENSES, 'utf8'), entries, sources);
+  const credits = await readIfExists(path.join(MODELS_DIR, '_textures/credits.json'));
+  const nextLicenses = renderLicenses(await readFile(LICENSES, 'utf8'), entries, sources, credits ? JSON.parse(credits.toString('utf8')) : []);
   const fresh = [await writeOrCheck(MANIFEST, nextManifest, args.check), await writeOrCheck(LICENSES, nextLicenses, args.check)];
   const total = entries.reduce((sum, e) => sum + e.sizeBytes, 0);
   log(`Готово: ${entries.length} моделей, ${(total / 1048576).toFixed(1)} МБ`);

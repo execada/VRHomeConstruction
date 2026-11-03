@@ -1043,6 +1043,295 @@
       "source": "https://opengameart.org/content/toilets",
       "license": "CC0",
       "author": "loafbrr"
+    },
+    {
+      "id": "kitchen_base_120",
+      "label": "Кухонный модуль 120 см",
+      "category": "kitchen",
+      "file": "/assets/models/kitchen_base_120/kitchen_base_120.gltf",
+      "thumbnail": "/assets/models/kitchen_base_120/thumb.jpg",
+      "sizeBytes": 423914,
+      "dimensions": {
+        "width": 1.2,
+        "height": 0.92,
+        "depth": 0.62
+      },
+      "triangles": 4116,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "kitchen_sink_120",
+      "label": "Кухонный модуль с мойкой",
+      "category": "kitchen",
+      "file": "/assets/models/kitchen_sink_120/kitchen_sink_120.gltf",
+      "thumbnail": "/assets/models/kitchen_sink_120/thumb.jpg",
+      "sizeBytes": 678164,
+      "dimensions": {
+        "width": 1.2,
+        "height": 1.312,
+        "depth": 0.62
+      },
+      "triangles": 8212,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "kitchen_hob_oven_60",
+      "label": "Модуль с варочной панелью и духовкой",
+      "category": "kitchen",
+      "file": "/assets/models/kitchen_hob_oven_60/kitchen_hob_oven_60.gltf",
+      "thumbnail": "/assets/models/kitchen_hob_oven_60/thumb.jpg",
+      "sizeBytes": 691545,
+      "dimensions": {
+        "width": 0.6,
+        "height": 0.928,
+        "depth": 0.64
+      },
+      "triangles": 7428,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "kitchen_island",
+      "label": "Кухонный остров",
+      "category": "kitchen",
+      "file": "/assets/models/kitchen_island/kitchen_island.gltf",
+      "thumbnail": "/assets/models/kitchen_island/thumb.jpg",
+      "sizeBytes": 2482525,
+      "dimensions": {
+        "width": 2.4,
+        "height": 0.92,
+        "depth": 1.018
+      },
+      "triangles": 7644,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "fridge_french_door",
+      "label": "Холодильник French Door",
+      "category": "kitchen",
+      "file": "/assets/models/fridge_french_door/fridge_french_door.gltf",
+      "thumbnail": "/assets/models/fridge_french_door/thumb.jpg",
+      "sizeBytes": 618027,
+      "dimensions": {
+        "width": 0.91,
+        "height": 1.78,
+        "depth": 0.771
+      },
+      "triangles": 6132,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "bathtub_freestanding",
+      "label": "Ванна отдельностоящая",
+      "category": "bathroom",
+      "file": "/assets/models/bathtub_freestanding/bathtub_freestanding.gltf",
+      "thumbnail": "/assets/models/bathtub_freestanding/thumb.jpg",
+      "sizeBytes": 111134,
+      "dimensions": {
+        "width": 1.86,
+        "height": 0.974,
+        "depth": 0.81
+      },
+      "triangles": 4000,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "shower_walk_in",
+      "label": "Душевое ограждение",
+      "category": "bathroom",
+      "file": "/assets/models/shower_walk_in/shower_walk_in.gltf",
+      "thumbnail": "/assets/models/shower_walk_in/thumb.jpg",
+      "sizeBytes": 373882,
+      "dimensions": {
+        "width": 1.2,
+        "height": 2.119,
+        "depth": 0.9
+      },
+      "triangles": 5236,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "vanity_walnut",
+      "label": "Тумба с раковиной",
+      "category": "bathroom",
+      "file": "/assets/models/vanity_walnut/vanity_walnut.gltf",
+      "thumbnail": "/assets/models/vanity_walnut/thumb.jpg",
+      "sizeBytes": 2173342,
+      "dimensions": {
+        "width": 1.02,
+        "height": 1.053,
+        "depth": 0.546
+      },
+      "triangles": 7144,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "washing_machine",
+      "label": "Стиральная машина",
+      "category": "appliances",
+      "file": "/assets/models/washing_machine/washing_machine.gltf",
+      "thumbnail": "/assets/models/washing_machine/thumb.jpg",
+      "sizeBytes": 336920,
+      "dimensions": {
+        "width": 0.6,
+        "height": 0.85,
+        "depth": 0.614
+      },
+      "triangles": 5340,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "bed_upholstered",
+      "label": "Кровать с мягким изголовьем",
+      "category": "bedroom",
+      "file": "/assets/models/bed_upholstered/bed_upholstered.gltf",
+      "thumbnail": "/assets/models/bed_upholstered/thumb.jpg",
+      "sizeBytes": 2697859,
+      "dimensions": {
+        "width": 1.96,
+        "height": 1.18,
+        "depth": 2.17
+      },
+      "triangles": 10584,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "nightstand_walnut",
+      "label": "Прикроватная тумба (орех)",
+      "category": "bedroom",
+      "file": "/assets/models/nightstand_walnut/nightstand_walnut.gltf",
+      "thumbnail": "/assets/models/nightstand_walnut/thumb.jpg",
+      "sizeBytes": 2035929,
+      "dimensions": {
+        "width": 0.55,
+        "height": 0.52,
+        "depth": 0.451
+      },
+      "triangles": 3580,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "dining_table_walnut",
+      "label": "Обеденный стол (орех)",
+      "category": "tables",
+      "file": "/assets/models/dining_table_walnut/dining_table_walnut.gltf",
+      "thumbnail": "/assets/models/dining_table_walnut/thumb.jpg",
+      "sizeBytes": 2300708,
+      "dimensions": {
+        "width": 2.2,
+        "height": 0.76,
+        "depth": 1
+      },
+      "triangles": 5880,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "rug_wool",
+      "label": "Ковёр шерстяной",
+      "category": "decor",
+      "file": "/assets/models/rug_wool/rug_wool.gltf",
+      "thumbnail": "/assets/models/rug_wool/thumb.jpg",
+      "sizeBytes": 2049626,
+      "dimensions": {
+        "width": 3,
+        "height": 0.012,
+        "depth": 2
+      },
+      "triangles": 588,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "rug_round_boucle",
+      "label": "Ковёр круглый букле",
+      "category": "decor",
+      "file": "/assets/models/rug_round_boucle/rug_round_boucle.gltf",
+      "thumbnail": "/assets/models/rug_round_boucle/thumb.jpg",
+      "sizeBytes": 1288600,
+      "dimensions": {
+        "width": 2,
+        "height": 0.012,
+        "depth": 2
+      },
+      "triangles": 384,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "floor_lamp_drum",
+      "label": "Торшер",
+      "category": "lighting",
+      "file": "/assets/models/floor_lamp_drum/floor_lamp_drum.gltf",
+      "thumbnail": "/assets/models/floor_lamp_drum/thumb.jpg",
+      "sizeBytes": 955657,
+      "dimensions": {
+        "width": 0.5,
+        "height": 1.65,
+        "depth": 0.5
+      },
+      "triangles": 704,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "floor_mirror_arch",
+      "label": "Напольное зеркало",
+      "category": "decor",
+      "file": "/assets/models/floor_mirror_arch/floor_mirror_arch.gltf",
+      "thumbnail": "/assets/models/floor_mirror_arch/thumb.jpg",
+      "sizeBytes": 1862716,
+      "dimensions": {
+        "width": 0.84,
+        "height": 1.932,
+        "depth": 0.22
+      },
+      "triangles": 1597,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "tv_65",
+      "label": "Телевизор 65″",
+      "category": "appliances",
+      "file": "/assets/models/tv_65/tv_65.gltf",
+      "thumbnail": "/assets/models/tv_65/thumb.jpg",
+      "sizeBytes": 243818,
+      "dimensions": {
+        "width": 1.45,
+        "height": 0.92,
+        "depth": 0.26
+      },
+      "triangles": 2364,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
     }
   ]
 }

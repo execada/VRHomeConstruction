@@ -301,6 +301,210 @@
         "license": "CC0",
         "url": "https://opengameart.org/content/toilets"
       }
+    },
+    {
+      "source": "local",
+      "id": "kitchen_base_120",
+      "label": "Кухонный модуль 120 см",
+      "category": "kitchen",
+      "file": "kitchen_base_120.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "kitchen_sink_120",
+      "label": "Кухонный модуль с мойкой",
+      "category": "kitchen",
+      "file": "kitchen_sink_120.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "kitchen_hob_oven_60",
+      "label": "Модуль с варочной панелью и духовкой",
+      "category": "kitchen",
+      "file": "kitchen_hob_oven_60.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "kitchen_island",
+      "label": "Кухонный остров",
+      "category": "kitchen",
+      "file": "kitchen_island.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "fridge_french_door",
+      "label": "Холодильник French Door",
+      "category": "kitchen",
+      "file": "fridge_french_door.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "bathtub_freestanding",
+      "label": "Ванна отдельностоящая",
+      "category": "bathroom",
+      "file": "bathtub_freestanding.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "shower_walk_in",
+      "label": "Душевое ограждение",
+      "category": "bathroom",
+      "file": "shower_walk_in.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "vanity_walnut",
+      "label": "Тумба с раковиной",
+      "category": "bathroom",
+      "file": "vanity_walnut.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "washing_machine",
+      "label": "Стиральная машина",
+      "category": "appliances",
+      "file": "washing_machine.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "bed_upholstered",
+      "label": "Кровать с мягким изголовьем",
+      "category": "bedroom",
+      "file": "bed_upholstered.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "nightstand_walnut",
+      "label": "Прикроватная тумба (орех)",
+      "category": "bedroom",
+      "file": "nightstand_walnut.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "dining_table_walnut",
+      "label": "Обеденный стол (орех)",
+      "category": "tables",
+      "file": "dining_table_walnut.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "rug_wool",
+      "label": "Ковёр шерстяной",
+      "category": "decor",
+      "file": "rug_wool.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "rug_round_boucle",
+      "label": "Ковёр круглый букле",
+      "category": "decor",
+      "file": "rug_round_boucle.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "floor_lamp_drum",
+      "label": "Торшер",
+      "category": "lighting",
+      "file": "floor_lamp_drum.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "floor_mirror_arch",
+      "label": "Напольное зеркало",
+      "category": "decor",
+      "file": "floor_mirror_arch.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "tv_65",
+      "label": "Телевизор 65″",
+      "category": "appliances",
+      "file": "tv_65.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
     }
   ]
 }

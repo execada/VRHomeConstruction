@@ -1,6 +1,7 @@
 /**
- * Каталог мебели: качественные CC0-модели из манифеста ассетов, процедурные модели
- * (без файлов, лёгкие для VR) и пользовательские модели из `public/models`.
+ * Каталог мебели: модели из манифеста ассетов (CC0 / CC BY, реальные габариты) и
+ * пользовательские модели из `public/models`. Процедурные `primitive:*` остались только
+ * для старых проектов (см. LEGACY_ITEMS).
  * @module furniture/catalog
  */
 
@@ -63,7 +64,7 @@ const USER_MODEL_NAMES: Record<string, string> = {
   untitled: 'Ящик',
 };
 
-/** Процедурные модели (без GLB-файла, см. furniture/ui/PrimitiveFurniture): путь, название, категория. */
+/** Процедурные модели старых проектов (без файла, см. furniture/ui/PrimitiveFurniture): вид, название, категория. */
 const PRIMITIVES: ReadonlyArray<[string, string, ModelCategory]> = [
   ['sofa', 'Диван (базовый)', 'seating'],
   ['stool', 'Табурет', 'seating'],
@@ -87,20 +88,15 @@ function knownDimensions(path: string): CatalogDimensions | undefined {
 }
 
 /**
- * Процедурные модели, которые заменены моделями каталога. Каталог их больше не предлагает,
- * но сцена по-прежнему рендерит их в старых проектах (обратная совместимость), а
- * инспектор показывает их название и категорию.
+ * Процедурные модели заменены моделями каталога (glTF с PBR-материалами). Каталог их больше
+ * не предлагает, но сцена по-прежнему рендерит `primitive:*` в старых проектах (обратная
+ * совместимость без миграции: позиции, повороты и размеры сохранённых предметов не меняются),
+ * а инспектор показывает их название и категорию.
  */
-const LEGACY_PRIMITIVES: ReadonlySet<string> = new Set(['sofa', 'stool', 'coffee_table', 'desk', 'shelf', 'plant']);
-
-const ALL_PRIMITIVE_ITEMS: CatalogItem[] = PRIMITIVES.map(([kind, name, categoryId]) => {
+const LEGACY_ITEMS: CatalogItem[] = PRIMITIVES.map(([kind, name, categoryId]) => {
   const path = `primitive:${kind}`;
   return { path, name, category: MODEL_CATEGORY_LABELS[categoryId], categoryId, dimensions: knownDimensions(path), source: 'primitive' };
 });
-
-const isLegacy = (item: CatalogItem) => LEGACY_PRIMITIVES.has(item.path.slice('primitive:'.length));
-const PRIMITIVE_ITEMS = ALL_PRIMITIVE_ITEMS.filter((item) => !isLegacy(item));
-const LEGACY_ITEMS = ALL_PRIMITIVE_ITEMS.filter(isLegacy);
 
 /** Ключевые слова в имени файла → категория (для пользовательских моделей). */
 const CATEGORY_KEYWORDS: ReadonlyArray<[RegExp, ModelCategory]> = [
@@ -165,7 +161,7 @@ function itemFromEntry(entry: ModelEntry): CatalogItem {
  * @param entries - модели из манифеста ассетов
  */
 export function buildCatalog(entries: ModelEntry[]): CatalogItem[] {
-  return [...entries.map(itemFromEntry), ...PRIMITIVE_ITEMS, ...USER_ITEMS];
+  return [...entries.map(itemFromEntry), ...USER_ITEMS];
 }
 
 /** Категории каталога в порядке появления (первая — «Все»). */

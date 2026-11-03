@@ -8,6 +8,7 @@
     "models:sync": "node --import ./scripts/models/register-ts.mjs scripts/models/sync-models.mjs",
     "models:check": "node --import ./scripts/models/register-ts.mjs scripts/models/sync-models.mjs --check",
     "models:thumbs": "node --import ./scripts/models/register-ts.mjs scripts/models/render-thumbnails.mjs",
+    "models:procedural": "node --import ./scripts/models/register-ts.mjs scripts/models/build-procedural.mjs",
     "predev": "npm run generate-models",
     "dev": "rsbuild dev",
     "prebuild": "npm run generate-models",

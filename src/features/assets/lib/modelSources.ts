@@ -29,7 +29,8 @@ const creditSchema = z
   .object({
     author: z.string().min(1).max(200),
     license: z.enum(['CC0', 'CC-BY 4.0']),
-    url: z.string().url().max(300),
+    /** Страница источника или путь к генератору в репозитории */
+    url: z.string().min(1).max(300),
     /** Полная строка атрибуции (обязательна для CC BY) */
     attribution: z.string().max(400).optional(),
     /** Что изменено относительно оригинала */
@@ -154,6 +155,20 @@ export function renderLicenseRows(entries: Array<Pick<ModelEntry, 'id' | 'author
   return entries
     .map((e) => `| ${e.id} | 3D model (glTF) | ${e.author} | ${e.source} | ${LICENSE_LABELS[e.license] ?? e.license} |`)
     .join('\n');
+}
+
+/** Текстура материалов процедурных моделей (scripts/models/build-procedural.mjs → _textures/credits.json). */
+export const textureCreditSchema = z.object({
+  id,
+  author: z.string().min(1).max(200),
+  source: z.string().url().max(300),
+  license: z.literal('CC0'),
+});
+
+/** Строки таблицы LICENSES.md для текстур материалов (повреждённые записи пропускаются). */
+export function renderTextureRows(credits: unknown): string {
+  const list = Array.isArray(credits) ? credits.flatMap((c) => (textureCreditSchema.safeParse(c).success ? [c as z.infer<typeof textureCreditSchema>] : [])) : [];
+  return list.map((c) => `| ${c.id} | PBR texture (model material) | ${c.author} | ${c.source} | CC0 1.0 |`).join('\n');
 }
 
 /** Полные атрибуции моделей под CC BY (для LICENSES.md, по-английски, как весь файл). */

@@ -6,6 +6,7 @@ import {
   polyhavenAuthors,
   renderAttributions,
   renderLicenseRows,
+  renderTextureRows,
   replaceBetweenMarkers,
   roundedDimensions,
   type ModelSource,
@@ -134,6 +135,15 @@ describe('license rendering', () => {
   it('renders table rows', () => {
     expect(renderLicenseRows([entry])).toBe('| Sofa_01 | 3D model (glTF) | Kirill Sannikov | https://polyhaven.com/a/Sofa_01 | CC0 1.0 |');
     expect(renderLicenseRows([{ ...entry, license: 'CC-BY 4.0' }])).toContain('| CC BY 4.0 |');
+  });
+
+  it('renders material texture rows and skips broken credits', () => {
+    const rows = renderTextureRows([
+      { id: 'white_oak_veneer', author: 'Jenelle van Heerden', source: 'https://polyhaven.com/a/white_oak_veneer', license: 'CC0' },
+      { id: 'bad', author: 'X', source: 'not a url', license: 'CC0' },
+    ]);
+    expect(rows).toBe('| white_oak_veneer | PBR texture (model material) | Jenelle van Heerden | https://polyhaven.com/a/white_oak_veneer | CC0 1.0 |');
+    expect(renderTextureRows(null)).toBe('');
   });
 
   it('renders full attributions for CC-BY sources only', () => {

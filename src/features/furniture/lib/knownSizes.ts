@@ -31,6 +31,13 @@ export const MODELS = {
   succulent: `${M}/potted_plant_04/potted_plant_04_1k.gltf`,
   vase: `${M}/ceramic_vase_02/ceramic_vase_02_1k.gltf`,
   pictureFrame: `${M}/standing_picture_frame_01/standing_picture_frame_01_1k.gltf`,
+  officeDesk: `${M}/metal_office_desk/metal_office_desk_1k.gltf`,
+  rug: `${M}/rug_wool/rug_wool.gltf`,
+  floorLamp: `${M}/floor_lamp_drum/floor_lamp_drum.gltf`,
+  fridge: `${M}/fridge_french_door/fridge_french_door.gltf`,
+  kitchenSink: `${M}/kitchen_sink_120/kitchen_sink_120.gltf`,
+  kitchenHob: `${M}/kitchen_hob_oven_60/kitchen_hob_oven_60.gltf`,
+  washingMachine: `${M}/washing_machine/washing_machine.gltf`,
 } as const;
 
 /** Габариты процедурных моделей (см. furniture/ui/PrimitiveFurniture). */
