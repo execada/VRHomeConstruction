@@ -12,9 +12,10 @@ import type { RootState } from '@/app/store';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { selectors as selectionSelectors } from '@/features/selection/selectors';
-import { wallBox, wallFrame, WALL_SIDES, type WallFrame } from '@/features/editor-3d/lib/walls';
+import { wallBox, wallBoxFootprint, wallFrame, WALL_SIDES, type WallFrame } from '@/features/editor-3d/lib/walls';
 import type { Opening, WallSide } from '@/features/editor-3d/types';
 import { dot2, scale2, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
+import { hatchFill } from '../lib/hatch';
 import { footprintPoints } from '../lib/plan';
 import { useSvgDrag } from '../model/useSvgInteraction';
 import { PlanOpening } from './PlanOpening';
@@ -30,8 +31,9 @@ const DragWall: React.FC<PlanWallsProps & { side: WallSide; selected: boolean; v
   const store = useStore<RootState>();
   const commands = useSceneCommands();
   const dims = useSelector(editorSelectors.selectDimensions);
-  const thickness = useSelector(editorSelectors.selectWallThickness);
-  const box = wallBox(side, dims, thickness);
+  const outerWalls = useSelector(editorSelectors.selectOuterWalls);
+  const removed = useSelector(editorSelectors.selectRemovedWalls);
+  const box = wallBox(side, dims, outerWalls, removed);
   const along = side === 'left' || side === 'right' ? 'width' : 'depth';
 
   const drag = useSvgDrag<{ side: WallSide }>({
@@ -54,8 +56,9 @@ const DragWall: React.FC<PlanWallsProps & { side: WallSide; selected: boolean; v
 
   return (
     <polygon
-      points={footprintPoints({ center: box.base, half: [box.length / 2, thickness / 2], angle: box.rotationY })}
-      className={cn(styles.wall, along === 'depth' && styles.wallVertical, selected && styles.wallSelected, viewed && styles.wallViewed)}
+      points={footprintPoints(wallBoxFootprint(box))}
+      fill={hatchFill(outerWalls[side].material)}
+      className={cn(styles.wall, along === 'depth' && styles.wallVertical, viewed && styles.wallViewed, selected && styles.wallSelected)}
       vectorEffect="non-scaling-stroke"
       {...drag}
     >
@@ -90,7 +93,7 @@ const WallOpening: React.FC<{ svg: PlanWallsProps['svg']; side: WallSide; frame:
 
 export const PlanWalls: React.FC<PlanWallsProps> = ({ svg, shiftView }) => {
   const dims = useSelector(editorSelectors.selectDimensions);
-  const thickness = useSelector(editorSelectors.selectWallThickness);
+  const outerWalls = useSelector(editorSelectors.selectOuterWalls);
   const removed = useSelector(editorSelectors.selectRemovedWalls);
   const openings = useSelector(editorSelectors.selectOpenings);
   const viewed = useSelector(editorSelectors.selectViewedWallId);
@@ -110,7 +113,7 @@ export const PlanWalls: React.FC<PlanWallsProps> = ({ svg, shiftView }) => {
             side={side}
             frame={wallFrame(side, dims)}
             opening={o}
-            thickness={thickness}
+            thickness={outerWalls[side].thickness}
             selected={selection?.kind === 'opening' && selection.id === o.id}
           />
         )),

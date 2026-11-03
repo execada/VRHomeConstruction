@@ -24,7 +24,7 @@ export const SCENE_EDIT_ACTION_TYPES: string[] = [
   editorActions.removeOpeningFromPartition,
   editorActions.setPartitionColor,
   editorActions.setFinish,
-  editorActions.setWallThickness,
+  editorActions.setOuterWalls,
   editorActions.setRemovedWalls,
   editorActions.setOpenings,
   editorActions.setPartitions,

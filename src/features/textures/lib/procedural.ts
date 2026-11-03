@@ -8,7 +8,7 @@
 import type { TextureDef, TextureDraw } from '../types';
 
 /** Детерминированный генератор случайных чисел (одинаковый рисунок при каждой генерации). */
-function seeded(seed: number): () => number {
+export function seeded(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
     s = (s * 1664525 + 1013904223) >>> 0;
@@ -16,7 +16,8 @@ function seeded(seed: number): () => number {
   };
 }
 
-function addNoise(ctx: CanvasRenderingContext2D, size: number, amp: number, seed: number) {
+/** Добавить детерминированный шум яркости ко всему холсту. */
+export function addNoise(ctx: CanvasRenderingContext2D, size: number, amp: number, seed: number) {
   const rand = seeded(seed);
   const img = ctx.getImageData(0, 0, size, size);
   for (let i = 0; i < img.data.length; i += 4) {

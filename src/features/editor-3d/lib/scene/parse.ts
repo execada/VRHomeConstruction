@@ -1,23 +1,27 @@
 /**
  * Разбор документа сцены из недоверенного источника (сервер, файл, localStorage).
- * Строгий путь — полная проверка схемы v2; если не прошла, документ «спасается»
- * по частям: валидные элементы сохраняются, повреждённые отбрасываются.
+ * Старые форматы сначала мигрируют (v1 → v3, v2 → v3). Строгий путь — полная проверка
+ * схемы v3; если не прошла, документ «спасается» по частям: валидные элементы сохраняются,
+ * повреждённые отбрасываются.
  * @module editor-3d/lib/scene/parse
  */
 
 import type { z } from 'zod';
 import { DEFAULT_ENVIRONMENT } from '@/features/environment/constants';
-import type { WallSide } from '../../types';
-import { isWallSide } from '../walls';
+import type { OuterWalls, WallSide } from '../../types';
+import { isWallSide, WALL_SIDES } from '../walls';
 import { createEmptyScene } from './build';
 import { migrateDimensions, migrateV1 } from './migrate';
+import { migrateV2 } from './migrateV2';
 import {
   finishesSchema,
   furnitureSchema,
   lightSchema,
   openingSchema,
+  outerWallSchema,
   partitionSchema,
   SCENE_LIMITS,
+  SCENE_SCHEMA_VERSION,
   sceneDocumentSchema,
   skySchema,
   sunSchema,
@@ -47,21 +51,26 @@ function pickArray<T>(schema: z.ZodType<T>, value: unknown, max: number): { item
   return { items, dropped: list.length - items.length };
 }
 
-/** Спасти документ v2 с повреждёнными частями. */
-function salvageV2(raw: Record<string, unknown>): { doc: SceneDocument; dropped: number } {
+/** Конструкция внешних стен: валидные стороны сохраняются, остальные — по умолчанию. */
+function pickOuterWalls(value: unknown, fallback: OuterWalls): OuterWalls {
+  const raw = isObject(value) ? value : {};
+  return WALL_SIDES.reduce<OuterWalls>((acc, side) => ({ ...acc, [side]: pick(outerWallSchema, raw[side], fallback[side]) }), fallback);
+}
+
+/** Спасти документ текущей версии с повреждёнными частями. */
+function salvage(raw: Record<string, unknown>): { doc: SceneDocument; dropped: number } {
   const base = createEmptyScene(migrateDimensions(raw.dimensions));
   const env = isObject(raw.environment) ? raw.environment : {};
   const openings = pickArray(openingSchema, raw.openings, SCENE_LIMITS.openings);
   const partitions = pickArray(partitionSchema, raw.partitions, SCENE_LIMITS.partitions);
   const furniture = pickArray(furnitureSchema, raw.furniture, SCENE_LIMITS.furniture);
-  const thickness = typeof raw.wallThickness === 'number' ? raw.wallThickness : base.wallThickness;
   const removed = (Array.isArray(raw.removedWalls) ? raw.removedWalls : []).filter(
     (s): s is WallSide => typeof s === 'string' && isWallSide(s),
   );
   return {
     doc: {
       ...base,
-      wallThickness: Math.min(SCENE_LIMITS.wallThickness[1], Math.max(SCENE_LIMITS.wallThickness[0], thickness)),
+      outerWalls: pickOuterWalls(raw.outerWalls, base.outerWalls),
       finishes: pick(finishesSchema, raw.finishes, base.finishes),
       removedWalls: [...new Set(removed)],
       light: pick(lightSchema, raw.light, base.light),
@@ -77,10 +86,18 @@ function salvageV2(raw: Record<string, unknown>): { doc: SceneDocument; dropped:
   };
 }
 
+/** Проверить документ текущей версии: строго или со спасением частей. */
+function validate(raw: Record<string, unknown>, migrated: boolean): SceneParseResult {
+  const strict = sceneDocumentSchema.safeParse(raw);
+  if (strict.success) return { ok: true, doc: strict.data, migrated, dropped: 0 };
+  const { doc, dropped } = salvage(raw);
+  return { ok: true, doc, migrated, dropped };
+}
+
 /**
  * Разобрать roomData проекта.
  * @param raw - данные из недоверенного источника
- * @returns документ v2 (с признаком миграции и числом отброшенных элементов) или ошибка
+ * @returns документ текущей версии (с признаком миграции и числом отброшенных элементов) или ошибка
  */
 export function parseSceneDocument(raw: unknown): SceneParseResult {
   if (!isObject(raw)) return { ok: false, error: 'В проекте нет данных комнаты' };
@@ -88,13 +105,9 @@ export function parseSceneDocument(raw: unknown): SceneParseResult {
   if (raw.schemaVersion === undefined || raw.schemaVersion === 1) {
     return { ok: true, doc: migrateV1(raw), migrated: true, dropped: 0 };
   }
-  if (raw.schemaVersion !== 2) {
+  if (raw.schemaVersion === 2) return validate(migrateV2(raw), true);
+  if (raw.schemaVersion !== SCENE_SCHEMA_VERSION) {
     return { ok: false, error: 'Проект создан в более новой версии приложения — обновите страницу' };
   }
-
-  const strict = sceneDocumentSchema.safeParse(raw);
-  if (strict.success) return { ok: true, doc: strict.data, migrated: false, dropped: 0 };
-
-  const { doc, dropped } = salvageV2(raw);
-  return { ok: true, doc, migrated: false, dropped };
+  return validate(raw, false);
 }

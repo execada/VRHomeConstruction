@@ -19,6 +19,7 @@ import {
   Tool,
   Partition,
   LightConfig,
+  OuterWalls,
   WallSide,
 } from './types';
 
@@ -31,7 +32,7 @@ import {
   DEFAULT_COLORS,
   DEFAULT_LIGHT,
   DEFAULT_FINISHES,
-  DEFAULT_WALL_THICKNESS,
+  DEFAULT_OUTER_WALLS,
 } from './constants';
 
 /** Начальное состояние редактора */
@@ -48,7 +49,7 @@ const initialState: EditorState = {
 
   finishes: DEFAULT_FINISHES,
 
-  wallThickness: DEFAULT_WALL_THICKNESS,
+  outerWalls: DEFAULT_OUTER_WALLS,
 
   removedWalls: [],
 
@@ -430,12 +431,12 @@ export const slice = createSlice({
       state.finishes = { ...state.finishes, walls };
     },
 
-    /** Толщина внешних стен */
-    setWallThickness(
+    /** Толщина и материал внешних стен */
+    setOuterWalls(
         state,
-        action: PayloadAction<number>
+        action: PayloadAction<OuterWalls>
     ) {
-      state.wallThickness = action.payload;
+      state.outerWalls = action.payload;
     },
 
     /** Список удалённых (скрытых) внешних стен */
@@ -471,7 +472,7 @@ export const slice = createSlice({
 
       state.dimensions = scene.dimensions;
       state.finishes = scene.finishes;
-      state.wallThickness = scene.wallThickness;
+      state.outerWalls = scene.outerWalls;
       state.removedWalls = scene.removedWalls;
       state.light = scene.light;
       state.openings = scene.openings;

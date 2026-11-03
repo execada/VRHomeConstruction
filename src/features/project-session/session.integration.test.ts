@@ -136,7 +136,7 @@ describe('project session saga', () => {
     await vi.advanceTimersByTimeAsync(2000);
     expect(api.updateProject).toHaveBeenCalledTimes(1);
     const payload = api.updateProject.mock.calls[0][1] as { roomData: { furniture: unknown[]; schemaVersion: number } };
-    expect(payload.roomData.schemaVersion).toBe(2);
+    expect(payload.roomData.schemaVersion).toBe(3);
     expect(payload.roomData.furniture).toHaveLength(1);
     expect(store.getState().projectSession.saveState).toBe('saved');
   });

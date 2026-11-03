@@ -6,7 +6,7 @@
 
 import { createSelector } from '@reduxjs/toolkit';
 import { name, EditorState } from './slice';
-import { DEFAULT_FINISHES, DEFAULT_LIGHT, DEFAULT_WALL_THICKNESS } from './constants';
+import { DEFAULT_FINISHES, DEFAULT_LIGHT, DEFAULT_OUTER_WALLS } from './constants';
 import type { WallSide } from './types';
 
 type State = {
@@ -50,8 +50,8 @@ const selectPlayerPosition = createSelector(root, (state) => state?.playerPositi
 const selectPlayerRotation = createSelector(root, (state) => state?.playerRotation);
 /** Отделка поверхностей */
 const selectFinishes = createSelector(root, (state) => state?.finishes ?? DEFAULT_FINISHES);
-/** Толщина внешних стен */
-const selectWallThickness = createSelector(root, (state) => state?.wallThickness ?? DEFAULT_WALL_THICKNESS);
+/** Толщина и материал внешних стен */
+const selectOuterWalls = createSelector(root, (state) => state?.outerWalls ?? DEFAULT_OUTER_WALLS);
 const NO_WALLS: WallSide[] = [];
 /** Удалённые внешние стены */
 const selectRemovedWalls = createSelector(root, (state) => state?.removedWalls ?? NO_WALLS);
@@ -79,7 +79,7 @@ export const selectors = {
   selectPlayerPosition,
   selectPlayerRotation,
   selectFinishes,
-  selectWallThickness,
+  selectOuterWalls,
   selectRemovedWalls,
   selectLightConfig,
 };

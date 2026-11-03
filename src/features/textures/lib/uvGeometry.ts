@@ -15,11 +15,13 @@ type Vec3 = readonly [number, number, number];
  * @param geometry - новая геометрия
  * @param offset - смещение геометрии в локальной системе поверхности (для непрерывности)
  * @param tile - размер тайла, м
+ * @param topTile - размер тайла верхних граней (у стены верх — разрез с другим материалом)
  */
-export function applyBoxProjectionUv<T extends BufferGeometry>(geometry: T, offset: Vec3, tile: number): T {
+export function applyBoxProjectionUv<T extends BufferGeometry>(geometry: T, offset: Vec3, tile: number, topTile = tile): T {
   const position = geometry.getAttribute('position');
   const normal = geometry.getAttribute('normal');
-  const size = tile > 0 ? tile : 1;
+  const sideSize = tile > 0 ? tile : 1;
+  const topSize = topTile > 0 ? topTile : sideSize;
   const uv = new Float32Array(position.count * 2);
   for (let i = 0; i < position.count; i += 1) {
     const x = position.getX(i) + offset[0];
@@ -32,6 +34,7 @@ export function applyBoxProjectionUv<T extends BufferGeometry>(geometry: T, offs
     let v = y;
     if (ny >= nx && ny >= nz) v = z;
     else if (nx >= nz) u = z;
+    const size = normal.getY(i) > 0.5 ? topSize : sideSize;
     uv[i * 2] = u / size;
     uv[i * 2 + 1] = v / size;
   }
@@ -39,9 +42,15 @@ export function applyBoxProjectionUv<T extends BufferGeometry>(geometry: T, offs
   return geometry;
 }
 
-/** Бокс с UV в метрах. */
-export function boxWithUv(size: Vec3, offset: Vec3, tile: number): BoxGeometry {
-  return applyBoxProjectionUv(new BoxGeometry(size[0], size[1], size[2]), offset, tile);
+/**
+ * Бокс с UV в метрах.
+ * @param size - размеры [x, y, z]
+ * @param offset - смещение бокса в системе поверхности (для непрерывности текстуры)
+ * @param tile - размер тайла, м
+ * @param topTile - размер тайла верхней грани (по умолчанию как у остальных)
+ */
+export function boxWithUv(size: Vec3, offset: Vec3, tile: number, topTile = tile): BoxGeometry {
+  return applyBoxProjectionUv(new BoxGeometry(size[0], size[1], size[2]), offset, tile, topTile);
 }
 
 /**
@@ -56,10 +65,11 @@ export function roundedEndBox(
   ends: { start: boolean; end: boolean },
   offset: Vec3,
   tile: number,
+  topTile = tile,
 ): BufferGeometry {
   const [length, height, thickness] = size;
   const r = Math.max(0, Math.min(radius, thickness / 2, length / 2));
-  if (r < 1e-4 || (!ends.start && !ends.end)) return boxWithUv(size, offset, tile);
+  if (r < 1e-4 || (!ends.start && !ends.end)) return boxWithUv(size, offset, tile, topTile);
 
   const hl = length / 2;
   const ht = thickness / 2;
@@ -80,5 +90,5 @@ export function roundedEndBox(
   // Форма построена в плоскости XY и выдавлена по Z: поворачиваем так, чтобы высота шла по Y.
   geometry.rotateX(-Math.PI / 2);
   geometry.translate(0, -height / 2, 0);
-  return applyBoxProjectionUv(geometry, offset, tile);
+  return applyBoxProjectionUv(geometry, offset, tile, topTile);
 }

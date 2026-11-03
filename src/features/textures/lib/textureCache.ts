@@ -55,7 +55,7 @@ function drawCanvas(def: TextureDef, size: number): HTMLCanvasElement | null {
 export function proceduralTexture(def: TextureDef): Texture | null {
   const cached = proceduralCache.get(def.id);
   if (cached) return cached;
-  const canvas = drawCanvas(def, PROCEDURAL_SIZE);
+  const canvas = drawCanvas(def, def.resolution ?? PROCEDURAL_SIZE);
   if (!canvas) return null;
   const texture = configure(new CanvasTexture(canvas), true);
   proceduralCache.set(def.id, texture);

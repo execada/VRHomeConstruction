@@ -14,6 +14,7 @@ import { selectTextureCatalog } from '@/features/textures/model/selectors';
 import { fitViewBox } from '../lib/plan';
 import { useSvgViewport } from '../model/useSvgInteraction';
 import { PlanFurniture } from './PlanFurniture';
+import { PlanHatches } from './PlanHatches';
 import { PlanPartitions } from './PlanPartitions';
 import { PlanWalls } from './PlanWalls';
 import styles from './PlanEditor2D.module.scss';
@@ -52,12 +53,12 @@ const FloorFill: React.FC<{ width: number; depth: number }> = ({ width, depth })
   );
 };
 
-const Dimensions: React.FC<{ width: number; depth: number; thickness: number }> = ({ width, depth, thickness }) => (
+const Dimensions: React.FC<{ width: number; depth: number; back: number; left: number }> = ({ width, depth, back, left }) => (
   <>
-    <text x={0} y={-depth / 2 - thickness - 0.25} fontSize={0.2} className={styles.dimension}>
+    <text x={0} y={-depth / 2 - back - 0.25} fontSize={0.2} className={styles.dimension}>
       {width.toFixed(2)} м
     </text>
-    <text x={-width / 2 - thickness - 0.3} y={0} fontSize={0.2} className={styles.dimension} transform={`rotate(-90 ${-width / 2 - thickness - 0.3} 0)`}>
+    <text x={-width / 2 - left - 0.3} y={0} fontSize={0.2} className={styles.dimension} transform={`rotate(-90 ${-width / 2 - left - 0.3} 0)`}>
       {depth.toFixed(2)} м
     </text>
   </>
@@ -65,10 +66,11 @@ const Dimensions: React.FC<{ width: number; depth: number; thickness: number }> 
 
 export const PlanView: React.FC = () => {
   const dims = useSelector(editorSelectors.selectDimensions);
-  const thickness = useSelector(editorSelectors.selectWallThickness);
+  const outerWalls = useSelector(editorSelectors.selectOuterWalls);
   const svg = useRef<SVGSVGElement>(null);
+  const thickest = Math.max(...Object.values(outerWalls).map((w) => w.thickness));
   const fitNow = () =>
-    fitViewBox({ minX: -dims.width / 2, maxX: dims.width / 2, minZ: -dims.depth / 2, maxZ: dims.depth / 2 }, MARGIN + thickness);
+    fitViewBox({ minX: -dims.width / 2, maxX: dims.width / 2, minZ: -dims.depth / 2, maxZ: dims.depth / 2 }, MARGIN + thickest);
   // Начальная рамка вида; дальше при перетаскивании стены вид сдвигается вместе с комнатой (см. PlanWalls),
   // а двойной клик вписывает комнату заново.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,11 +88,12 @@ export const PlanView: React.FC = () => {
       {...viewport.panHandlers}
       onDoubleClick={() => viewport.reset(fitNow())}
     >
+      <PlanHatches />
       <FloorFill width={dims.width} depth={dims.depth} />
       <PlanWalls svg={svg} shiftView={viewport.shift} />
       <PlanPartitions svg={svg} />
       <PlanFurniture svg={svg} />
-      <Dimensions width={dims.width} depth={dims.depth} thickness={thickness} />
+      <Dimensions width={dims.width} depth={dims.depth} back={outerWalls.back.thickness} left={outerWalls.left.thickness} />
     </svg>
   );
 };

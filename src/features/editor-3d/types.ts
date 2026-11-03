@@ -8,6 +8,10 @@
  * @module editor-3d/types
  */
 
+import type { WallMaterialId } from './lib/wallMaterials';
+
+export type { WallMaterialId };
+
 /** Внутренние размеры комнаты, м. */
 export interface RoomDimensions {
   width: number;
@@ -92,6 +96,20 @@ export interface RoomFinishes {
 export type FinishTarget = 'floor' | 'ceiling' | 'walls' | WallSide;
 
 /**
+ * Конструкция внешней стены: толщина (стена растёт наружу, внутренние размеры комнаты
+ * не меняются) и материал. Отделка лицевой грани хранится отдельно, в `finishes.walls`.
+ */
+export interface OuterWallSpec {
+  /** Толщина, м */
+  thickness: number;
+  /** Конструкционный материал */
+  material: WallMaterialId;
+}
+
+/** Конструкция всех четырёх внешних стен. */
+export type OuterWalls = Record<WallSide, OuterWallSpec>;
+
+/**
  * Перегородка (внутренняя стена), которую можно добавить в комнату.
  */
 export interface Partition {
@@ -109,6 +127,8 @@ export interface Partition {
   finish?: SurfaceFinish;
   /** Радиус скругления углов, м (0 — прямые углы) */
   cornerRadius?: number;
+  /** Конструкционный материал (если не задан — гипсокартон) */
+  material?: WallMaterialId;
 }
 
 /** Как задаётся цвет света комнаты. */
@@ -146,8 +166,8 @@ export interface EditorState {
   materials: RoomMaterials;
   /** Отделка поверхностей комнаты */
   finishes: RoomFinishes;
-  /** Толщина внешних стен, м */
-  wallThickness: number;
+  /** Толщина и материал каждой внешней стены */
+  outerWalls: OuterWalls;
   /** Удалённые (скрытые) внешние стены */
   removedWalls: WallSide[];
   /** Конфигурация освещения */
@@ -187,7 +207,7 @@ export interface EditorState {
 export interface EditorScenePayload {
   dimensions: RoomDimensions;
   finishes: RoomFinishes;
-  wallThickness: number;
+  outerWalls: OuterWalls;
   removedWalls: WallSide[];
   light: LightConfig;
   openings: { [wallId: string]: Opening[] };

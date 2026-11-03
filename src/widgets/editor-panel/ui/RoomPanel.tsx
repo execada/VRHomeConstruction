@@ -8,6 +8,7 @@ import React from 'react';
 import cn from 'classnames';
 import { useDispatch, useSelector } from 'react-redux';
 import { WALL_THICKNESS_LIMITS } from '@/features/editor-3d/constants';
+import { uniformThickness } from '@/features/editor-3d/lib/outerWalls';
 import { SCENE_LIMITS } from '@/features/editor-3d/lib/scene/schema';
 import { WALL_LABELS, WALL_SIDES } from '@/features/editor-3d/lib/walls';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
@@ -65,7 +66,8 @@ export const RoomPanel: React.FC = () => {
   const dispatch = useDispatch();
   const commands = useSceneCommands();
   const dims = useSelector(editorSelectors.selectDimensions);
-  const thickness = useSelector(editorSelectors.selectWallThickness);
+  const outerWalls = useSelector(editorSelectors.selectOuterWalls);
+  const thickness = uniformThickness(outerWalls);
   const tool = useSelector(editorSelectors.selectActiveTool);
 
   return (
@@ -78,7 +80,16 @@ export const RoomPanel: React.FC = () => {
         </FieldRow>
         <FieldRow>
           <NumberField label="Высота стен" unit="м" min={SCENE_LIMITS.height[0]} max={SCENE_LIMITS.height[1]} value={dims.height} onChange={(height) => commands.room.resize({ ...dims, height })} />
-          <NumberField label="Толщина стен" unit="см" scale={100} precision={1} min={WALL_THICKNESS_LIMITS[0]} max={WALL_THICKNESS_LIMITS[1]} value={thickness} onChange={(t) => commands.room.setWallThickness(t)} />
+          <NumberField
+            label={thickness === null ? 'Толщина стен (разная)' : 'Толщина стен'}
+            unit="см"
+            scale={100}
+            precision={1}
+            min={WALL_THICKNESS_LIMITS[0]}
+            max={WALL_THICKNESS_LIMITS[1]}
+            value={thickness ?? outerWalls.front.thickness}
+            onChange={(t) => commands.room.setWallThickness(t)}
+          />
         </FieldRow>
       </Section>
       <Section title="Стены">

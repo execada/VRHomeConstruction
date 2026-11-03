@@ -7,7 +7,7 @@
  * @module editor-3d/lib/walls
  */
 
-import { add2, dot2, rotateLocal, scale2, sub2, type Rect, type Vec2 } from '@/shared/lib/math/geometry2d';
+import { add2, dot2, rotateLocal, scale2, sub2, type Obb, type Rect, type Vec2 } from '@/shared/lib/math/geometry2d';
 import type { Opening, Partition, RoomDimensions, WallSide } from '../types';
 
 /** Порядок стен в интерфейсе: передняя, задняя, левая, правая. */
@@ -50,16 +50,29 @@ export interface WallPiece {
 /** Параметры бокса внешней стены для рендера. */
 export interface WallBox {
   side: WallSide;
-  /** Центр нижней грани стены по оси толщины [x, z] */
+  /** Середина стены по толщине напротив центра рабочей грани [x, z] */
   base: Vec2;
   rotationY: number;
-  /** Полная длина бокса (с заходом на углы) */
-  length: number;
+  /** Начало и конец тела стены вдоль u (с заходом на углы), м */
+  uMin: number;
+  uMax: number;
   height: number;
   thickness: number;
-  /** Заход на углы с каждой стороны, м */
-  cornerExtension: number;
 }
+
+/** Толщины внешних стен по сторонам. */
+export type WallThicknesses = Record<WallSide, { thickness: number }>;
+
+/**
+ * Соседи внешней стены по её концам: start — у начала (u-min), end — у конца (u-max).
+ * Передняя и задняя стены перекрывают углы, левая и правая упираются в них.
+ */
+export const WALL_NEIGHBORS: Record<WallSide, { start: WallSide; end: WallSide }> = {
+  back: { start: 'left', end: 'right' },
+  front: { start: 'right', end: 'left' },
+  left: { start: 'front', end: 'back' },
+  right: { start: 'back', end: 'front' },
+};
 
 const ROTATION: Record<WallSide, number> = {
   back: 0,
@@ -139,20 +152,47 @@ export function worldToWall(frame: WallFrame, point: readonly [number, number, n
 }
 
 /**
- * Бокс внешней стены для рендера. Передняя и задняя стены заходят на углы,
- * чтобы в углах комнаты не было щелей.
+ * Бокс внешней стены для рендера. Стена растёт наружу от внутренней грани; передняя
+ * и задняя стены заходят на углы на толщину соседних, поэтому углы закрыты при любых толщинах.
+ * @param side - сторона стены
+ * @param dims - внутренние размеры комнаты
+ * @param walls - толщины всех внешних стен
+ * @param removed - удалённые стены (на их углы стена не заходит)
  */
-export function wallBox(side: WallSide, dims: RoomDimensions, thickness: number): WallBox {
+export function wallBox(side: WallSide, dims: RoomDimensions, walls: WallThicknesses, removed: readonly WallSide[] = []): WallBox {
   const frame = wallFrame(side, dims);
-  const cornerExtension = side === 'front' || side === 'back' ? thickness : 0;
+  const thickness = walls[side].thickness;
+  const overlaps = side === 'front' || side === 'back';
+  const reach = (neighbor: WallSide) => (overlaps && !removed.includes(neighbor) ? walls[neighbor].thickness : 0);
   return {
     side,
     base: add2(frame.origin, scale2(frame.normal, -thickness / 2)),
     rotationY: frame.rotationY,
-    length: frame.length + cornerExtension * 2,
+    uMin: -frame.length / 2 - reach(WALL_NEIGHBORS[side].start),
+    uMax: frame.length / 2 + reach(WALL_NEIGHBORS[side].end),
     height: dims.height,
     thickness,
-    cornerExtension,
+  };
+}
+
+/** Футпринт бокса внешней стены на полу. */
+export function wallBoxFootprint(box: WallBox): Obb {
+  const tangent = rotateLocal([1, 0], box.rotationY);
+  return {
+    center: add2(box.base, scale2(tangent, (box.uMin + box.uMax) / 2)),
+    half: [(box.uMax - box.uMin) / 2, box.thickness / 2],
+    angle: box.rotationY,
+  };
+}
+
+/** Прямоугольник под всеми внешними стенами (плиты пола и потолка). */
+export function outerBounds(dims: Pick<RoomDimensions, 'width' | 'depth'>, walls: WallThicknesses): Rect {
+  const inner = interiorRect(dims);
+  return {
+    minX: inner.minX - walls.left.thickness,
+    maxX: inner.maxX + walls.right.thickness,
+    minZ: inner.minZ - walls.back.thickness,
+    maxZ: inner.maxZ + walls.front.thickness,
   };
 }
 

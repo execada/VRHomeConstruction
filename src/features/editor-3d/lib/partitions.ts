@@ -7,8 +7,9 @@
 
 import { clamp, clampObbToRect, length2, normalizeAngle, sub2, type Vec2, add2, scale2, rotateLocal } from '@/shared/lib/math/geometry2d';
 import { normalizeWallOpenings } from './openings';
+import { DEFAULT_INTERIOR_MATERIAL, isWallMaterialId } from './wallMaterials';
 import { interiorRect } from './walls';
-import type { Partition, RoomDimensions, SurfaceFinish } from '../types';
+import type { Partition, RoomDimensions, SurfaceFinish, WallMaterialId } from '../types';
 
 /** Ограничения размеров перегородки, м. */
 export const PARTITION_LIMITS = {
@@ -56,7 +57,7 @@ export function clampPartition(partition: Partition, dims: RoomDimensions): Part
 
 /**
  * Создать перегородку на всю высоту комнаты.
- * @param params - id, центр на полу [x, z], поворот, размеры комнаты, отделка, длина
+ * @param params - id, центр на полу [x, z], поворот, размеры комнаты, отделка, длина, материал, толщина
  */
 export function createPartition(params: {
   id: string;
@@ -65,6 +66,8 @@ export function createPartition(params: {
   dims: RoomDimensions;
   finish?: SurfaceFinish;
   length?: number;
+  material?: WallMaterialId;
+  thickness?: number;
 }): Partition {
   const { id, center, angle = 0, dims, finish, length = PARTITION_DEFAULTS.length } = params;
   return clampPartition(
@@ -72,13 +75,19 @@ export function createPartition(params: {
       id,
       position: [center[0], dims.height / 2, center[1]],
       rotation: [0, angle, 0],
-      size: [Math.min(length, Math.max(dims.width, dims.depth) * 0.6), dims.height, PARTITION_DEFAULTS.thickness],
+      size: [Math.min(length, Math.max(dims.width, dims.depth) * 0.6), dims.height, params.thickness ?? PARTITION_DEFAULTS.thickness],
       openings: [],
       finish,
       cornerRadius: PARTITION_DEFAULTS.cornerRadius,
+      material: params.material ?? DEFAULT_INTERIOR_MATERIAL,
     },
     dims,
   );
+}
+
+/** Материал внутренней стены (старые стены без материала — гипсокартон). */
+export function partitionMaterial(partition: Pick<Partition, 'material'>): WallMaterialId {
+  return isWallMaterialId(partition.material) ? partition.material : DEFAULT_INTERIOR_MATERIAL;
 }
 
 /** Концы перегородки на полу [начало, конец] (вдоль локальной +X). */

@@ -16,16 +16,16 @@ const selectEditorScene = createSelector(
   [
     selectors.selectDimensions,
     selectors.selectFinishes,
-    selectors.selectWallThickness,
+    selectors.selectOuterWalls,
     selectors.selectRemovedWalls,
     selectors.selectLightConfig,
     selectors.selectOpenings,
     selectors.selectPartitions,
   ],
-  (dimensions, finishes, wallThickness, removedWalls, light, openings, partitions): EditorSceneSlice => ({
+  (dimensions, finishes, outerWalls, removedWalls, light, openings, partitions): EditorSceneSlice => ({
     dimensions,
     finishes,
-    wallThickness,
+    outerWalls,
     removedWalls,
     light,
     openings,
@@ -33,7 +33,7 @@ const selectEditorScene = createSelector(
   }),
 );
 
-/** Документ сцены v2 (то, что сохраняется в проект). */
+/** Документ сцены (то, что сохраняется в проект). */
 export const selectSceneDocument = createSelector(
   [selectEditorScene, furnitureSelectors.selectFurnitureItems, environmentSelectors.selectEnvironment],
   buildSceneDocument,

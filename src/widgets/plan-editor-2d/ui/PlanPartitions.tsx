@@ -10,11 +10,12 @@ import { useSelector } from 'react-redux';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { selectors as selectionSelectors } from '@/features/selection/selectors';
-import { partitionEndpoints } from '@/features/editor-3d/lib/partitions';
+import { partitionEndpoints, partitionMaterial } from '@/features/editor-3d/lib/partitions';
 import { partitionFootprint } from '@/features/editor-3d/lib/placement';
 import { partitionFrame } from '@/features/editor-3d/lib/walls';
 import type { Opening, Partition } from '@/features/editor-3d/types';
 import { add2, dot2, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
+import { hatchFill } from '../lib/hatch';
 import { footprintPoints } from '../lib/plan';
 import { useSvgDrag } from '../model/useSvgInteraction';
 import { PlanOpening } from './PlanOpening';
@@ -72,6 +73,7 @@ const PlanPartition: React.FC<{ svg: SvgRef; partition: Partition; selected: boo
     <g>
       <polygon
         points={footprintPoints(partitionFootprint(partition))}
+        fill={hatchFill(partitionMaterial(partition))}
         className={cn(styles.partition, selected && styles.partitionSelected)}
         vectorEffect="non-scaling-stroke"
         {...drag}

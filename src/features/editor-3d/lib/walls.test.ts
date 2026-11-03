@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { obbBounds } from '@/shared/lib/math/geometry2d';
+import { uniformOuterWalls } from '../constants';
 import {
   freeIntervals,
   interiorRect,
@@ -6,15 +8,17 @@ import {
   isWallSide,
   nearestWall,
   openingHole,
+  outerBounds,
   partitionFrame,
   wallBox,
+  wallBoxFootprint,
   wallFrame,
   wallFrames,
   wallPieces,
   wallToWorld,
   worldToWall,
 } from './walls';
-import type { Opening, Partition } from '../types';
+import type { Opening, OuterWalls, Partition } from '../types';
 
 const dims = { width: 4, height: 3, depth: 6 };
 
@@ -69,11 +73,40 @@ describe('wall frames', () => {
 });
 
 describe('wall boxes', () => {
+  const uniform = uniformOuterWalls(0.2);
+
   it('extends front/back walls over the corners', () => {
-    const box = wallBox('front', dims, 0.2);
-    expect(box.length).toBeCloseTo(4.4);
+    const box = wallBox('front', dims, uniform);
+    expect(box.uMax - box.uMin).toBeCloseTo(4.4);
     expect(box.base[1]).toBeCloseTo(3.1);
-    expect(wallBox('left', dims, 0.2).length).toBe(6);
+    const left = wallBox('left', dims, uniform);
+    expect(left.uMax - left.uMin).toBe(6);
+  });
+
+  it('grows each wall outwards by its own thickness and closes corners of mixed thickness', () => {
+    const walls: OuterWalls = { ...uniform, left: { thickness: 0.4, material: 'monolith' }, front: { thickness: 0.1, material: 'drywall' } };
+    const front = wallBox('front', dims, walls);
+    // Передняя стена: начало (u-min) — у правой стены, конец — у левой.
+    expect(front.uMin).toBeCloseTo(-2 - 0.2);
+    expect(front.uMax).toBeCloseTo(2 + 0.4);
+    expect(front.base[1]).toBeCloseTo(3.05);
+    const left = obbBounds(wallBoxFootprint(wallBox('left', dims, walls)));
+    expect(left.minX).toBeCloseTo(-2.4);
+    expect(left.maxX).toBeCloseTo(-2);
+    const corner = obbBounds(wallBoxFootprint(front));
+    expect(corner.minX).toBeCloseTo(-2.4);
+    expect(corner.maxZ).toBeCloseTo(3.1);
+  });
+
+  it('does not reach over removed neighbours', () => {
+    const back = wallBox('back', dims, uniform, ['left']);
+    expect(back.uMin).toBeCloseTo(-2);
+    expect(back.uMax).toBeCloseTo(2.2);
+  });
+
+  it('covers all walls with the floor slab', () => {
+    const walls: OuterWalls = { ...uniform, right: { thickness: 0.5, material: 'brick' } };
+    expect(outerBounds(dims, walls)).toEqual({ minX: -2.2, maxX: 2.5, minZ: -3.2, maxZ: 3.2 });
   });
 });
 

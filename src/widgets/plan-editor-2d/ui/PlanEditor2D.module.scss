@@ -80,7 +80,8 @@
 }
 
 .wall {
-  fill: var(--text-2);
+  stroke: var(--text-2);
+  stroke-width: 1;
   cursor: ew-resize;
 }
 
@@ -88,13 +89,14 @@
   cursor: ns-resize;
 }
 
-.wallSelected {
-  fill: var(--accent);
+.wallViewed {
+  stroke: var(--accent-3);
+  stroke-width: 2;
 }
 
-.wallViewed {
+.wallSelected {
   stroke: var(--accent);
-  stroke-width: 2;
+  stroke-width: 3;
 }
 
 .opening {
@@ -124,12 +126,14 @@
 }
 
 .partition {
-  fill: var(--text-2);
+  stroke: var(--text-2);
+  stroke-width: 1;
   cursor: move;
 }
 
 .partitionSelected {
-  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 3;
 }
 
 .handle {

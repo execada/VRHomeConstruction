@@ -1,16 +1,16 @@
 /**
- * Команды комнаты: размеры (с перемещением стены), толщина стен, отделка поверхностей,
- * удаление/возврат внешних стен, свет.
+ * Команды комнаты: размеры (с перемещением стены), толщина и материал внешних стен,
+ * отделка поверхностей, удаление/возврат внешних стен, свет.
  * @module editor-3d/model/commands/roomCommands
  */
 
 import { clamp } from '@/shared/lib/math/geometry2d';
 import { actions as furnitureActions } from '@/features/furniture/slice';
-import { WALL_THICKNESS_LIMITS } from '../../constants';
+import { updateOuterWalls, type OuterWallTarget } from '../../lib/outerWalls';
 import { anchorForDraggedWall, resizeRoom, type ResizeAnchor } from '../../lib/roomResize';
 import { SCENE_LIMITS } from '../../lib/scene/schema';
 import { actions as editorActions } from '../../slice';
-import type { FinishTarget, LightConfig, RoomDimensions, SurfaceFinish, WallSide } from '../../types';
+import type { FinishTarget, LightConfig, OuterWallSpec, RoomDimensions, SurfaceFinish, WallSide } from '../../types';
 import type { CommandContext } from './context';
 
 /** Ограничить размеры комнаты допустимыми значениями. */
@@ -51,9 +51,19 @@ export function createRoomCommands(ctx: CommandContext) {
       resize({ ...dims, [along]: dims[along] + offset }, anchorForDraggedWall(side));
     },
 
-    /** Толщина внешних стен. */
+    /**
+     * Конструкция внешней стены (или всех: target = 'all'): толщина и/или материал.
+     * Стена растёт наружу, поэтому мебель, проёмы и внутренние стены не сдвигаются.
+     */
+    setOuterWall(target: OuterWallTarget, patch: Partial<OuterWallSpec>): void {
+      const current = editor().outerWalls;
+      const next = updateOuterWalls(current, target, patch);
+      if (next !== current) ctx.dispatch(editorActions.setOuterWalls(next));
+    },
+
+    /** Толщина всех внешних стен. */
     setWallThickness(thickness: number): void {
-      ctx.dispatch(editorActions.setWallThickness(clamp(thickness, WALL_THICKNESS_LIMITS[0], WALL_THICKNESS_LIMITS[1])));
+      ctx.dispatch(editorActions.setOuterWalls(updateOuterWalls(editor().outerWalls, 'all', { thickness })));
     },
 
     /** Отделка поверхности. */

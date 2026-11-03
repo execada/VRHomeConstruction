@@ -1,13 +1,15 @@
 /**
- * Свойства внешней стены: материал (с применением ко всем стенам), высота и толщина стен,
- * перемещение стены (размер комнаты), проёмы, удаление/возврат стены.
+ * Свойства внешней стены: конструкция (материал и толщина), отделка (с применением
+ * ко всем стенам), высота стен, перемещение стены (размер комнаты), проёмы, удаление/возврат.
  * @module widgets/editor-inspector/ui/WallInspector
  */
 
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { FinishEditor } from '@/features/textures/ui/FinishEditor';
+import { textureThumbnail } from '@/features/textures/lib/textureCache';
 import { WALL_THICKNESS_LIMITS } from '@/features/editor-3d/constants';
+import { wallMaterialTexture } from '@/features/editor-3d/lib/wallMaterials';
 import { WALL_LABELS, wallFrame } from '@/features/editor-3d/lib/walls';
 import { SCENE_LIMITS } from '@/features/editor-3d/lib/scene/schema';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
@@ -15,12 +17,13 @@ import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import type { WallSide } from '@/features/editor-3d/types';
 import { Button, FieldRow, NumberField, Section } from '@/shared/ui/controls';
 import { InspectorHeader } from './InspectorHeader';
+import { WallConstructionEditor } from './WallConstructionEditor';
 import styles from './EditorInspector.module.scss';
 
 export const WallInspector: React.FC<{ side: WallSide }> = ({ side }) => {
   const commands = useSceneCommands();
   const dims = useSelector(editorSelectors.selectDimensions);
-  const thickness = useSelector(editorSelectors.selectWallThickness);
+  const spec = useSelector(editorSelectors.selectOuterWalls)[side];
   const finishes = useSelector(editorSelectors.selectFinishes);
   const openings = useSelector(editorSelectors.selectOpenings)[side] ?? [];
   const removed = useSelector(editorSelectors.selectRemovedWalls).includes(side);
@@ -32,12 +35,31 @@ export const WallInspector: React.FC<{ side: WallSide }> = ({ side }) => {
     <>
       <InspectorHeader icon="wall" title={`${WALL_LABELS[side]} стена`} subtitle={removed ? 'Удалена' : `${openings.length} проём(ов)`} />
       {!removed && (
-        <Section title="Материал стены">
-          <FinishEditor category="wall" finish={finishes.walls[side]} onChange={(finish) => room.setFinish(side, finish)} />
-          <Button size="sm" onClick={() => room.setFinish('walls', finishes.walls[side])}>
-            Применить ко всем стенам
-          </Button>
-        </Section>
+        <>
+          <Section title="Конструкция">
+            <WallConstructionEditor
+              material={spec.material}
+              thickness={spec.thickness}
+              limits={WALL_THICKNESS_LIMITS}
+              onMaterial={(material) => room.setOuterWall(side, { material })}
+              onThickness={(thickness) => room.setOuterWall(side, { thickness })}
+            />
+            <Button size="sm" onClick={() => room.setOuterWall('all', spec)}>
+              Применить ко всем стенам
+            </Button>
+          </Section>
+          <Section title="Отделка">
+            <FinishEditor
+              category="wall"
+              finish={finishes.walls[side]}
+              bare={{ thumbnail: textureThumbnail(wallMaterialTexture(spec.material)) }}
+              onChange={(finish) => room.setFinish(side, finish)}
+            />
+            <Button size="sm" onClick={() => room.setFinish('walls', finishes.walls[side])}>
+              Применить ко всем стенам
+            </Button>
+          </Section>
+        </>
       )}
       <Section title="Размеры">
         <FieldRow>
@@ -53,16 +75,6 @@ export const WallInspector: React.FC<{ side: WallSide }> = ({ side }) => {
             onChange={(height) => room.resize({ ...dims, height })}
           />
         </FieldRow>
-        <NumberField
-          label="Толщина стен"
-          unit="см"
-          scale={100}
-          precision={1}
-          min={WALL_THICKNESS_LIMITS[0]}
-          max={WALL_THICKNESS_LIMITS[1]}
-          value={thickness}
-          onChange={(t) => room.setWallThickness(t)}
-        />
         <NumberField
           label="Сдвинуть стену (размер комнаты)"
           unit="см"

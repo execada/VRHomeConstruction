@@ -7,16 +7,17 @@
 import React, { memo, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Edges } from '@react-three/drei';
-import { useFinishMaterial } from '@/features/textures/model/useFinishMaterial';
 import { add2, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { selectors as editorSelectors } from '../../selectors';
 import { useSceneCommands } from '../../model/useSceneCommands';
+import { partitionMaterial } from '../../lib/partitions';
 import { partitionFrame, type WallFrame } from '../../lib/walls';
 import type { Opening, Partition, SurfaceFinish } from '../../types';
 import { OpeningMesh } from './OpeningMesh';
 import { HELPER_DATA, NO_RAYCAST, rayToFloor, rayToWall } from './pointer';
 import { useDragGesture } from './useDragGesture';
 import { useOpeningDrag } from './useOpeningDrag';
+import { useWallLook } from './useWallLook';
 import { WallPieces } from './WallPieces';
 
 interface PartitionMeshProps {
@@ -42,7 +43,7 @@ const PartitionOpening: React.FC<{ partition: Partition; frame: WallFrame; openi
 export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, fallbackFinish, selected, selectedOpeningId }) => {
   const commands = useSceneCommands();
   const activeTool = useSelector(editorSelectors.selectActiveTool);
-  const { material, tile } = useFinishMaterial(partition.finish ?? fallbackFinish, 'wall');
+  const look = useWallLook(partition.finish ?? fallbackFinish, partitionMaterial(partition));
   const frame = useMemo(() => partitionFrame(partition), [partition]);
   const [length, height, thickness] = partition.size;
 
@@ -75,8 +76,7 @@ export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, fa
           height={height}
           thickness={thickness}
           openings={partition.openings}
-          material={material}
-          tile={tile}
+          look={look}
           cornerRadius={partition.cornerRadius ?? 0}
         />
       </group>

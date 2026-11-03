@@ -153,7 +153,25 @@ describe('room and selection commands', () => {
     commands.room.resize({ width: 100, height: 0.5, depth: 4 });
     expect(store.getState().editor.dimensions).toEqual({ width: 50, height: 1.5, depth: 4 });
     commands.room.setWallThickness(5);
-    expect(store.getState().editor.wallThickness).toBeCloseTo(0.6);
+    expect(store.getState().editor.outerWalls.front.thickness).toBeCloseTo(0.6);
+  });
+
+  it('changes construction of one outer wall or all of them', () => {
+    const { store, commands } = setup();
+    commands.room.setOuterWall('left', { thickness: 0.38, material: 'aerated' });
+    expect(store.getState().editor.outerWalls.left).toEqual({ thickness: 0.38, material: 'aerated' });
+    expect(store.getState().editor.outerWalls.right.material).toBe('brick');
+    commands.room.setOuterWall('all', { material: 'monolith' });
+    expect(Object.values(store.getState().editor.outerWalls).every((w) => w.material === 'monolith')).toBe(true);
+    expect(store.getState().editor.outerWalls.left.thickness).toBeCloseTo(0.38);
+  });
+
+  it('sets the construction material of an interior wall', () => {
+    const { store, commands } = setup();
+    const id = commands.partitions.add([0, 0]);
+    expect(store.getState().editor.partitions[0].material).toBe('drywall');
+    commands.partitions.setMaterial(id, 'silicate');
+    expect(store.getState().editor.partitions[0].material).toBe('silicate');
   });
 
   it('deletes and rotates the current selection', () => {

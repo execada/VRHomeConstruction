@@ -7,6 +7,17 @@ import type { TextureEntry } from '@/features/assets/lib/manifest';
 import { PROCEDURAL_TEXTURES } from './procedural';
 import type { TextureCategory, TextureDef } from '../types';
 
+/**
+ * Отделка «Без отделки»: лицевые грани стены показывают её конструкционный материал
+ * (кирпич, газобетон и т.д.). Это не текстура галереи: resolveTexture для неё возвращает null.
+ */
+export const BARE_FINISH_ID = 'bare';
+
+/** Стена без отделки (видна конструкция). */
+export function isBareFinish(finish: { textureId: string | null }): boolean {
+  return finish.textureId === BARE_FINISH_ID;
+}
+
 /** Шероховатость по умолчанию для PBR без карты шероховатости. */
 const DEFAULT_ROUGHNESS: Record<TextureCategory, number> = { floor: 0.6, wall: 0.9, ceiling: 0.95 };
 
@@ -45,7 +56,7 @@ const FALLBACK: Partial<Record<TextureCategory, string>> = { floor: 'floor-wood'
  * для пола возвращается базовая процедурная, для остальных — null (однотонная поверхность).
  */
 export function resolveTexture(catalog: TextureDef[], id: string | null, category: TextureCategory): TextureDef | null {
-  if (!id) return null;
+  if (!id || id === BARE_FINISH_ID) return null;
   const found = catalog.find((t) => t.id === id);
   if (found) return found;
   const fallback = FALLBACK[category];

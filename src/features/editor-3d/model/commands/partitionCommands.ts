@@ -16,7 +16,8 @@ import {
   resizePartition,
   rotatePartition,
 } from '../../lib/partitions';
-import type { Partition, SurfaceFinish } from '../../types';
+import { isWallMaterialId } from '../../lib/wallMaterials';
+import type { Partition, SurfaceFinish, WallMaterialId } from '../../types';
 import { createId, type CommandContext } from './context';
 
 /** Создать команды перегородок. */
@@ -69,6 +70,11 @@ export function createPartitionCommands(ctx: CommandContext, settleFurniture: ()
     /** Отделка перегородки. */
     setFinish(id: string, finish: SurfaceFinish): void {
       change(id, (p) => ({ ...p, finish }));
+    },
+
+    /** Конструкционный материал (толщина не меняется — её задают отдельно). */
+    setMaterial(id: string, material: WallMaterialId): void {
+      if (isWallMaterialId(material)) change(id, (p) => ({ ...p, material }));
     },
 
     /** Радиус скругления углов. */
