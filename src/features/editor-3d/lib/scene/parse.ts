@@ -20,6 +20,7 @@ import {
   openingSchema,
   outerWallSchema,
   partitionSchema,
+  roomLabelSchema,
   SCENE_LIMITS,
   SCENE_SCHEMA_VERSION,
   sceneDocumentSchema,
@@ -63,6 +64,7 @@ function salvage(raw: Record<string, unknown>): { doc: SceneDocument; dropped: n
   const env = isObject(raw.environment) ? raw.environment : {};
   const openings = pickArray(openingSchema, raw.openings, SCENE_LIMITS.openings);
   const partitions = pickArray(partitionSchema, raw.partitions, SCENE_LIMITS.partitions);
+  const rooms = pickArray(roomLabelSchema, raw.rooms, SCENE_LIMITS.rooms);
   const furniture = pickArray(furnitureSchema, raw.furniture, SCENE_LIMITS.furniture);
   const removed = (Array.isArray(raw.removedWalls) ? raw.removedWalls : []).filter(
     (s): s is WallSide => typeof s === 'string' && isWallSide(s),
@@ -80,9 +82,10 @@ function salvage(raw: Record<string, unknown>): { doc: SceneDocument; dropped: n
       },
       openings: openings.items,
       partitions: partitions.items,
+      rooms: rooms.items,
       furniture: furniture.items,
     },
-    dropped: openings.dropped + partitions.dropped + furniture.dropped,
+    dropped: openings.dropped + partitions.dropped + rooms.dropped + furniture.dropped,
   };
 }
 

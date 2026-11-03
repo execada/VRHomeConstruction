@@ -28,6 +28,7 @@ export const SCENE_EDIT_ACTION_TYPES: string[] = [
   editorActions.setRemovedWalls,
   editorActions.setOpenings,
   editorActions.setPartitions,
+  editorActions.setRooms,
   furnitureActions.addFurniture,
   furnitureActions.updateFurniture,
   furnitureActions.duplicateFurniture,

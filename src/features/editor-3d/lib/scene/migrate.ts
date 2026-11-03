@@ -163,6 +163,7 @@ export function migrateV1(raw: Loose): SceneDocument {
     environment: DEFAULT_ENVIRONMENT,
     openings: migrateWallOpenings(raw.openings, dimensions),
     partitions: migratePartitions(raw.partitions, dimensions),
+    rooms: [],
     furniture: migrateFurniture(raw.furniture),
   };
 }

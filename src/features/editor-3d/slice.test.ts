@@ -142,8 +142,10 @@ describe('editor slice: загрузка сцены', () => {
         light: doc.light,
         openings: {},
         partitions: [],
+        rooms: [{ id: 'r', name: 'Кухня', anchor: [0, 0] }],
       }),
     );
+    expect(state.rooms[0].name).toBe('Кухня');
     expect(state.dimensions.width).toBe(6);
     expect(state.selectedPartition).toBeNull();
     expect(state.selectedOpening).toBeNull();

@@ -21,8 +21,9 @@ const selectEditorScene = createSelector(
     selectors.selectLightConfig,
     selectors.selectOpenings,
     selectors.selectPartitions,
+    selectors.selectRoomLabels,
   ],
-  (dimensions, finishes, outerWalls, removedWalls, light, openings, partitions): EditorSceneSlice => ({
+  (dimensions, finishes, outerWalls, removedWalls, light, openings, partitions, rooms): EditorSceneSlice => ({
     dimensions,
     finishes,
     outerWalls,
@@ -30,6 +31,7 @@ const selectEditorScene = createSelector(
     light,
     openings,
     partitions,
+    rooms,
   }),
 );
 

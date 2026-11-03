@@ -21,7 +21,7 @@ import { SCENE_SCHEMA_VERSION, type SceneDocument } from './schema';
 /** Части состояния редактора, входящие в документ сцены. */
 export type EditorSceneSlice = Pick<
   EditorState,
-  'dimensions' | 'finishes' | 'outerWalls' | 'removedWalls' | 'light' | 'openings' | 'partitions'
+  'dimensions' | 'finishes' | 'outerWalls' | 'removedWalls' | 'light' | 'openings' | 'partitions' | 'rooms'
 >;
 
 /** Разложить проёмы по стенам. */
@@ -58,6 +58,7 @@ export function buildSceneDocument(
     environment,
     openings: flattenOpenings(editor.openings),
     partitions: editor.partitions,
+    rooms: editor.rooms,
     furniture,
   };
 }
@@ -72,6 +73,7 @@ export function toEditorPayload(doc: SceneDocument): EditorScenePayload {
     light: doc.light,
     openings: groupOpenings(doc.openings),
     partitions: doc.partitions,
+    rooms: doc.rooms,
   };
 }
 
@@ -92,6 +94,7 @@ export function createEmptyScene(
     environment: DEFAULT_ENVIRONMENT,
     openings: [],
     partitions: [],
+    rooms: [],
     furniture: [],
   };
 }

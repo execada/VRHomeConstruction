@@ -131,6 +131,25 @@ export interface Partition {
   material?: WallMaterialId;
 }
 
+/**
+ * Вид помещения. Лоджия и балкон — летние помещения: в общую площадь квартиры
+ * входят с понижающим коэффициентом (0,5 и 0,3).
+ */
+export type RoomKind = 'room' | 'loggia' | 'balcony';
+
+/**
+ * Подпись помещения: название и вид. Помещения вычисляются по стенам, поэтому подпись
+ * привязана к точке внутри помещения и «находит» его по этой точке.
+ */
+export interface RoomLabel {
+  id: string;
+  name: string;
+  /** Точка внутри помещения [x, z] */
+  anchor: [number, number];
+  /** Вид помещения (по умолчанию — обычное) */
+  kind?: RoomKind;
+}
+
 /** Как задаётся цвет света комнаты. */
 export type LightColorMode = 'temperature' | 'color';
 
@@ -178,8 +197,10 @@ export interface EditorState {
   activeTool: Tool;
   /** Проёмы, сгруппированные по идентификатору стены */
   openings: { [wallId: string]: Opening[] };
-  /** Список перегородок */
+  /** Список перегородок (внутренних стен) */
   partitions: Partition[];
+  /** Названия и виды помещений */
+  rooms: RoomLabel[];
   /** Цвета перегородок (ключ – id перегородки) */
   partitionColors: { [partitionId: string]: string };
   /** Идентификатор стены, выбранной для просмотра в 2D */
@@ -212,4 +233,5 @@ export interface EditorScenePayload {
   light: LightConfig;
   openings: { [wallId: string]: Opening[] };
   partitions: Partition[];
+  rooms: RoomLabel[];
 }

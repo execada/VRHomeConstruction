@@ -20,6 +20,7 @@ import {
   Partition,
   LightConfig,
   OuterWalls,
+  RoomLabel,
   WallSide,
 } from './types';
 
@@ -62,6 +63,8 @@ const initialState: EditorState = {
   openings: {},
 
   partitions: [],
+
+  rooms: [],
 
   partitionColors: {},
 
@@ -455,6 +458,14 @@ export const slice = createSlice({
       state.openings = action.payload;
     },
 
+    /** Названия и виды помещений */
+    setRooms(
+        state,
+        action: PayloadAction<RoomLabel[]>
+    ) {
+      state.rooms = action.payload;
+    },
+
     /** Заменить все перегородки (пересчёт после изменения размеров комнаты) */
     setPartitions(
         state,
@@ -477,6 +488,7 @@ export const slice = createSlice({
       state.light = scene.light;
       state.openings = scene.openings;
       state.partitions = scene.partitions;
+      state.rooms = scene.rooms;
       state.partitionColors = {};
       state.selectedOpening = null;
       state.selectedPartition = null;

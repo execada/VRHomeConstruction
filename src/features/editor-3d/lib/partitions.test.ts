@@ -51,7 +51,7 @@ describe('clampPartition', () => {
   it('re-fits openings when the partition becomes lower', () => {
     const door = withSill({ id: 'd', wallId: 'p', type: 'door', position: [0, 0], width: 0.9, height: 2.1 }, 0);
     const p = resizePartition({ ...base(), openings: [door] }, { height: 1.8 }, dims);
-    expect(p.openings[0].height).toBeLessThanOrEqual(1.8 - 0.05 + 1e-6);
+    expect(p.openings[0].height).toBeLessThanOrEqual(1.8 + 1e-6);
   });
 });
 

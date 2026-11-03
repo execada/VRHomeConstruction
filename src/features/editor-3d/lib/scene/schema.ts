@@ -4,7 +4,8 @@
  * Ограничения согласованы с бэкендом (размеры комнаты, длины массивов и строк).
  *
  * v3 по сравнению с v2: у каждой внешней стены своя толщина и материал (`outerWalls`
- * вместо общего `wallThickness`), у внутренних стен (перегородок) — материал.
+ * вместо общего `wallThickness`), у внутренних стен (перегородок) — материал; названия
+ * и виды помещений (`rooms`: помещения вычисляются по стенам, подпись привязана к точке).
  * @module editor-3d/lib/scene/schema
  */
 
@@ -25,6 +26,8 @@ export const SCENE_LIMITS = {
   partitions: 100,
   openings: 300,
   partitionOpenings: 20,
+  rooms: 100,
+  roomNameLength: 60,
   idLength: 64,
   nameLength: 120,
   pathLength: 512,
@@ -77,8 +80,9 @@ export const openingSchema = z.object({
   wallId: id,
   type: z.enum(['window', 'door']),
   position: z.tuple([coordinate, coordinate]),
-  width: z.number().positive().max(10),
-  height: z.number().positive().max(10),
+  /** До длины стены: панорамное остекление */
+  width: z.number().positive().max(SCENE_LIMITS.width[1]),
+  height: z.number().positive().max(SCENE_LIMITS.height[1]),
 });
 
 export const partitionSchema = z.object({
@@ -98,6 +102,13 @@ export const outerWallSchema = z.object({
 });
 
 export const outerWallsSchema = z.object({ front: outerWallSchema, back: outerWallSchema, left: outerWallSchema, right: outerWallSchema });
+
+export const roomLabelSchema = z.object({
+  id,
+  name: z.string().min(1).max(SCENE_LIMITS.roomNameLength),
+  anchor: z.tuple([coordinate, coordinate]),
+  kind: z.enum(['room', 'loggia', 'balcony']).optional(),
+});
 
 export const furnitureSchema = z.object({
   id,
@@ -149,6 +160,7 @@ export const sceneDocumentSchema = z.object({
   environment: z.object({ sun: sunSchema, sky: skySchema }),
   openings: z.array(openingSchema).max(SCENE_LIMITS.openings),
   partitions: z.array(partitionSchema).max(SCENE_LIMITS.partitions),
+  rooms: z.array(roomLabelSchema).max(SCENE_LIMITS.rooms).default([]),
   furniture: z.array(furnitureSchema).max(SCENE_LIMITS.furniture),
 });
 
