@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { wallFrame } from '@/features/editor-3d/lib/walls';
 import type { FurnitureItem } from '@/features/furniture/types';
-import { fitViewBox, footprintPoints, itemsNearWall, polygonPoints, slideAlongWall, zoomViewBox } from './plan';
+import { fitViewBox, footprintPoints, itemsNearWall, planDrawOrder, polygonPoints, slideAlongWall, zoomViewBox } from './plan';
 
 const dims = { width: 4, height: 2.7, depth: 4 };
 
@@ -61,9 +61,25 @@ describe('itemsNearWall', () => {
     expect(p.bottom).toBeCloseTo(1.5);
   });
 
+  it('draws items standing on a support over it, even when they are farther from the wall', () => {
+    const shelf = { ...item('shelf', 0, -1.7), height: 1.8 };
+    const vase = { ...item('vase', 0, -1.55, 0.52), halfWidth: 0.1, halfDepth: 0.1, height: 0.3, supportId: 'shelf' };
+    expect(itemsNearWall([vase, shelf], wallFrame('back', dims), 0.6).map((p) => p.item.id)).toEqual(['shelf', 'vase']);
+  });
+
   it('slides items along the wall tangent', () => {
     const [x, z] = slideAlongWall(item('a', 0, 0), wallFrame('left', dims), 1);
     expect(x).toBeCloseTo(0);
     expect(z).toBeCloseTo(-1);
+  });
+});
+
+describe('planDrawOrder', () => {
+  it('draws rugs first, then furniture, then items standing on supports', () => {
+    const bookcase = { ...item('bookcase', 0, 0), height: 1.8 };
+    const rug = { ...item('rug', 0, 0), height: 0.02 };
+    const book = { ...item('book', 0, 0, 0.52), height: 0.2, supportId: 'bookcase' };
+    const desk = item('desk', 1, 0);
+    expect(planDrawOrder([book, bookcase, desk, rug]).map((i) => i.id)).toEqual(['rug', 'desk', 'bookcase', 'book']);
   });
 });

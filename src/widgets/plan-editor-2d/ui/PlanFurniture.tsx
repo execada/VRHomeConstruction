@@ -1,10 +1,12 @@
 /**
  * Мебель на плане: футпринты с подписями, перетаскивание и ручка поворота (Shift — без шага 15°).
- * Ограничения те же, что в 3D: стены, перегородки, другая мебель, магнит к стенам.
+ * Ограничения те же, что в 3D: стены, перегородки, другая мебель, магнит к стенам, края
+ * поверхностей. Предметы на опорах (лампа на столе) рисуются поверх опоры пунктиром;
+ * перетаскивание на стол ставит предмет на него, за край — на пол.
  * @module widgets/plan-editor-2d/ui/PlanFurniture
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import cn from 'classnames';
 import { useSelector } from 'react-redux';
 import { furnitureFootprint, itemSizes } from '@/features/editor-3d/lib/placement';
@@ -14,7 +16,7 @@ import { selectors as furnitureSelectors } from '@/features/furniture/selectors'
 import type { FurnitureItem } from '@/features/furniture/types';
 import { selectors as selectionSelectors } from '@/features/selection/selectors';
 import { add2, rotateLocal, snapAngle, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
-import { footprintPoints } from '../lib/plan';
+import { footprintPoints, planDrawOrder } from '../lib/plan';
 import { useSvgDrag } from '../model/useSvgInteraction';
 import styles from './PlanEditor2D.module.scss';
 
@@ -43,7 +45,7 @@ const RotateHandle: React.FC<{ svg: SvgRef; item: FurnitureItem }> = ({ svg, ite
   );
 };
 
-const PlanItem: React.FC<{ svg: SvgRef; item: FurnitureItem; selected: boolean }> = ({ svg, item, selected }) => {
+const PlanItem: React.FC<{ svg: SvgRef; item: FurnitureItem; selected: boolean; supportName?: string }> = ({ svg, item, selected, supportName }) => {
   const commands = useSceneCommands();
   const footprint = furnitureFootprint(item);
   const drag = useSvgDrag<{ offset: Vec2 }>({
@@ -59,11 +61,11 @@ const PlanItem: React.FC<{ svg: SvgRef; item: FurnitureItem; selected: boolean }
     <g>
       <polygon
         points={footprintPoints(footprint)}
-        className={cn(styles.item, selected && styles.itemSelected, item.locked && styles.itemLocked)}
+        className={cn(styles.item, item.supportId && styles.itemOnSurface, selected && styles.itemSelected, item.locked && styles.itemLocked)}
         vectorEffect="non-scaling-stroke"
         {...drag}
       >
-        <title>{item.name}</title>
+        <title>{supportName ? `${item.name} — на поверхности «${supportName}»` : item.name}</title>
       </polygon>
       <text x={footprint.center[0]} y={footprint.center[1]} fontSize={fontSize} className={styles.label}>
         {item.name.length > 18 ? `${item.name.slice(0, 17)}…` : item.name}
@@ -76,12 +78,19 @@ const PlanItem: React.FC<{ svg: SvgRef; item: FurnitureItem; selected: boolean }
 export const PlanFurniture: React.FC<{ svg: SvgRef }> = ({ svg }) => {
   const items = useSelector(furnitureSelectors.selectFurnitureItems);
   const selection = useSelector(selectionSelectors.selectSelection);
-  // Ковры и низкие предметы — снизу, чтобы не перекрывать мебель.
-  const ordered = [...items].sort((a, b) => itemSizes(a).height - itemSizes(b).height);
+  // Ковры и низкие предметы — снизу, предметы на опорах — поверх своих опор.
+  const ordered = useMemo(() => planDrawOrder(items), [items]);
+  const names = useMemo(() => new Map(items.map((i) => [i.id, i.name] as const)), [items]);
   return (
     <g>
       {ordered.map((item) => (
-        <PlanItem key={item.id} svg={svg} item={item} selected={selection?.kind === 'furniture' && selection.id === item.id} />
+        <PlanItem
+          key={item.id}
+          svg={svg}
+          item={item}
+          selected={selection?.kind === 'furniture' && selection.id === item.id}
+          supportName={item.supportId ? names.get(item.supportId) : undefined}
+        />
       ))}
     </g>
   );
