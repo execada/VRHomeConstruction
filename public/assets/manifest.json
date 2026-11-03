@@ -595,6 +595,369 @@
       "source": "https://polyhaven.com/a/standing_picture_frame_01",
       "license": "CC0",
       "author": "James Ray Cock"
+    },
+    {
+      "id": "mid_century_lounge_chair",
+      "label": "Лаунж-кресло",
+      "category": "seating",
+      "file": "/assets/models/mid_century_lounge_chair/mid_century_lounge_chair_1k.gltf",
+      "thumbnail": "/assets/models/mid_century_lounge_chair/thumb.jpg",
+      "sizeBytes": 2087019,
+      "dimensions": {
+        "width": 1.009,
+        "height": 1.169,
+        "depth": 1.19
+      },
+      "triangles": 6148,
+      "source": "https://polyhaven.com/a/mid_century_lounge_chair",
+      "license": "CC0",
+      "author": "Kuutti Siitonen"
+    },
+    {
+      "id": "Ottoman_01",
+      "label": "Пуф кожаный",
+      "category": "seating",
+      "file": "/assets/models/Ottoman_01/Ottoman_01_1k.gltf",
+      "thumbnail": "/assets/models/Ottoman_01/thumb.jpg",
+      "sizeBytes": 652112,
+      "dimensions": {
+        "width": 0.885,
+        "height": 0.624,
+        "depth": 0.621
+      },
+      "triangles": 4240,
+      "source": "https://polyhaven.com/a/Ottoman_01",
+      "license": "CC0",
+      "author": "Caspian Fortune"
+    },
+    {
+      "id": "metal_stool_02",
+      "label": "Табурет",
+      "category": "seating",
+      "file": "/assets/models/metal_stool_02/metal_stool_02_1k.gltf",
+      "thumbnail": "/assets/models/metal_stool_02/thumb.jpg",
+      "sizeBytes": 2540986,
+      "dimensions": {
+        "width": 0.448,
+        "height": 0.458,
+        "depth": 0.473
+      },
+      "triangles": 6532,
+      "source": "https://polyhaven.com/a/metal_stool_02",
+      "license": "CC0",
+      "author": "Ulan Cabanilla"
+    },
+    {
+      "id": "metal_stool_03",
+      "label": "Барный стул",
+      "category": "seating",
+      "file": "/assets/models/metal_stool_03/metal_stool_03_1k.gltf",
+      "thumbnail": "/assets/models/metal_stool_03/thumb.jpg",
+      "sizeBytes": 2289619,
+      "dimensions": {
+        "width": 0.461,
+        "height": 1.023,
+        "depth": 0.471
+      },
+      "triangles": 6576,
+      "source": "https://polyhaven.com/a/metal_stool_03",
+      "license": "CC0",
+      "author": "Flo Tasser"
+    },
+    {
+      "id": "coffee_table_round_01",
+      "label": "Журнальный столик круглый",
+      "category": "tables",
+      "file": "/assets/models/coffee_table_round_01/coffee_table_round_01_1k.gltf",
+      "thumbnail": "/assets/models/coffee_table_round_01/thumb.jpg",
+      "sizeBytes": 1563153,
+      "dimensions": {
+        "width": 1.301,
+        "height": 0.491,
+        "depth": 1.301
+      },
+      "triangles": 4044,
+      "source": "https://polyhaven.com/a/coffee_table_round_01",
+      "license": "CC0",
+      "author": "Ulan Cabanilla"
+    },
+    {
+      "id": "metal_office_desk",
+      "label": "Письменный стол офисный",
+      "category": "tables",
+      "file": "/assets/models/metal_office_desk/metal_office_desk_1k.gltf",
+      "thumbnail": "/assets/models/metal_office_desk/thumb.jpg",
+      "sizeBytes": 1606530,
+      "dimensions": {
+        "width": 2,
+        "height": 0.788,
+        "depth": 0.947
+      },
+      "triangles": 6898,
+      "source": "https://polyhaven.com/a/metal_office_desk",
+      "license": "CC0",
+      "author": "Ulan Cabanilla"
+    },
+    {
+      "id": "steel_frame_shelves_01",
+      "label": "Стеллаж металлический",
+      "category": "storage",
+      "file": "/assets/models/steel_frame_shelves_01/steel_frame_shelves_01_1k.gltf",
+      "thumbnail": "/assets/models/steel_frame_shelves_01/thumb.jpg",
+      "sizeBytes": 1597356,
+      "dimensions": {
+        "width": 1.097,
+        "height": 2.141,
+        "depth": 0.502
+      },
+      "triangles": 4348,
+      "normalize": {
+        "unit": "dm"
+      },
+      "source": "https://polyhaven.com/a/steel_frame_shelves_01",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "steel_frame_shelves_02",
+      "label": "Стеллаж узкий",
+      "category": "storage",
+      "file": "/assets/models/steel_frame_shelves_02/steel_frame_shelves_02_1k.gltf",
+      "thumbnail": "/assets/models/steel_frame_shelves_02/thumb.jpg",
+      "sizeBytes": 540263,
+      "dimensions": {
+        "width": 0.593,
+        "height": 2.142,
+        "depth": 0.502
+      },
+      "triangles": 4348,
+      "source": "https://polyhaven.com/a/steel_frame_shelves_02",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "Chandelier_01",
+      "label": "Люстра классическая",
+      "category": "lighting",
+      "file": "/assets/models/Chandelier_01/Chandelier_01_1k.gltf",
+      "thumbnail": "/assets/models/Chandelier_01/thumb.jpg",
+      "sizeBytes": 1306295,
+      "dimensions": {
+        "width": 0.746,
+        "height": 0.798,
+        "depth": 0.816
+      },
+      "triangles": 26860,
+      "source": "https://polyhaven.com/a/Chandelier_01",
+      "license": "CC0",
+      "author": "Kirill Sannikov"
+    },
+    {
+      "id": "throw_pillows_01",
+      "label": "Декоративные подушки",
+      "category": "decor",
+      "file": "/assets/models/throw_pillows_01/throw_pillows_01_1k.gltf",
+      "thumbnail": "/assets/models/throw_pillows_01/thumb.jpg",
+      "sizeBytes": 1194408,
+      "dimensions": {
+        "width": 1.022,
+        "height": 0.45,
+        "depth": 0.627
+      },
+      "triangles": 6362,
+      "source": "https://polyhaven.com/a/throw_pillows_01",
+      "license": "CC0",
+      "author": "Serhii Khromov"
+    },
+    {
+      "id": "ceramic_vase_01",
+      "label": "Ваза-кувшин белая",
+      "category": "decor",
+      "file": "/assets/models/ceramic_vase_01/ceramic_vase_01_1k.gltf",
+      "thumbnail": "/assets/models/ceramic_vase_01/thumb.jpg",
+      "sizeBytes": 418457,
+      "dimensions": {
+        "width": 0.204,
+        "height": 0.4,
+        "depth": 0.204
+      },
+      "triangles": 10296,
+      "source": "https://polyhaven.com/a/ceramic_vase_01",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "ceramic_vase_03",
+      "label": "Ваза высокая",
+      "category": "decor",
+      "file": "/assets/models/ceramic_vase_03/ceramic_vase_03_1k.gltf",
+      "thumbnail": "/assets/models/ceramic_vase_03/thumb.jpg",
+      "sizeBytes": 765159,
+      "dimensions": {
+        "width": 0.112,
+        "height": 0.414,
+        "depth": 0.112
+      },
+      "triangles": 11136,
+      "source": "https://polyhaven.com/a/ceramic_vase_03",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "ceramic_vase_04",
+      "label": "Ваза с ручкой",
+      "category": "decor",
+      "file": "/assets/models/ceramic_vase_04/ceramic_vase_04_1k.gltf",
+      "thumbnail": "/assets/models/ceramic_vase_04/thumb.jpg",
+      "sizeBytes": 596053,
+      "dimensions": {
+        "width": 0.181,
+        "height": 0.342,
+        "depth": 0.181
+      },
+      "triangles": 9000,
+      "source": "https://polyhaven.com/a/ceramic_vase_04",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "brass_vase_01",
+      "label": "Ваза латунная",
+      "category": "decor",
+      "file": "/assets/models/brass_vase_01/brass_vase_01_1k.gltf",
+      "thumbnail": "/assets/models/brass_vase_01/thumb.jpg",
+      "sizeBytes": 842226,
+      "dimensions": {
+        "width": 0.227,
+        "height": 0.692,
+        "depth": 0.227
+      },
+      "triangles": 21440,
+      "source": "https://polyhaven.com/a/brass_vase_01",
+      "license": "CC0",
+      "author": "Rico Cilliers"
+    },
+    {
+      "id": "marble_bust_01",
+      "label": "Мраморный бюст",
+      "category": "decor",
+      "file": "/assets/models/marble_bust_01/marble_bust_01_1k.gltf",
+      "thumbnail": "/assets/models/marble_bust_01/thumb.jpg",
+      "sizeBytes": 898283,
+      "dimensions": {
+        "width": 0.272,
+        "height": 0.515,
+        "depth": 0.3
+      },
+      "triangles": 17456,
+      "source": "https://polyhaven.com/a/marble_bust_01",
+      "license": "CC0",
+      "author": "Rico Cilliers"
+    },
+    {
+      "id": "horse_statue_01",
+      "label": "Статуэтка «Конь»",
+      "category": "decor",
+      "file": "/assets/models/horse_statue_01/horse_statue_01_1k.gltf",
+      "thumbnail": "/assets/models/horse_statue_01/thumb.jpg",
+      "sizeBytes": 1283596,
+      "dimensions": {
+        "width": 0.163,
+        "height": 0.22,
+        "depth": 0.108
+      },
+      "triangles": 22388,
+      "source": "https://polyhaven.com/a/horse_statue_01",
+      "license": "CC0",
+      "author": "Rico Cilliers"
+    },
+    {
+      "id": "hanging_picture_frame_01",
+      "label": "Постер в чёрной раме",
+      "category": "decor",
+      "file": "/assets/models/hanging_picture_frame_01/hanging_picture_frame_01_1k.gltf",
+      "thumbnail": "/assets/models/hanging_picture_frame_01/thumb.jpg",
+      "sizeBytes": 397466,
+      "dimensions": {
+        "width": 0.594,
+        "height": 0.841,
+        "depth": 0.016
+      },
+      "triangles": 2586,
+      "source": "https://polyhaven.com/a/hanging_picture_frame_01",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "hanging_picture_frame_02",
+      "label": "Картина в белой раме",
+      "category": "decor",
+      "file": "/assets/models/hanging_picture_frame_02/hanging_picture_frame_02_1k.gltf",
+      "thumbnail": "/assets/models/hanging_picture_frame_02/thumb.jpg",
+      "sizeBytes": 696031,
+      "dimensions": {
+        "width": 0.752,
+        "height": 0.5,
+        "depth": 0.033
+      },
+      "triangles": 3678,
+      "source": "https://polyhaven.com/a/hanging_picture_frame_02",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "standing_picture_frame_02",
+      "label": "Фоторамка белая",
+      "category": "decor",
+      "file": "/assets/models/standing_picture_frame_02/standing_picture_frame_02_1k.gltf",
+      "thumbnail": "/assets/models/standing_picture_frame_02/thumb.jpg",
+      "sizeBytes": 569572,
+      "dimensions": {
+        "width": 0.217,
+        "height": 0.266,
+        "depth": 0.102
+      },
+      "triangles": 2986,
+      "normalize": {
+        "rotationY": 270
+      },
+      "source": "https://polyhaven.com/a/standing_picture_frame_02",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "ornate_mirror_01",
+      "label": "Зеркало в латунной раме",
+      "category": "decor",
+      "file": "/assets/models/ornate_mirror_01/ornate_mirror_01_1k.gltf",
+      "thumbnail": "/assets/models/ornate_mirror_01/thumb.jpg",
+      "sizeBytes": 677241,
+      "dimensions": {
+        "width": 0.486,
+        "height": 0.744,
+        "depth": 0.026
+      },
+      "triangles": 14246,
+      "source": "https://polyhaven.com/a/ornate_mirror_01",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "wall_clock",
+      "label": "Настенные часы",
+      "category": "decor",
+      "file": "/assets/models/wall_clock/wall_clock_1k.gltf",
+      "thumbnail": "/assets/models/wall_clock/thumb.jpg",
+      "sizeBytes": 1564880,
+      "dimensions": {
+        "width": 0.32,
+        "height": 0.32,
+        "depth": 0.047
+      },
+      "triangles": 3658,
+      "source": "https://polyhaven.com/a/wall_clock",
+      "license": "CC0",
+      "author": "PierreB3D"
     }
   ]
 }

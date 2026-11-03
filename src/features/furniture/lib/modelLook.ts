@@ -5,7 +5,7 @@
  * @module furniture/lib/modelLook
  */
 
-import { Box3, Color, Group, Light, Material, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import { Box3, Color, Group, Light, Material, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import {
   isIdentityNormalization,
   resolveNormalization,
@@ -47,14 +47,40 @@ export interface ModelLook {
 const INVALID_COLOR = new Color('#e5484d');
 const MIN_SIZE = 0.02;
 
-/** Клон сцены: встроенный свет выключен, тени включены. */
+const GLASS_OPACITY = 0.18;
+
+/**
+ * Материал, удобный для VR, или null, если менять нечего:
+ * - transmission (отдельный проход рендера каждый кадр, дорого для Quest) → обычная прозрачность;
+ * - «стекло» в режиме BLEND с непрозрачной текстурой (альфа потеряна при экспорте в JPEG)
+ *   закрывало бы картину или циферблат — делаем его действительно прозрачным.
+ */
+function vrFriendlyMaterial(source: Material): Material | null {
+  const transmissive = source instanceof MeshPhysicalMaterial && source.transmission > 0;
+  const opaqueGlass = /glass/i.test(source.name) && source.transparent && source.opacity >= 0.99;
+  if (!transmissive && !opaqueGlass) return null;
+  const material = source.clone();
+  if (material instanceof MeshPhysicalMaterial) material.transmission = 0;
+  material.transparent = true;
+  material.opacity = opaqueGlass ? GLASS_OPACITY : source.opacity;
+  material.depthWrite = false;
+  return material;
+}
+
+/** Клон сцены: встроенный свет выключен, тени включены, тяжёлые для VR материалы упрощены. */
 function cloneForScene(scene: Object3D): Object3D {
   const object = scene.clone(true);
+  const replaced = new Map<Material, Material | null>();
+  const convert = (m: Material) => {
+    if (!replaced.has(m)) replaced.set(m, vrFriendlyMaterial(m));
+    return replaced.get(m) ?? m;
+  };
   object.traverse((child) => {
     if (child instanceof Light) child.visible = false;
     if (child instanceof Mesh) {
       child.castShadow = true;
       child.receiveShadow = true;
+      child.material = Array.isArray(child.material) ? child.material.map(convert) : convert(child.material);
     }
   });
   object.updateMatrixWorld(true);

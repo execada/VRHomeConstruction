@@ -86,10 +86,21 @@ function knownDimensions(path: string): CatalogDimensions | undefined {
   return sizes && { width: sizes.halfWidth * 2, height: sizes.height, depth: sizes.halfDepth * 2 };
 }
 
-const PRIMITIVE_ITEMS: CatalogItem[] = PRIMITIVES.map(([kind, name, categoryId]) => {
+/**
+ * Процедурные модели, которые заменены моделями каталога. Каталог их больше не предлагает,
+ * но сцена по-прежнему рендерит их в старых проектах (обратная совместимость), а
+ * инспектор показывает их название и категорию.
+ */
+const LEGACY_PRIMITIVES: ReadonlySet<string> = new Set(['sofa', 'stool', 'coffee_table', 'desk', 'shelf', 'plant']);
+
+const ALL_PRIMITIVE_ITEMS: CatalogItem[] = PRIMITIVES.map(([kind, name, categoryId]) => {
   const path = `primitive:${kind}`;
   return { path, name, category: MODEL_CATEGORY_LABELS[categoryId], categoryId, dimensions: knownDimensions(path), source: 'primitive' };
 });
+
+const isLegacy = (item: CatalogItem) => LEGACY_PRIMITIVES.has(item.path.slice('primitive:'.length));
+const PRIMITIVE_ITEMS = ALL_PRIMITIVE_ITEMS.filter((item) => !isLegacy(item));
+const LEGACY_ITEMS = ALL_PRIMITIVE_ITEMS.filter(isLegacy);
 
 /** Ключевые слова в имени файла → категория (для пользовательских моделей). */
 const CATEGORY_KEYWORDS: ReadonlyArray<[RegExp, ModelCategory]> = [
@@ -172,7 +183,12 @@ export function filterCatalog(catalog: CatalogItem[], query: string, category: s
   );
 }
 
+/** Позиция каталога по пути, включая снятые с каталога процедурные модели старых проектов. */
+export function catalogEntry(catalog: CatalogItem[], path: string): CatalogItem | undefined {
+  return catalog.find((c) => c.path === path) ?? LEGACY_ITEMS.find((c) => c.path === path);
+}
+
 /** Читаемое имя модели по пути. */
 export function catalogName(catalog: CatalogItem[], path: string): string {
-  return catalog.find((c) => c.path === path)?.name ?? prettify(getModelName(path));
+  return catalogEntry(catalog, path)?.name ?? prettify(getModelName(path));
 }

@@ -67,8 +67,8 @@ export const modelCategorySchema = z.enum([
   'appliances',
 ]);
 
-/** Единицы длины исходной модели. */
-export const lengthUnitSchema = z.enum(['m', 'cm', 'mm', 'in']);
+/** Единицы длины исходной модели (dm — частая ошибка экспорта «×10»). */
+export const lengthUnitSchema = z.enum(['m', 'cm', 'mm', 'dm', 'in']);
 
 /** Ось «вверх» исходной модели (glTF — Y; экспорт без конвертации осей — Z). */
 export const upAxisSchema = z.enum(['y', 'z']);

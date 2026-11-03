@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BoxGeometry, Group, Mesh, MeshStandardMaterial, PointLight } from 'three';
+import { BoxGeometry, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, PointLight } from 'three';
 import { applyLook, hasLook, prepareModel } from './modelLook';
 
 function scene() {
@@ -71,6 +71,39 @@ describe('prepareModel', () => {
     root.add(new Mesh(new BoxGeometry(0.4, 3.5, 0.4), new MeshStandardMaterial()));
     expect(prepareModel(root, { category: 'tables' }).issues).toHaveLength(1);
     expect(prepareModel(scene()).issues).toEqual([]);
+  });
+});
+
+describe('VR-friendly materials', () => {
+  const withMaterial = (material: MeshStandardMaterial) => {
+    const root = new Group();
+    root.add(new Mesh(new BoxGeometry(0.5, 0.5, 0.05), material));
+    return root;
+  };
+
+  it('replaces transmission (an extra render pass) with plain transparency', () => {
+    const glass = new MeshPhysicalMaterial({ transmission: 1, transparent: true, opacity: 0.4 });
+    const source = withMaterial(glass);
+    const prepared = prepareModel(source);
+    const material = (prepared.object.children[0] as Mesh).material as MeshPhysicalMaterial;
+    expect(material).not.toBe(glass);
+    expect(material.transmission).toBe(0);
+    expect(material.transparent).toBe(true);
+    expect(material.opacity).toBeCloseTo(0.4);
+    expect(glass.transmission).toBe(1);
+  });
+
+  it('makes blended glass see-through when its texture lost the alpha channel', () => {
+    const glass = new MeshStandardMaterial({ name: 'frame_glass', transparent: true, opacity: 1 });
+    const material = (prepareModel(withMaterial(glass)).object.children[0] as Mesh).material as MeshStandardMaterial;
+    expect(material.opacity).toBeLessThan(0.3);
+    expect(material.depthWrite).toBe(false);
+  });
+
+  it('keeps ordinary materials shared between instances', () => {
+    const wood = new MeshStandardMaterial({ name: 'wood' });
+    const material = (prepareModel(withMaterial(wood)).object.children[0] as Mesh).material;
+    expect(material).toBe(wood);
   });
 });
 

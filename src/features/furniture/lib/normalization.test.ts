@@ -53,6 +53,13 @@ describe('resolveNormalization', () => {
     expect(mm.size.y).toBeCloseTo(1.8);
   });
 
+  it('detects ×10 (decimetre) exports before ambiguous inches', () => {
+    // Реальный случай: steel_frame_shelves_01 с Poly Haven в 10 раз больше реального.
+    const n = resolveNormalization({ x: 10.974, y: 21.405, z: 5.021 }, { category: 'storage' });
+    expect(n.unit).toBe('dm');
+    expect(n.size.y).toBeCloseTo(2.1405);
+  });
+
   it('uses a generic plausibility range for models without a category', () => {
     expect(resolveNormalization({ x: 2.2, y: 1.2, z: 2.2 }).unit).toBe('m');
     expect(resolveNormalization({ x: 45, y: 100, z: 50 }).unit).toBe('cm');

@@ -46,9 +46,10 @@ export const CATEGORY_SIZE_RANGES: Readonly<Record<ModelCategory, SizeRange>> = 
 export const GENERIC_SIZE_RANGE: SizeRange = { height: [0.003, 4], footprint: [0.02, 8] };
 
 /** Метров в единице длины. */
-export const UNIT_SCALE: Readonly<Record<LengthUnit, number>> = { m: 1, cm: 0.01, mm: 0.001, in: 0.0254 };
+export const UNIT_SCALE: Readonly<Record<LengthUnit, number>> = { m: 1, cm: 0.01, mm: 0.001, dm: 0.1, in: 0.0254 };
 
-const UNITS: readonly LengthUnit[] = ['m', 'cm', 'mm', 'in'];
+/** Порядок проверки единиц: дюймы последними — их легко спутать с сантиметрами. */
+const UNITS: readonly LengthUnit[] = ['m', 'cm', 'mm', 'dm', 'in'];
 const AXES: readonly UpAxis[] = ['y', 'z'];
 const DEG = Math.PI / 180;
 

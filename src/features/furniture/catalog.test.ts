@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { ModelEntry } from '@/features/assets/lib/manifest';
 import { modelCategorySchema } from '@/features/assets/lib/manifest';
-import { ALL_CATEGORIES, buildCatalog, catalogCategories, catalogName, filterCatalog, formatDimensions, guessCategory } from './catalog';
+import {
+  ALL_CATEGORIES,
+  buildCatalog,
+  catalogCategories,
+  catalogEntry,
+  catalogName,
+  filterCatalog,
+  formatDimensions,
+  guessCategory,
+} from './catalog';
 
 const sofa: ModelEntry = {
   id: 'Sofa_01',
@@ -47,6 +56,23 @@ describe('furniture catalog', () => {
     expect(catalog[0]).toMatchObject({ categoryId: 'seating', dimensions: sofa.dimensions });
     expect(catalog.find((c) => c.path === 'primitive:fridge')?.categoryId).toBe('kitchen');
     expect(catalog.find((c) => c.path === 'primitive:rug')?.dimensions).toEqual({ width: 2, height: 0.022, depth: 1.4 });
+  });
+});
+
+describe('legacy primitives', () => {
+  const catalog = buildCatalog([sofa]);
+
+  it('are no longer offered once catalog models replace them', () => {
+    const paths = catalog.map((c) => c.path);
+    expect(paths).not.toContain('primitive:sofa');
+    expect(paths).not.toContain('primitive:stool');
+    expect(paths).not.toContain('primitive:plant');
+  });
+
+  it('still resolve for old projects', () => {
+    expect(catalogEntry(catalog, 'primitive:stool')).toMatchObject({ name: 'Табурет', categoryId: 'seating' });
+    expect(catalogName(catalog, 'primitive:shelf')).toBe('Стеллаж (базовый)');
+    expect(catalogEntry(catalog, '/models/nope.glb')).toBeUndefined();
   });
 });
 
