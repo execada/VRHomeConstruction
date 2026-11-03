@@ -5,7 +5,7 @@
  * @module textures/lib/uvGeometry
  */
 
-import { BoxGeometry, BufferAttribute, BufferGeometry, ExtrudeGeometry, Shape } from 'three';
+import { BoxGeometry, BufferAttribute, BufferGeometry, ExtrudeGeometry, Float32BufferAttribute, Shape, ShapeUtils, Vector2 } from 'three';
 
 type Vec3 = readonly [number, number, number];
 
@@ -91,4 +91,83 @@ export function roundedEndBox(
   geometry.rotateX(-Math.PI / 2);
   geometry.translate(0, -height / 2, 0);
   return applyBoxProjectionUv(geometry, offset, tile, topTile);
+}
+
+type Point2 = readonly [number, number];
+type Point3 = readonly [number, number, number];
+
+/** Накопитель треугольников призмы. */
+interface PrismBuffers {
+  positions: number[];
+  normals: number[];
+  uvs: number[];
+}
+
+/** UV вершины проекцией по доминирующей оси нормали (как у boxWithUv). */
+function projectUv(p: Point3, n: Point3, tile: number): [number, number] {
+  const [ax, ay, az] = n.map(Math.abs);
+  if (ay >= ax && ay >= az) return [p[0] / tile, p[2] / tile];
+  return ax >= az ? [p[2] / tile, p[1] / tile] : [p[0] / tile, p[1] / tile];
+}
+
+/** Добавить треугольник с нужной нормалью (порядок вершин исправляется под нормаль). */
+function pushTriangle(out: PrismBuffers, tri: [Point3, Point3, Point3], n: Point3, tile: number): void {
+  const [a, b, c] = tri;
+  const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+  const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+  const facing = (uy * vz - uz * vy) * n[0] + (uz * vx - ux * vz) * n[1] + (ux * vy - uy * vx) * n[2];
+  for (const p of facing >= 0 ? [a, b, c] : [a, c, b]) {
+    out.positions.push(p[0], p[1], p[2]);
+    out.normals.push(n[0], n[1], n[2]);
+    out.uvs.push(...projectUv(p, n, tile));
+  }
+}
+
+/** Боковые грани призмы (внешние нормали). */
+function prismSides(out: PrismBuffers, polygon: readonly Point2[], v0: number, v1: number, tile: number): void {
+  const ccw = polygon.reduce((s, p, i) => s + p[0] * polygon[(i + 1) % polygon.length][1] - polygon[(i + 1) % polygon.length][0] * p[1], 0) > 0;
+  polygon.forEach((a, i) => {
+    const b = polygon[(i + 1) % polygon.length];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (len < 1e-7) return;
+    const sign = ccw ? 1 : -1;
+    const n: Point3 = [((b[1] - a[1]) / len) * sign, 0, (-(b[0] - a[0]) / len) * sign];
+    const q: Point3[] = [[a[0], v0, a[1]], [b[0], v0, b[1]], [b[0], v1, b[1]], [a[0], v1, a[1]]];
+    pushTriangle(out, [q[0], q[1], q[2]], n, tile);
+    pushTriangle(out, [q[0], q[2], q[3]], n, tile);
+  });
+}
+
+/** Горизонтальная грань призмы (низ или верх) на высоте y. */
+function prismCap(out: PrismBuffers, polygon: readonly Point2[], y: number, up: boolean, tile: number): void {
+  const contour = polygon.map(([x, z]) => new Vector2(x, z));
+  for (const [i, j, k] of ShapeUtils.triangulateShape(contour, [])) {
+    const p = (m: number): Point3 => [polygon[m][0], y, polygon[m][1]];
+    pushTriangle(out, [p(i), p(j), p(k)], [0, up ? 1 : -1, 0], tile);
+  }
+}
+
+/**
+ * Призма из многоугольника основания (x, z) между высотами v0 и v1 с UV в метрах.
+ * Группы материалов: 0 — боковые грани и низ, 1 — верх (у стены — разрез с материалом конструкции).
+ * @param polygon - основание (выпуклое или простое невыпуклое)
+ * @param v0 - низ
+ * @param v1 - верх
+ * @param tile - размер тайла боковых граней, м
+ * @param topTile - размер тайла верха, м
+ */
+export function prismWithUv(polygon: readonly Point2[], v0: number, v1: number, tile: number, topTile = tile): BufferGeometry {
+  const out: PrismBuffers = { positions: [], normals: [], uvs: [] };
+  const safe = (t: number) => (t > 0 ? t : 1);
+  prismSides(out, polygon, v0, v1, safe(tile));
+  prismCap(out, polygon, v0, false, safe(tile));
+  const sideCount = out.positions.length / 3;
+  prismCap(out, polygon, v1, true, safe(topTile));
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(out.positions, 3));
+  geometry.setAttribute('normal', new Float32BufferAttribute(out.normals, 3));
+  geometry.setAttribute('uv', new Float32BufferAttribute(out.uvs, 2));
+  geometry.addGroup(0, sideCount, 0);
+  geometry.addGroup(sideCount, out.positions.length / 3 - sideCount, 1);
+  return geometry;
 }

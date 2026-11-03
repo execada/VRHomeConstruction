@@ -22,7 +22,7 @@ const TOOLS: Array<{ tool: Tool; icon: IconName; label: string }> = [
   { tool: 'select', icon: 'cursor', label: 'Выбор и перемещение (Esc)' },
   { tool: 'window', icon: 'window', label: 'Окно: кликните по стене' },
   { tool: 'door', icon: 'door', label: 'Дверь: кликните по стене' },
-  { tool: 'partition', icon: 'partition', label: 'Перегородка: кликните по полу' },
+  { tool: 'partition', icon: 'partition', label: 'Стена: кликните начало и конец на полу' },
 ];
 
 /** Панель инструментов внизу сцены. */
@@ -69,7 +69,11 @@ export const ViewportHint: React.FC = () => {
   } else if (tool === 'window' || tool === 'door') {
     content = <>Кликните по стене или перегородке, чтобы добавить {tool === 'window' ? 'окно' : 'дверь'} · <Kbd>Esc</Kbd> отмена</>;
   } else if (tool === 'partition') {
-    content = <>Кликните по полу, чтобы поставить перегородку · <Kbd>Esc</Kbd> отмена</>;
+    content = (
+      <>
+        Стена: кликните начало и конец · концы липнут к стенам, углы — к 45° · <Kbd>G</Kbd> сетка · правая кнопка или <Kbd>Esc</Kbd> — закончить
+      </>
+    );
   } else if (camera === 'fps') {
     content = (
       <>

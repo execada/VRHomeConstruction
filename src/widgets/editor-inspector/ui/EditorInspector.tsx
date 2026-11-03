@@ -10,6 +10,7 @@ import { FurnitureInspector } from './FurnitureInspector';
 import { OpeningInspector } from './OpeningInspector';
 import { PartitionInspector } from './PartitionInspector';
 import { RoomInspector, SurfaceInspector } from './RoomInspector';
+import { RoomSpaceInspector } from './RoomSpaceInspector';
 import { WallInspector } from './WallInspector';
 import styles from './EditorInspector.module.scss';
 
@@ -18,11 +19,13 @@ const InspectorBody: React.FC = () => {
   const item = useSelector(selectionSelectors.selectSelectedItem);
   const partition = useSelector(selectionSelectors.selectSelectedPartitionLive);
   const opening = useSelector(selectionSelectors.selectSelectedOpeningLive);
+  const room = useSelector(selectionSelectors.selectSelectedRoom);
 
   if (item) return <FurnitureInspector key={item.id} item={item} />;
   if (partition) return <PartitionInspector key={partition.id} partition={partition} />;
   if (opening) return <OpeningInspector key={opening.opening.id} hostId={opening.hostId} opening={opening.opening} />;
   if (selection?.kind === 'wall') return <WallInspector key={selection.side} side={selection.side} />;
+  if (selection?.kind === 'room' && room) return <RoomSpaceInspector key={room.key} room={room} point={selection.point} />;
   if (selection?.kind === 'floor' || selection?.kind === 'ceiling') return <SurfaceInspector surface={selection.kind} />;
   return <RoomInspector />;
 };

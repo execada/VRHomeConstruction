@@ -10,6 +10,7 @@ import type { Group } from 'three';
 import { selectors as selectionSelectors } from '@/features/selection/selectors';
 import { boxWithUv } from '@/features/textures/lib/uvGeometry';
 import { useFinishMaterial } from '@/features/textures/model/useFinishMaterial';
+import { selectWallLayout } from '../../layoutSelectors';
 import { selectors as editorSelectors } from '../../selectors';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { outerBounds, WALL_SIDES } from '../../lib/walls';
@@ -62,6 +63,7 @@ export const RoomShell: React.FC<RoomShellProps> = ({ cutaway }) => {
   const finishes = useSelector(editorSelectors.selectFinishes);
   const openings = useSelector(editorSelectors.selectOpenings);
   const partitions = useSelector(editorSelectors.selectPartitions);
+  const layout = useSelector(selectWallLayout);
   const removed = useSelector(editorSelectors.selectRemovedWalls);
   const activeTool = useSelector(editorSelectors.selectActiveTool);
   const selection = useSelector(selectionSelectors.selectSelection);
@@ -70,12 +72,11 @@ export const RoomShell: React.FC<RoomShellProps> = ({ cutaway }) => {
   const onFloorClick = (e: SceneMouseEvent) => {
     if (!isClick(e)) return;
     e.stopPropagation();
-    if (activeTool === 'partition') {
-      const hit = rayToFloor(e.ray);
-      if (hit) commands.partitions.add(hit);
-      return;
-    }
-    commands.select({ kind: 'floor' });
+    // Стены рисует WallDrawController (клик по полу сквозь стены и мебель).
+    if (activeTool === 'partition') return;
+    const hit = rayToFloor(e.ray);
+    const room = hit ? commands.rooms.at(hit) : null;
+    commands.select(room && hit ? { kind: 'room', point: [hit[0], hit[1]] } : { kind: 'floor' });
   };
 
   const onCeilingClick = (e: SceneMouseEvent) => {
@@ -106,6 +107,7 @@ export const RoomShell: React.FC<RoomShellProps> = ({ cutaway }) => {
         <PartitionMesh
           key={p.id}
           partition={p}
+          shape={layout.interior[p.id]}
           fallbackFinish={finishes.walls.front}
           selected={selection?.kind === 'partition' && selection.id === p.id}
           selectedOpeningId={selectedOpeningId}

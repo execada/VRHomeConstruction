@@ -15,6 +15,8 @@ import { fitViewBox } from '../lib/plan';
 import { useSvgViewport } from '../model/useSvgInteraction';
 import { PlanFurniture } from './PlanFurniture';
 import { PlanHatches } from './PlanHatches';
+import { PlanRooms } from './PlanRooms';
+import { PlanWallDraw } from './PlanWallDraw';
 import { PlanPartitions } from './PlanPartitions';
 import { PlanWalls } from './PlanWalls';
 import styles from './PlanEditor2D.module.scss';
@@ -67,6 +69,7 @@ const Dimensions: React.FC<{ width: number; depth: number; back: number; left: n
 export const PlanView: React.FC = () => {
   const dims = useSelector(editorSelectors.selectDimensions);
   const outerWalls = useSelector(editorSelectors.selectOuterWalls);
+  const drawing = useSelector(editorSelectors.selectActiveTool) === 'partition';
   const svg = useRef<SVGSVGElement>(null);
   const thickest = Math.max(...Object.values(outerWalls).map((w) => w.thickness));
   const fitNow = () =>
@@ -90,10 +93,12 @@ export const PlanView: React.FC = () => {
     >
       <PlanHatches />
       <FloorFill width={dims.width} depth={dims.depth} />
+      <PlanRooms />
       <PlanWalls svg={svg} shiftView={viewport.shift} />
       <PlanPartitions svg={svg} />
       <PlanFurniture svg={svg} />
       <Dimensions width={dims.width} depth={dims.depth} back={outerWalls.back.thickness} left={outerWalls.left.thickness} />
+      {drawing && <PlanWallDraw svg={svg} />}
     </svg>
   );
 };

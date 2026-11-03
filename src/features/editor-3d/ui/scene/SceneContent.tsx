@@ -23,6 +23,7 @@ import { RoomLights } from './RoomLights';
 import { RoomShell } from './RoomShell';
 import { SceneBridge } from './SceneBridge';
 import { SunLight } from './SunLight';
+import { WallDrawController } from './WallDrawController';
 
 interface SceneContentProps {
   /** Сохранить проект (кнопка VR-меню) */
@@ -53,6 +54,7 @@ export const SceneContent: React.FC<SceneContentProps> = ({ onSave }) => {
   const graphics = useSelector(graphicsSelectors.selectGraphics);
   const cameraMode = useSelector(cameraSelectors.selectCameraMode);
   const inXR = useXR((s) => s.session != null);
+  const drawingWalls = useSelector(editorSelectors.selectActiveTool) === 'partition';
   const cutaway = !inXR && cameraMode !== 'fps';
   const maxLamps = inXR || graphics.preset === 'low' ? 2 : 6;
 
@@ -66,6 +68,7 @@ export const SceneContent: React.FC<SceneContentProps> = ({ onSave }) => {
       <FurnitureLayer />
       <PlacementLayer />
       <SnapGrid />
+      {drawingWalls && !inXR && <WallDrawController />}
       {inXR && (
         <>
           <VrRig />

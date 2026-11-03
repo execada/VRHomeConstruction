@@ -52,6 +52,8 @@ export function useEditorShortcuts(): void {
 
     const onEscape = () => {
       if (interactionStore.getState().mode === 'placing') return interaction.reset();
+      const draft = interactionStore.getState().wallDraft;
+      if (draft?.start) return interaction.setWallDraft({ ...draft, start: null });
       if (store.getState().editor.activeTool !== 'select') return dispatch(editorActions.setActiveTool('select'));
       return commands.select(null);
     };

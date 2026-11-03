@@ -6,6 +6,7 @@
 
 import { createExternalStore } from '@/shared/lib/externalStore';
 import type { Vec2 } from '@/shared/lib/math/geometry2d';
+import type { SnapKind } from '../lib/wallSnap';
 
 /** Что сейчас делает пользователь. */
 export type InteractionMode = 'idle' | 'dragging' | 'rotating' | 'placing';
@@ -15,6 +16,16 @@ export interface PlacementGhost {
   center: Vec2;
   angle: number;
   valid: boolean;
+}
+
+/** Черновик рисуемой внутренней стены. */
+export interface WallDraft {
+  /** Начало стены (null — ещё не поставлено) */
+  start: Vec2 | null;
+  /** Точка под курсором (с привязкой) */
+  cursor: Vec2;
+  /** К чему привязалась точка */
+  snap: SnapKind;
 }
 
 export interface InteractionState {
@@ -32,6 +43,10 @@ export interface InteractionState {
   gridEnabled: boolean;
   /** Номер текущего (последнего) жеста — история склеивает изменения внутри одного жеста */
   gestureId: number;
+  /** Идёт рисование стен: перетаскивание объектов отключено */
+  drawingWalls: boolean;
+  /** Черновик рисуемой стены */
+  wallDraft: WallDraft | null;
 }
 
 /** Шаг сетки, м. */
@@ -52,6 +67,8 @@ const initialState: InteractionState = {
   ghost: null,
   gridEnabled: false,
   gestureId: 0,
+  drawingWalls: false,
+  wallDraft: null,
 };
 
 export const interactionStore = createExternalStore<InteractionState>(initialState);
@@ -81,5 +98,13 @@ export const interaction = {
   /** Переключить привязку к сетке */
   toggleGrid() {
     interactionStore.setState((s) => ({ gridEnabled: !s.gridEnabled }));
+  },
+  /** Включить/выключить режим рисования стен (выключение сбрасывает черновик) */
+  setDrawingWalls(drawingWalls: boolean) {
+    interactionStore.setState(drawingWalls ? { drawingWalls } : { drawingWalls, wallDraft: null });
+  },
+  /** Обновить черновик рисуемой стены */
+  setWallDraft(wallDraft: WallDraft | null) {
+    interactionStore.setState({ wallDraft });
   },
 };

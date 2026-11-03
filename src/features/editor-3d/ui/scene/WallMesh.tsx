@@ -66,7 +66,7 @@ export const WallMesh: React.FC<WallMeshProps> = memo(
     const ref = useCutaway<Group>(shouldCut);
 
     const handleClick = (e: SceneMouseEvent) => {
-      if (!isClick(e)) return;
+      if (!isClick(e) || activeTool === 'partition') return;
       e.stopPropagation();
       if (activeTool === 'window' || activeTool === 'door') {
         const hit = rayToWall(e.ray, frame);

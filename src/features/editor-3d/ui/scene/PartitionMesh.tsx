@@ -1,5 +1,6 @@
 /**
- * Перегородка в 3D: тело с проёмами и скруглёнными торцами, перетаскивание по полу,
+ * Внутренняя стена (перегородка) в 3D: тело с проёмами и стыками с другими стенами
+ * (торцы «на ус», по грани соседней стены, скруглённые), перетаскивание по полу,
  * выделение, создание проёмов инструментами окна/двери.
  * @module editor-3d/ui/scene/PartitionMesh
  */
@@ -11,17 +12,20 @@ import { add2, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { selectors as editorSelectors } from '../../selectors';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { partitionMaterial } from '../../lib/partitions';
+import type { InteriorWallShape } from '../../lib/wallJoints';
 import { partitionFrame, type WallFrame } from '../../lib/walls';
 import type { Opening, Partition, SurfaceFinish } from '../../types';
 import { OpeningMesh } from './OpeningMesh';
 import { HELPER_DATA, NO_RAYCAST, rayToFloor, rayToWall } from './pointer';
 import { useDragGesture } from './useDragGesture';
+import { InteriorWallPieces } from './InteriorWallPieces';
 import { useOpeningDrag } from './useOpeningDrag';
 import { useWallLook } from './useWallLook';
-import { WallPieces } from './WallPieces';
 
 interface PartitionMeshProps {
   partition: Partition;
+  /** Форма стены с учётом стыков */
+  shape: InteriorWallShape | undefined;
   /** Отделка по умолчанию (как у стен комнаты) */
   fallbackFinish: SurfaceFinish;
   selected: boolean;
@@ -40,7 +44,7 @@ const PartitionOpening: React.FC<{ partition: Partition; frame: WallFrame; openi
   return <OpeningMesh opening={opening} thickness={partition.size[2]} selected={selected} {...handlers} />;
 };
 
-export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, fallbackFinish, selected, selectedOpeningId }) => {
+export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, shape, fallbackFinish, selected, selectedOpeningId }) => {
   const commands = useSceneCommands();
   const activeTool = useSelector(editorSelectors.selectActiveTool);
   const look = useWallLook(partition.finish ?? fallbackFinish, partitionMaterial(partition));
@@ -50,6 +54,7 @@ export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, fa
   const drag = useDragGesture<{ offset: Vec2; planeY: number }>({
     id: partition.id,
     onStart: (e) => {
+      if (activeTool === 'partition') return null;
       if (activeTool === 'window' || activeTool === 'door') {
         const hit = rayToWall(e.ray, frame);
         commands.openings.add(partition.id, activeTool, hit?.u ?? 0);
@@ -70,15 +75,7 @@ export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, fa
   return (
     <group position={[partition.position[0], 0, partition.position[2]]} rotation={[0, partition.rotation[1], 0]}>
       <group {...drag}>
-        <WallPieces
-          uMin={-length / 2}
-          uMax={length / 2}
-          height={height}
-          thickness={thickness}
-          openings={partition.openings}
-          look={look}
-          cornerRadius={partition.cornerRadius ?? 0}
-        />
+        <InteriorWallPieces spans={shape?.spans ?? []} length={length} height={height} openings={partition.openings} look={look} />
       </group>
       {partition.openings.map((o) => (
         <PartitionOpening key={o.id} partition={partition} frame={frame} opening={o} selected={o.id === selectedOpeningId} />
