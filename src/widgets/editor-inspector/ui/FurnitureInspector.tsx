@@ -8,7 +8,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { selectFurnitureCatalog } from '@/features/furniture/model/selectors';
-import { HEAVY_MODEL_BYTES } from '@/features/furniture/catalog';
+import { catalogEntry, HEAVY_MODEL_BYTES } from '@/features/furniture/catalog';
 import { itemSizes } from '@/features/editor-3d/lib/placement';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { Button, ColorField, FieldRow, IconButton, NumberField, Section, Slider, Toggle } from '@/shared/ui/controls';
@@ -19,7 +19,7 @@ import styles from './EditorInspector.module.scss';
 export const FurnitureInspector: React.FC<{ item: FurnitureItem }> = ({ item }) => {
   const commands = useSceneCommands();
   const catalog = useSelector(selectFurnitureCatalog);
-  const entry = catalog.find((c) => c.path === item.modelPath);
+  const entry = catalogEntry(catalog, item.modelPath);
   const sizes = itemSizes(item);
   const f = commands.furniture;
 

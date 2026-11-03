@@ -1,11 +1,13 @@
 /**
- * Известные габариты моделей каталога (при scale = 1), посчитанные по glTF-файлам.
- * Нужны, чтобы размещение и шаблоны были точными ещё до загрузки модели;
+ * Известные габариты моделей каталога (при scale = 1): для моделей манифеста — реальные
+ * размеры после нормализации (их считает конвейер `npm run models:sync`), для процедурных —
+ * размеры из кода. Нужны, чтобы размещение и шаблоны были точными ещё до загрузки модели;
  * после загрузки габариты всё равно уточняются измерением.
  * @module furniture/lib/knownSizes
  */
 
 import type { ModelSizes } from './modelLook';
+import { MANIFEST_MODEL_SIZES } from './modelProfiles';
 
 const M = '/assets/models';
 
@@ -29,28 +31,17 @@ export const MODELS = {
   succulent: `${M}/potted_plant_04/potted_plant_04_1k.gltf`,
   vase: `${M}/ceramic_vase_02/ceramic_vase_02_1k.gltf`,
   pictureFrame: `${M}/standing_picture_frame_01/standing_picture_frame_01_1k.gltf`,
+  officeDesk: `${M}/metal_office_desk/metal_office_desk_1k.gltf`,
+  rug: `${M}/rug_wool/rug_wool.gltf`,
+  floorLamp: `${M}/floor_lamp_drum/floor_lamp_drum.gltf`,
+  fridge: `${M}/fridge_french_door/fridge_french_door.gltf`,
+  kitchenSink: `${M}/kitchen_sink_120/kitchen_sink_120.gltf`,
+  kitchenHob: `${M}/kitchen_hob_oven_60/kitchen_hob_oven_60.gltf`,
+  washingMachine: `${M}/washing_machine/washing_machine.gltf`,
 } as const;
 
-/** Габариты по пути модели. */
-export const KNOWN_MODEL_SIZES: Readonly<Record<string, ModelSizes>> = {
-  [MODELS.bed]: { halfWidth: 0.747, halfDepth: 1.02, height: 1.534 },
-  [MODELS.sofa]: { halfWidth: 0.785, halfDepth: 0.329, height: 0.797 },
-  [MODELS.vase]: { halfWidth: 0.109, halfDepth: 0.109, height: 0.309 },
-  [MODELS.deskLamp]: { halfWidth: 0.101, halfDepth: 0.307, height: 0.893 },
-  [MODELS.diningChair]: { halfWidth: 0.217, halfDepth: 0.288, height: 0.973 },
-  [MODELS.drawerCabinet]: { halfWidth: 0.571, halfDepth: 0.244, height: 1.881 },
-  [MODELS.armchair]: { halfWidth: 0.41, halfDepth: 0.493, height: 1.023 },
-  [MODELS.ceilingLamp]: { halfWidth: 0.216, halfDepth: 0.216, height: 0.952 },
-  [MODELS.coffeeTable]: { halfWidth: 0.3, halfDepth: 0.601, height: 0.39 },
-  [MODELS.tvCabinet]: { halfWidth: 1.22, halfDepth: 0.26, height: 0.68 },
-  [MODELS.woodenChair]: { halfWidth: 0.216, halfDepth: 0.27, height: 0.956 },
-  [MODELS.plantTall]: { halfWidth: 0.293, halfDepth: 0.317, height: 1.35 },
-  [MODELS.plant]: { halfWidth: 0.35, halfDepth: 0.329, height: 0.841 },
-  [MODELS.succulent]: { halfWidth: 0.084, halfDepth: 0.092, height: 0.267 },
-  [MODELS.sideTable]: { halfWidth: 0.275, halfDepth: 0.225, height: 0.551 },
-  [MODELS.pictureFrame]: { halfWidth: 0.05, halfDepth: 0.101, height: 0.25 },
-  [MODELS.shelves]: { halfWidth: 0.186, halfDepth: 0.539, height: 1.556 },
-  [MODELS.diningTable]: { halfWidth: 0.567, halfDepth: 0.353, height: 0.8 },
+/** Габариты процедурных моделей (см. furniture/ui/PrimitiveFurniture). */
+const PRIMITIVE_SIZES: Readonly<Record<string, ModelSizes>> = {
   'primitive:sofa': { halfWidth: 0.9, halfDepth: 0.425, height: 0.85 },
   'primitive:stool': { halfWidth: 0.19, halfDepth: 0.19, height: 0.48 },
   'primitive:coffee_table': { halfWidth: 0.5, halfDepth: 0.3, height: 0.45 },
@@ -65,3 +56,6 @@ export const KNOWN_MODEL_SIZES: Readonly<Record<string, ModelSizes>> = {
   'primitive:rug': { halfWidth: 1, halfDepth: 0.7, height: 0.022 },
   'primitive:mirror': { halfWidth: 0.35, halfDepth: 0.045, height: 1.7 },
 };
+
+/** Габариты по пути модели. */
+export const KNOWN_MODEL_SIZES: Readonly<Record<string, ModelSizes>> = { ...MANIFEST_MODEL_SIZES, ...PRIMITIVE_SIZES };

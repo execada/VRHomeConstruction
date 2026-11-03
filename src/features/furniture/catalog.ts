@@ -1,22 +1,32 @@
 /**
- * Каталог мебели: качественные CC0-модели из манифеста ассетов, процедурные модели
- * (без файлов, лёгкие для VR) и пользовательские модели из `public/models`.
+ * Каталог мебели: модели из манифеста ассетов (CC0 / CC BY, реальные габариты) и
+ * пользовательские модели из `public/models`. Процедурные `primitive:*` остались только
+ * для старых проектов (см. LEGACY_ITEMS).
  * @module furniture/catalog
  */
 
 import type { ModelCategory, ModelEntry } from '@/features/assets/lib/manifest';
 import { getModelName } from '@/shared/utils/getModelName';
+import { KNOWN_MODEL_SIZES } from './lib/knownSizes';
 import { modelPaths, modelSizes } from './modelList';
 
 /** Источник модели в каталоге. */
 export type CatalogSource = 'asset' | 'primitive' | 'user';
+
+/** Реальные габариты, м. */
+export type CatalogDimensions = NonNullable<ModelEntry['dimensions']>;
 
 /** Позиция каталога. */
 export interface CatalogItem {
   /** Путь модели (сохраняется в FurnitureItem.modelPath) */
   path: string;
   name: string;
+  /** Подпись категории для интерфейса */
   category: string;
+  /** Стабильная категория для логики (опоры, мелкие предметы, сантехника…), см. modelCategorySchema */
+  categoryId: ModelCategory;
+  /** Реальные габариты, м (если известны до загрузки) */
+  dimensions?: CatalogDimensions;
   source: CatalogSource;
   thumbnail?: string;
   /** Размер файла, байт (для предупреждения о тяжёлых моделях) */
@@ -39,6 +49,8 @@ const MODEL_CATEGORY_LABELS: Record<ModelCategory, string> = {
   plants: 'Растения',
   decor: 'Декор',
   kitchen: 'Кухня',
+  bathroom: 'Ванная',
+  appliances: 'Техника',
 };
 
 /** Названия пользовательских моделей по имени файла. */
@@ -52,22 +64,64 @@ const USER_MODEL_NAMES: Record<string, string> = {
   untitled: 'Ящик',
 };
 
-/** Процедурные модели (без GLB-файла, см. furniture/ui/PrimitiveFurniture). */
-const PRIMITIVE_ITEMS: CatalogItem[] = [
-  { path: 'primitive:sofa', name: 'Диван (базовый)', category: 'Сидения', source: 'primitive' },
-  { path: 'primitive:stool', name: 'Табурет', category: 'Сидения', source: 'primitive' },
-  { path: 'primitive:coffee_table', name: 'Журнальный столик (базовый)', category: 'Столы', source: 'primitive' },
-  { path: 'primitive:desk', name: 'Письменный стол', category: 'Столы', source: 'primitive' },
-  { path: 'primitive:shelf', name: 'Стеллаж (базовый)', category: 'Хранение', source: 'primitive' },
-  { path: 'primitive:kitchen_counter', name: 'Кухонная тумба', category: 'Кухня', source: 'primitive' },
-  { path: 'primitive:fridge', name: 'Холодильник', category: 'Кухня', source: 'primitive' },
-  { path: 'primitive:washing_machine', name: 'Стиральная машина', category: 'Техника', source: 'primitive' },
-  { path: 'primitive:tv_stand', name: 'ТВ-тумба с телевизором', category: 'Техника', source: 'primitive' },
-  { path: 'primitive:floor_lamp', name: 'Торшер', category: 'Освещение', source: 'primitive' },
-  { path: 'primitive:plant', name: 'Дерево в кадке', category: 'Растения', source: 'primitive' },
-  { path: 'primitive:rug', name: 'Ковёр', category: 'Декор', source: 'primitive' },
-  { path: 'primitive:mirror', name: 'Напольное зеркало', category: 'Декор', source: 'primitive' },
+/** Процедурные модели старых проектов (без файла, см. furniture/ui/PrimitiveFurniture): вид, название, категория. */
+const PRIMITIVES: ReadonlyArray<[string, string, ModelCategory]> = [
+  ['sofa', 'Диван (базовый)', 'seating'],
+  ['stool', 'Табурет', 'seating'],
+  ['coffee_table', 'Журнальный столик (базовый)', 'tables'],
+  ['desk', 'Письменный стол', 'tables'],
+  ['shelf', 'Стеллаж (базовый)', 'storage'],
+  ['kitchen_counter', 'Кухонная тумба', 'kitchen'],
+  ['fridge', 'Холодильник', 'kitchen'],
+  ['washing_machine', 'Стиральная машина', 'appliances'],
+  ['tv_stand', 'ТВ-тумба с телевизором', 'appliances'],
+  ['floor_lamp', 'Торшер', 'lighting'],
+  ['plant', 'Дерево в кадке', 'plants'],
+  ['rug', 'Ковёр', 'decor'],
+  ['mirror', 'Напольное зеркало', 'decor'],
 ];
+
+/** Габариты по известным размерам (половины → полные), м. */
+function knownDimensions(path: string): CatalogDimensions | undefined {
+  const sizes = KNOWN_MODEL_SIZES[path];
+  return sizes && { width: sizes.halfWidth * 2, height: sizes.height, depth: sizes.halfDepth * 2 };
+}
+
+/**
+ * Процедурные модели заменены моделями каталога (glTF с PBR-материалами). Каталог их больше
+ * не предлагает, но сцена по-прежнему рендерит `primitive:*` в старых проектах (обратная
+ * совместимость без миграции: позиции, повороты и размеры сохранённых предметов не меняются),
+ * а инспектор показывает их название и категорию.
+ */
+const LEGACY_ITEMS: CatalogItem[] = PRIMITIVES.map(([kind, name, categoryId]) => {
+  const path = `primitive:${kind}`;
+  return { path, name, category: MODEL_CATEGORY_LABELS[categoryId], categoryId, dimensions: knownDimensions(path), source: 'primitive' };
+});
+
+/** Ключевые слова в имени файла → категория (для пользовательских моделей). */
+const CATEGORY_KEYWORDS: ReadonlyArray<[RegExp, ModelCategory]> = [
+  [/toilet|bath|shower|basin|sink|vanity/, 'bathroom'],
+  [/fridge|refrigerator|stove|oven|hob|kitchen|counter/, 'kitchen'],
+  [/\btv\b|television|washer|washing|dryer|fan/, 'appliances'],
+  [/lamp|light|chandelier|sconce/, 'lighting'],
+  [/plant|tree|flower|cactus/, 'plants'],
+  [/nightstand|bedside|mattress|\bbed\b/, 'bedroom'],
+  [/chair|sofa|couch|stool|bench|ottoman|pouf/, 'seating'],
+  [/table|desk|console/, 'tables'],
+  [/shel(f|ves)|cabinet|commode|wardrobe|dresser|drawer|bookcase|crate|rack|closet/, 'storage'],
+];
+
+/** Категория модели по пути файла; неизвестное — декор. */
+export function guessCategory(path: string): ModelCategory {
+  const name = path.toLowerCase().split('/').slice(-2).join(' ').replace(/[-_.]+/g, ' ');
+  return CATEGORY_KEYWORDS.find(([pattern]) => pattern.test(name))?.[1] ?? 'decor';
+}
+
+/** Габариты «Ш × Г × В см». */
+export function formatDimensions(d: CatalogDimensions): string {
+  const cm = (v: number) => Math.round(v * 100);
+  return `${cm(d.width)} × ${cm(d.depth)} × ${cm(d.height)} см`;
+}
 
 function prettify(name: string): string {
   const clean = name.replace(/[-_]+/g, ' ').trim();
@@ -77,7 +131,14 @@ function prettify(name: string): string {
 /** Пользовательские модели из public/models. */
 const USER_ITEMS: CatalogItem[] = modelPaths.map((path) => {
   const file = getModelName(path);
-  return { path, name: USER_MODEL_NAMES[file] ?? prettify(file), category: 'Мои модели', source: 'user', sizeBytes: modelSizes[path] };
+  return {
+    path,
+    name: USER_MODEL_NAMES[file] ?? prettify(file),
+    category: 'Мои модели',
+    categoryId: guessCategory(path),
+    source: 'user',
+    sizeBytes: modelSizes[path],
+  };
 });
 
 /** Позиция каталога из записи манифеста. */
@@ -86,6 +147,8 @@ function itemFromEntry(entry: ModelEntry): CatalogItem {
     path: entry.file,
     name: entry.label,
     category: MODEL_CATEGORY_LABELS[entry.category],
+    categoryId: entry.category,
+    dimensions: entry.dimensions,
     source: 'asset',
     thumbnail: entry.thumbnail,
     sizeBytes: entry.sizeBytes,
@@ -98,7 +161,7 @@ function itemFromEntry(entry: ModelEntry): CatalogItem {
  * @param entries - модели из манифеста ассетов
  */
 export function buildCatalog(entries: ModelEntry[]): CatalogItem[] {
-  return [...entries.map(itemFromEntry), ...PRIMITIVE_ITEMS, ...USER_ITEMS];
+  return [...entries.map(itemFromEntry), ...USER_ITEMS];
 }
 
 /** Категории каталога в порядке появления (первая — «Все»). */
@@ -116,7 +179,12 @@ export function filterCatalog(catalog: CatalogItem[], query: string, category: s
   );
 }
 
+/** Позиция каталога по пути, включая снятые с каталога процедурные модели старых проектов. */
+export function catalogEntry(catalog: CatalogItem[], path: string): CatalogItem | undefined {
+  return catalog.find((c) => c.path === path) ?? LEGACY_ITEMS.find((c) => c.path === path);
+}
+
 /** Читаемое имя модели по пути. */
 export function catalogName(catalog: CatalogItem[], path: string): string {
-  return catalog.find((c) => c.path === path)?.name ?? prettify(getModelName(path));
+  return catalogEntry(catalog, path)?.name ?? prettify(getModelName(path));
 }

@@ -1,5 +1,6 @@
 /**
- * Модель мебели, нормализованная по габаритам: низ на y = 0, центр по X/Z.
+ * Модель мебели, нормализованная по габаритам: реальные метры и ось «вверх» Y (единицы,
+ * ось и поправки из манифеста — см. lib/normalization), низ на y = 0, центр по X/Z.
  * Поэтому позиция предмета = точка на полу, и он никогда не «висит» и не проваливается.
  * Процедурные модели (`primitive:*`) рендерятся без файлов, glTF загружается с Suspense,
  * битый файл заменяется заглушкой, не роняя сцену.
@@ -11,7 +12,9 @@ import { useGLTF } from '@react-three/drei';
 import { Box3, Group, Vector3 } from 'three';
 import { ErrorBoundary } from '@/shared/ui/error-boundary/ErrorBoundary';
 import { furnitureSizesCache } from '../sizesCache';
-import { applyLook, hasLook, prepareModel, type ModelLook, type ModelSizes } from '../lib/modelLook';
+import { applyLook, hasLook, prepareModel, type ModelLook, type ModelSizes, type PreparedModel } from '../lib/modelLook';
+import { modelProfile } from '../lib/modelProfiles';
+import { formatSizeIssue } from '../lib/normalization';
 import { PrimitiveFurniture } from './PrimitiveFurniture';
 import { PRIMITIVE_PREFIX } from '../lib/preload';
 
@@ -32,13 +35,29 @@ function useReportSizes(path: string, sizes: ModelSizes | null, onMeasured?: (si
   }, [path, sizes, onMeasured]);
 }
 
+const warnedPaths = new Set<string>();
+
+/** В режиме разработки один раз сообщить о неправдоподобных размерах или автоисправлении единиц. */
+function warnAboutSize(path: string, prepared: PreparedModel): void {
+  if (process.env.NODE_ENV !== 'development' || warnedPaths.has(path)) return;
+  const { unit, upAxis, corrected } = prepared.normalization;
+  const notes = [...prepared.issues.map(formatSizeIssue), ...(corrected ? [`единицы (${unit}) и ось (${upAxis}) определены автоматически`] : [])];
+  if (notes.length === 0) return;
+  warnedPaths.add(path);
+  console.warn(`Модель ${path}: ${notes.join('; ')}`);
+}
+
 const GltfModel: React.FC<Required<Pick<NormalizedModelProps, 'path' | 'look'>> & Pick<NormalizedModelProps, 'onMeasured'>> = ({
   path,
   look,
   onMeasured,
 }) => {
   const { scene } = useGLTF(path);
-  const prepared = useMemo(() => prepareModel(scene), [scene]);
+  const prepared = useMemo(() => {
+    const profile = modelProfile(path);
+    return prepareModel(scene, { category: profile?.category, rule: profile?.normalize });
+  }, [scene, path]);
+  useEffect(() => warnAboutSize(path, prepared), [path, prepared]);
   const lookKey = `${look.tint ?? ''}|${look.ghost ? 1 : 0}|${look.invalid ? 1 : 0}`;
 
   useLayoutEffect(() => {

@@ -8,7 +8,14 @@ import React, { useMemo, useState } from 'react';
 import cn from 'classnames';
 import { useSelector } from 'react-redux';
 import { selectFurnitureCatalog } from '@/features/furniture/model/selectors';
-import { ALL_CATEGORIES, catalogCategories, filterCatalog, HEAVY_MODEL_BYTES, type CatalogItem } from '@/features/furniture/catalog';
+import {
+  ALL_CATEGORIES,
+  catalogCategories,
+  filterCatalog,
+  formatDimensions,
+  HEAVY_MODEL_BYTES,
+  type CatalogItem,
+} from '@/features/furniture/catalog';
 import { preloadModel } from '@/features/furniture/lib/preload';
 import { interaction, interactionStore, MODEL_DRAG_TYPE } from '@/features/editor-3d/model/interactionStore';
 import { useExternalStore } from '@/shared/lib/externalStore';
@@ -21,14 +28,22 @@ const SOURCE_LABEL: Record<CatalogItem['source'], string> = {
   user: 'Моя модель',
 };
 
+/** Подсказка карточки: название, реальные габариты, источник. */
+function cardTitle(item: CatalogItem, heavy: boolean): string {
+  if (heavy) return `${item.name} — тяжёлая модель (${Math.round((item.sizeBytes ?? 0) / 1048576)} МБ)`;
+  const dims = item.dimensions ? formatDimensions(item.dimensions) : null;
+  return [item.name, dims, SOURCE_LABEL[item.source]].filter(Boolean).join(' · ');
+}
+
 const CatalogCard: React.FC<{ item: CatalogItem; active: boolean }> = ({ item, active }) => {
   const heavy = (item.sizeBytes ?? 0) > HEAVY_MODEL_BYTES;
+  const meta = heavy ? 'Тяжёлая модель' : item.dimensions ? formatDimensions(item.dimensions) : SOURCE_LABEL[item.source];
   return (
     <button
       type="button"
       className={cn(styles.card, active && styles.cardActive)}
       draggable
-      title={heavy ? `${item.name} — тяжёлая модель (${Math.round((item.sizeBytes ?? 0) / 1048576)} МБ)` : item.name}
+      title={cardTitle(item, heavy)}
       onMouseEnter={() => preloadModel(item.path)}
       onClick={() => (active ? interaction.reset() : interaction.startPlacing(item.path, item.name))}
       onDragStart={(e) => {
@@ -44,7 +59,7 @@ const CatalogCard: React.FC<{ item: CatalogItem; active: boolean }> = ({ item, a
         {!item.thumbnail && <Icon name="sofa" size={28} />}
       </span>
       <span className={styles.cardName}>{item.name}</span>
-      <span className={styles.cardMeta}>{heavy ? 'Тяжёлая модель' : SOURCE_LABEL[item.source]}</span>
+      <span className={styles.cardMeta}>{meta}</span>
     </button>
   );
 };

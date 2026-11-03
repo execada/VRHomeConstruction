@@ -1,10 +1,19 @@
 /**
- * Подготовка glTF-модели к сцене: клон на экземпляр, нормализация по габаритам
- * (низ на y = 0, центр по X/Z), тени, внешний вид (тонирование, призрак, ошибка).
+ * Подготовка glTF-модели к сцене: клон на экземпляр, нормализация (реальные метры,
+ * ось «вверх» Y, поправки манифеста — см. normalization), низ на y = 0 и центр по X/Z,
+ * тени, внешний вид (тонирование, призрак, ошибка).
  * @module furniture/lib/modelLook
  */
 
-import { Box3, Color, Light, Material, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import { Box3, Color, Group, Light, Material, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import {
+  isIdentityNormalization,
+  resolveNormalization,
+  validateSize,
+  type Normalization,
+  type NormalizeOptions,
+  type SizeIssue,
+} from './normalization';
 
 /** Габариты модели при scale = 1. */
 export interface ModelSizes {
@@ -19,6 +28,10 @@ export interface PreparedModel {
   /** Смещение, при котором низ модели на полу, а центр — в начале координат */
   offset: [number, number, number];
   sizes: ModelSizes;
+  /** Применённая нормализация (единицы, ось, масштаб, поворот) */
+  normalization: Normalization;
+  /** Размеры вне ожидаемого диапазона категории (после нормализации) */
+  issues: SizeIssue[];
 }
 
 /** Внешний вид модели. */
@@ -34,18 +47,72 @@ export interface ModelLook {
 const INVALID_COLOR = new Color('#e5484d');
 const MIN_SIZE = 0.02;
 
-/** Клонировать сцену glTF, выключить встроенный свет, включить тени, измерить габариты. */
-export function prepareModel(scene: Object3D): PreparedModel {
+const GLASS_OPACITY = 0.18;
+
+/**
+ * Материал, удобный для VR, или null, если менять нечего:
+ * - transmission (отдельный проход рендера каждый кадр, дорого для Quest) → обычная прозрачность;
+ * - «стекло» в режиме BLEND с непрозрачной текстурой (альфа потеряна при экспорте в JPEG)
+ *   закрывало бы картину или циферблат — делаем его действительно прозрачным.
+ */
+function vrFriendlyMaterial(source: Material): Material | null {
+  const transmissive = source instanceof MeshPhysicalMaterial && source.transmission > 0;
+  const opaqueGlass = /glass/i.test(source.name) && source.transparent && source.opacity >= 0.99;
+  if (!transmissive && !opaqueGlass) return null;
+  const material = source.clone();
+  if (material instanceof MeshPhysicalMaterial) material.transmission = 0;
+  material.transparent = true;
+  material.opacity = opaqueGlass ? GLASS_OPACITY : source.opacity;
+  material.depthWrite = false;
+  return material;
+}
+
+/** Клон сцены: встроенный свет выключен, тени включены, тяжёлые для VR материалы упрощены. */
+function cloneForScene(scene: Object3D): Object3D {
   const object = scene.clone(true);
+  const replaced = new Map<Material, Material | null>();
+  const convert = (m: Material) => {
+    if (!replaced.has(m)) replaced.set(m, vrFriendlyMaterial(m));
+    return replaced.get(m) ?? m;
+  };
   object.traverse((child) => {
     if (child instanceof Light) child.visible = false;
     if (child instanceof Mesh) {
       child.castShadow = true;
       child.receiveShadow = true;
+      child.material = Array.isArray(child.material) ? child.material.map(convert) : convert(child.material);
     }
   });
   object.updateMatrixWorld(true);
-  const box = new Box3().setFromObject(object);
+  return object;
+}
+
+/** Обёртка, применяющая поворот осей и масштаб нормализации к клону. */
+function wrapNormalized(object: Object3D, n: Normalization): Object3D {
+  const root = new Group();
+  root.name = 'normalized';
+  root.add(object);
+  // Порядок YXZ: сначала исправление оси «вверх» (X), затем поворот фасадом к +Z (Y).
+  root.rotation.set(n.rotationX, n.rotationY, 0, 'YXZ');
+  root.scale.setScalar(n.scale);
+  root.updateMatrixWorld(true);
+  return root;
+}
+
+/**
+ * Клонировать сцену glTF, выключить встроенный свет, включить тени, нормализовать
+ * габариты (единицы, ось «вверх», поправки манифеста) и измерить результат.
+ * @param scene - сцена glTF (общая для всех экземпляров, не изменяется)
+ * @param options - категория модели и поправки из манифеста
+ */
+export function prepareModel(scene: Object3D, options: NormalizeOptions = {}): PreparedModel {
+  const clone = cloneForScene(scene);
+  const raw = new Box3().setFromObject(clone);
+  const rawSize = raw.isEmpty() ? new Vector3(1, 1, 1) : raw.getSize(new Vector3());
+  const normalization = raw.isEmpty() ? resolveNormalization(rawSize) : resolveNormalization(rawSize, options);
+  const identity = isIdentityNormalization(normalization);
+  const object = identity ? clone : wrapNormalized(clone, normalization);
+  const box = identity ? raw : new Box3().setFromObject(object);
   const size = box.isEmpty() ? new Vector3(1, 1, 1) : box.getSize(new Vector3());
   const center = box.isEmpty() ? new Vector3() : box.getCenter(new Vector3());
   return {
@@ -56,6 +123,8 @@ export function prepareModel(scene: Object3D): PreparedModel {
       halfDepth: Math.max(MIN_SIZE, size.z / 2),
       height: Math.max(MIN_SIZE, size.y),
     },
+    normalization,
+    issues: box.isEmpty() ? [] : validateSize(size, options.category),
   };
 }
 

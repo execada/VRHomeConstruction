@@ -60,6 +60,38 @@ describe('parseManifest', () => {
     expect(m.models.map((x) => x.id)).toEqual(['Sofa_01']);
   });
 
+  it('accepts normalization rules, real-world dimensions and the new categories', () => {
+    const model = {
+      ...valid.models[0],
+      id: 'toilet',
+      category: 'bathroom',
+      normalize: { unit: 'cm', upAxis: 'z', rotationY: 90, targetHeight: 0.8 },
+      dimensions: { width: 0.38, height: 0.8, depth: 0.65 },
+      triangles: 2400,
+    };
+    const m = parseManifest({ ...valid, models: [model, { ...model, id: 'tv', category: 'appliances', normalize: undefined }] });
+    expect(m.models).toHaveLength(2);
+    expect(m.models[0].normalize).toEqual({ unit: 'cm', upAxis: 'z', rotationY: 90, targetHeight: 0.8 });
+    expect(m.models[0].dimensions).toEqual({ width: 0.38, height: 0.8, depth: 0.65 });
+    expect(m.models[1].category).toBe('appliances');
+  });
+
+  it('drops entries with contradictory or out-of-range normalization rules', () => {
+    const base = valid.models[0];
+    const m = parseManifest({
+      ...valid,
+      models: [
+        { ...base, id: 'two-targets', normalize: { targetHeight: 0.8, targetWidth: 2 } },
+        { ...base, id: 'bad-turn', normalize: { rotationY: 45 } },
+        { ...base, id: 'bad-unit', normalize: { unit: 'ft' } },
+        { ...base, id: 'huge', normalize: { targetHeight: 50 } },
+        { ...base, id: 'neg', dimensions: { width: -1, height: 1, depth: 1 } },
+        { ...base, id: 'unknown-category', category: 'garage' },
+      ],
+    });
+    expect(m.models).toEqual([]);
+  });
+
   it('rejects HDRIs that are not .hdr files', () => {
     const m = parseManifest({ ...valid, hdris: [{ ...valid.hdris[0], file: '/assets/hdri/a.png' }] });
     expect(m.hdris).toHaveLength(0);

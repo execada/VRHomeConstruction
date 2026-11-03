@@ -315,6 +315,12 @@
       "file": "/assets/models/Sofa_01/Sofa_01_1k.gltf",
       "thumbnail": "/assets/models/Sofa_01/thumb.jpg",
       "sizeBytes": 517935,
+      "dimensions": {
+        "width": 1.571,
+        "height": 0.797,
+        "depth": 0.658
+      },
+      "triangles": 4101,
       "source": "https://polyhaven.com/a/Sofa_01",
       "license": "CC0",
       "author": "Kirill Sannikov"
@@ -326,6 +332,12 @@
       "file": "/assets/models/modern_arm_chair_01/modern_arm_chair_01_1k.gltf",
       "thumbnail": "/assets/models/modern_arm_chair_01/thumb.jpg",
       "sizeBytes": 2698032,
+      "dimensions": {
+        "width": 0.82,
+        "height": 1.023,
+        "depth": 0.987
+      },
+      "triangles": 8916,
       "source": "https://polyhaven.com/a/modern_arm_chair_01",
       "license": "CC0",
       "author": "Vibrant Nordic"
@@ -337,6 +349,12 @@
       "file": "/assets/models/dining_chair_02/dining_chair_02_1k.gltf",
       "thumbnail": "/assets/models/dining_chair_02/thumb.jpg",
       "sizeBytes": 921075,
+      "dimensions": {
+        "width": 0.434,
+        "height": 0.973,
+        "depth": 0.576
+      },
+      "triangles": 22013,
       "source": "https://polyhaven.com/a/dining_chair_02",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -348,6 +366,12 @@
       "file": "/assets/models/painted_wooden_chair_01/painted_wooden_chair_01_1k.gltf",
       "thumbnail": "/assets/models/painted_wooden_chair_01/thumb.jpg",
       "sizeBytes": 492550,
+      "dimensions": {
+        "width": 0.432,
+        "height": 0.956,
+        "depth": 0.54
+      },
+      "triangles": 724,
       "source": "https://polyhaven.com/a/painted_wooden_chair_01",
       "license": "CC0",
       "author": "Kuutti Siitonen"
@@ -359,6 +383,12 @@
       "file": "/assets/models/modern_coffee_table_01/modern_coffee_table_01_1k.gltf",
       "thumbnail": "/assets/models/modern_coffee_table_01/thumb.jpg",
       "sizeBytes": 1331297,
+      "dimensions": {
+        "width": 0.6,
+        "height": 0.39,
+        "depth": 1.202
+      },
+      "triangles": 4504,
       "source": "https://polyhaven.com/a/modern_coffee_table_01",
       "license": "CC0",
       "author": "Amin"
@@ -370,6 +400,12 @@
       "file": "/assets/models/wooden_table_02/wooden_table_02_1k.gltf",
       "thumbnail": "/assets/models/wooden_table_02/thumb.jpg",
       "sizeBytes": 485316,
+      "dimensions": {
+        "width": 1.134,
+        "height": 0.8,
+        "depth": 0.706
+      },
+      "triangles": 196,
       "source": "https://polyhaven.com/a/wooden_table_02",
       "license": "CC0",
       "author": "Serhii Khromov"
@@ -381,6 +417,12 @@
       "file": "/assets/models/GothicBed_01/GothicBed_01_1k.gltf",
       "thumbnail": "/assets/models/GothicBed_01/thumb.jpg",
       "sizeBytes": 1155213,
+      "dimensions": {
+        "width": 1.494,
+        "height": 1.534,
+        "depth": 2.04
+      },
+      "triangles": 18745,
       "source": "https://polyhaven.com/a/GothicBed_01",
       "license": "CC0",
       "author": "Kirill Sannikov"
@@ -392,6 +434,12 @@
       "file": "/assets/models/side_table_01/side_table_01_1k.gltf",
       "thumbnail": "/assets/models/side_table_01/thumb.jpg",
       "sizeBytes": 505268,
+      "dimensions": {
+        "width": 0.55,
+        "height": 0.551,
+        "depth": 0.45
+      },
+      "triangles": 2756,
       "source": "https://polyhaven.com/a/side_table_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -403,6 +451,12 @@
       "file": "/assets/models/wooden_display_shelves_01/wooden_display_shelves_01_1k.gltf",
       "thumbnail": "/assets/models/wooden_display_shelves_01/thumb.jpg",
       "sizeBytes": 471129,
+      "dimensions": {
+        "width": 0.372,
+        "height": 1.556,
+        "depth": 1.078
+      },
+      "triangles": 3174,
       "source": "https://polyhaven.com/a/wooden_display_shelves_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -414,6 +468,12 @@
       "file": "/assets/models/modern_wooden_cabinet/modern_wooden_cabinet_1k.gltf",
       "thumbnail": "/assets/models/modern_wooden_cabinet/thumb.jpg",
       "sizeBytes": 2855522,
+      "dimensions": {
+        "width": 2.44,
+        "height": 0.68,
+        "depth": 0.52
+      },
+      "triangles": 24976,
       "source": "https://polyhaven.com/a/modern_wooden_cabinet",
       "license": "CC0",
       "author": "Patrik Pangerl"
@@ -425,6 +485,12 @@
       "file": "/assets/models/drawer_cabinet/drawer_cabinet_1k.gltf",
       "thumbnail": "/assets/models/drawer_cabinet/thumb.jpg",
       "sizeBytes": 1143429,
+      "dimensions": {
+        "width": 1.141,
+        "height": 1.881,
+        "depth": 0.488
+      },
+      "triangles": 26406,
       "source": "https://polyhaven.com/a/drawer_cabinet",
       "license": "CC0",
       "author": "Ulan Cabanilla"
@@ -436,6 +502,12 @@
       "file": "/assets/models/modern_ceiling_lamp_01/modern_ceiling_lamp_01_1k.gltf",
       "thumbnail": "/assets/models/modern_ceiling_lamp_01/thumb.jpg",
       "sizeBytes": 436065,
+      "dimensions": {
+        "width": 0.432,
+        "height": 0.952,
+        "depth": 0.432
+      },
+      "triangles": 5602,
       "source": "https://polyhaven.com/a/modern_ceiling_lamp_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -447,6 +519,12 @@
       "file": "/assets/models/desk_lamp_arm_01/desk_lamp_arm_01_1k.gltf",
       "thumbnail": "/assets/models/desk_lamp_arm_01/thumb.jpg",
       "sizeBytes": 2875984,
+      "dimensions": {
+        "width": 0.202,
+        "height": 0.893,
+        "depth": 0.614
+      },
+      "triangles": 24102,
       "source": "https://polyhaven.com/a/desk_lamp_arm_01",
       "license": "CC0",
       "author": "Yann Kervran, Kuutti Siitonen"
@@ -458,6 +536,12 @@
       "file": "/assets/models/potted_plant_01/potted_plant_01_1k.gltf",
       "thumbnail": "/assets/models/potted_plant_01/thumb.jpg",
       "sizeBytes": 6325139,
+      "dimensions": {
+        "width": 0.587,
+        "height": 1.35,
+        "depth": 0.634
+      },
+      "triangles": 176226,
       "source": "https://polyhaven.com/a/potted_plant_01",
       "license": "CC0",
       "author": "Rico Cilliers"
@@ -469,6 +553,12 @@
       "file": "/assets/models/potted_plant_02/potted_plant_02_1k.gltf",
       "thumbnail": "/assets/models/potted_plant_02/thumb.jpg",
       "sizeBytes": 2634698,
+      "dimensions": {
+        "width": 0.701,
+        "height": 0.841,
+        "depth": 0.657
+      },
+      "triangles": 69806,
       "source": "https://polyhaven.com/a/potted_plant_02",
       "license": "CC0",
       "author": "Rico Cilliers"
@@ -480,6 +570,12 @@
       "file": "/assets/models/potted_plant_04/potted_plant_04_1k.gltf",
       "thumbnail": "/assets/models/potted_plant_04/thumb.jpg",
       "sizeBytes": 2122625,
+      "dimensions": {
+        "width": 0.168,
+        "height": 0.267,
+        "depth": 0.185
+      },
+      "triangles": 8929,
       "source": "https://polyhaven.com/a/potted_plant_04",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -491,6 +587,12 @@
       "file": "/assets/models/ceramic_vase_02/ceramic_vase_02_1k.gltf",
       "thumbnail": "/assets/models/ceramic_vase_02/thumb.jpg",
       "sizeBytes": 750161,
+      "dimensions": {
+        "width": 0.218,
+        "height": 0.309,
+        "depth": 0.218
+      },
+      "triangles": 11128,
       "source": "https://polyhaven.com/a/ceramic_vase_02",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -502,9 +604,752 @@
       "file": "/assets/models/standing_picture_frame_01/standing_picture_frame_01_1k.gltf",
       "thumbnail": "/assets/models/standing_picture_frame_01/thumb.jpg",
       "sizeBytes": 447425,
+      "dimensions": {
+        "width": 0.1,
+        "height": 0.25,
+        "depth": 0.201
+      },
+      "triangles": 1634,
       "source": "https://polyhaven.com/a/standing_picture_frame_01",
       "license": "CC0",
       "author": "James Ray Cock"
+    },
+    {
+      "id": "mid_century_lounge_chair",
+      "label": "Лаунж-кресло",
+      "category": "seating",
+      "file": "/assets/models/mid_century_lounge_chair/mid_century_lounge_chair_1k.gltf",
+      "thumbnail": "/assets/models/mid_century_lounge_chair/thumb.jpg",
+      "sizeBytes": 2087019,
+      "dimensions": {
+        "width": 1.009,
+        "height": 1.169,
+        "depth": 1.19
+      },
+      "triangles": 6148,
+      "source": "https://polyhaven.com/a/mid_century_lounge_chair",
+      "license": "CC0",
+      "author": "Kuutti Siitonen"
+    },
+    {
+      "id": "Ottoman_01",
+      "label": "Пуф кожаный",
+      "category": "seating",
+      "file": "/assets/models/Ottoman_01/Ottoman_01_1k.gltf",
+      "thumbnail": "/assets/models/Ottoman_01/thumb.jpg",
+      "sizeBytes": 652112,
+      "dimensions": {
+        "width": 0.885,
+        "height": 0.624,
+        "depth": 0.621
+      },
+      "triangles": 4240,
+      "source": "https://polyhaven.com/a/Ottoman_01",
+      "license": "CC0",
+      "author": "Caspian Fortune"
+    },
+    {
+      "id": "metal_stool_02",
+      "label": "Табурет",
+      "category": "seating",
+      "file": "/assets/models/metal_stool_02/metal_stool_02_1k.gltf",
+      "thumbnail": "/assets/models/metal_stool_02/thumb.jpg",
+      "sizeBytes": 2540986,
+      "dimensions": {
+        "width": 0.448,
+        "height": 0.458,
+        "depth": 0.473
+      },
+      "triangles": 6532,
+      "source": "https://polyhaven.com/a/metal_stool_02",
+      "license": "CC0",
+      "author": "Ulan Cabanilla"
+    },
+    {
+      "id": "metal_stool_03",
+      "label": "Барный стул",
+      "category": "seating",
+      "file": "/assets/models/metal_stool_03/metal_stool_03_1k.gltf",
+      "thumbnail": "/assets/models/metal_stool_03/thumb.jpg",
+      "sizeBytes": 2289619,
+      "dimensions": {
+        "width": 0.461,
+        "height": 1.023,
+        "depth": 0.471
+      },
+      "triangles": 6576,
+      "source": "https://polyhaven.com/a/metal_stool_03",
+      "license": "CC0",
+      "author": "Flo Tasser"
+    },
+    {
+      "id": "coffee_table_round_01",
+      "label": "Журнальный столик круглый",
+      "category": "tables",
+      "file": "/assets/models/coffee_table_round_01/coffee_table_round_01_1k.gltf",
+      "thumbnail": "/assets/models/coffee_table_round_01/thumb.jpg",
+      "sizeBytes": 1563153,
+      "dimensions": {
+        "width": 1.301,
+        "height": 0.491,
+        "depth": 1.301
+      },
+      "triangles": 4044,
+      "source": "https://polyhaven.com/a/coffee_table_round_01",
+      "license": "CC0",
+      "author": "Ulan Cabanilla"
+    },
+    {
+      "id": "metal_office_desk",
+      "label": "Письменный стол офисный",
+      "category": "tables",
+      "file": "/assets/models/metal_office_desk/metal_office_desk_1k.gltf",
+      "thumbnail": "/assets/models/metal_office_desk/thumb.jpg",
+      "sizeBytes": 1606530,
+      "dimensions": {
+        "width": 2,
+        "height": 0.788,
+        "depth": 0.947
+      },
+      "triangles": 6898,
+      "source": "https://polyhaven.com/a/metal_office_desk",
+      "license": "CC0",
+      "author": "Ulan Cabanilla"
+    },
+    {
+      "id": "steel_frame_shelves_01",
+      "label": "Стеллаж металлический",
+      "category": "storage",
+      "file": "/assets/models/steel_frame_shelves_01/steel_frame_shelves_01_1k.gltf",
+      "thumbnail": "/assets/models/steel_frame_shelves_01/thumb.jpg",
+      "sizeBytes": 1597356,
+      "dimensions": {
+        "width": 1.097,
+        "height": 2.141,
+        "depth": 0.502
+      },
+      "triangles": 4348,
+      "normalize": {
+        "unit": "dm"
+      },
+      "source": "https://polyhaven.com/a/steel_frame_shelves_01",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "steel_frame_shelves_02",
+      "label": "Стеллаж узкий",
+      "category": "storage",
+      "file": "/assets/models/steel_frame_shelves_02/steel_frame_shelves_02_1k.gltf",
+      "thumbnail": "/assets/models/steel_frame_shelves_02/thumb.jpg",
+      "sizeBytes": 540263,
+      "dimensions": {
+        "width": 0.593,
+        "height": 2.142,
+        "depth": 0.502
+      },
+      "triangles": 4348,
+      "source": "https://polyhaven.com/a/steel_frame_shelves_02",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "Chandelier_01",
+      "label": "Люстра классическая",
+      "category": "lighting",
+      "file": "/assets/models/Chandelier_01/Chandelier_01_1k.gltf",
+      "thumbnail": "/assets/models/Chandelier_01/thumb.jpg",
+      "sizeBytes": 1306295,
+      "dimensions": {
+        "width": 0.746,
+        "height": 0.798,
+        "depth": 0.816
+      },
+      "triangles": 26860,
+      "source": "https://polyhaven.com/a/Chandelier_01",
+      "license": "CC0",
+      "author": "Kirill Sannikov"
+    },
+    {
+      "id": "throw_pillows_01",
+      "label": "Декоративные подушки",
+      "category": "decor",
+      "file": "/assets/models/throw_pillows_01/throw_pillows_01_1k.gltf",
+      "thumbnail": "/assets/models/throw_pillows_01/thumb.jpg",
+      "sizeBytes": 1194408,
+      "dimensions": {
+        "width": 1.022,
+        "height": 0.45,
+        "depth": 0.627
+      },
+      "triangles": 6362,
+      "source": "https://polyhaven.com/a/throw_pillows_01",
+      "license": "CC0",
+      "author": "Serhii Khromov"
+    },
+    {
+      "id": "ceramic_vase_01",
+      "label": "Ваза-кувшин белая",
+      "category": "decor",
+      "file": "/assets/models/ceramic_vase_01/ceramic_vase_01_1k.gltf",
+      "thumbnail": "/assets/models/ceramic_vase_01/thumb.jpg",
+      "sizeBytes": 418457,
+      "dimensions": {
+        "width": 0.204,
+        "height": 0.4,
+        "depth": 0.204
+      },
+      "triangles": 10296,
+      "source": "https://polyhaven.com/a/ceramic_vase_01",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "ceramic_vase_03",
+      "label": "Ваза высокая",
+      "category": "decor",
+      "file": "/assets/models/ceramic_vase_03/ceramic_vase_03_1k.gltf",
+      "thumbnail": "/assets/models/ceramic_vase_03/thumb.jpg",
+      "sizeBytes": 765159,
+      "dimensions": {
+        "width": 0.112,
+        "height": 0.414,
+        "depth": 0.112
+      },
+      "triangles": 11136,
+      "source": "https://polyhaven.com/a/ceramic_vase_03",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "ceramic_vase_04",
+      "label": "Ваза с ручкой",
+      "category": "decor",
+      "file": "/assets/models/ceramic_vase_04/ceramic_vase_04_1k.gltf",
+      "thumbnail": "/assets/models/ceramic_vase_04/thumb.jpg",
+      "sizeBytes": 596053,
+      "dimensions": {
+        "width": 0.181,
+        "height": 0.342,
+        "depth": 0.181
+      },
+      "triangles": 9000,
+      "source": "https://polyhaven.com/a/ceramic_vase_04",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "brass_vase_01",
+      "label": "Ваза латунная",
+      "category": "decor",
+      "file": "/assets/models/brass_vase_01/brass_vase_01_1k.gltf",
+      "thumbnail": "/assets/models/brass_vase_01/thumb.jpg",
+      "sizeBytes": 842226,
+      "dimensions": {
+        "width": 0.227,
+        "height": 0.692,
+        "depth": 0.227
+      },
+      "triangles": 21440,
+      "source": "https://polyhaven.com/a/brass_vase_01",
+      "license": "CC0",
+      "author": "Rico Cilliers"
+    },
+    {
+      "id": "marble_bust_01",
+      "label": "Мраморный бюст",
+      "category": "decor",
+      "file": "/assets/models/marble_bust_01/marble_bust_01_1k.gltf",
+      "thumbnail": "/assets/models/marble_bust_01/thumb.jpg",
+      "sizeBytes": 898283,
+      "dimensions": {
+        "width": 0.272,
+        "height": 0.515,
+        "depth": 0.3
+      },
+      "triangles": 17456,
+      "source": "https://polyhaven.com/a/marble_bust_01",
+      "license": "CC0",
+      "author": "Rico Cilliers"
+    },
+    {
+      "id": "horse_statue_01",
+      "label": "Статуэтка «Конь»",
+      "category": "decor",
+      "file": "/assets/models/horse_statue_01/horse_statue_01_1k.gltf",
+      "thumbnail": "/assets/models/horse_statue_01/thumb.jpg",
+      "sizeBytes": 1283596,
+      "dimensions": {
+        "width": 0.163,
+        "height": 0.22,
+        "depth": 0.108
+      },
+      "triangles": 22388,
+      "source": "https://polyhaven.com/a/horse_statue_01",
+      "license": "CC0",
+      "author": "Rico Cilliers"
+    },
+    {
+      "id": "hanging_picture_frame_01",
+      "label": "Постер в чёрной раме",
+      "category": "decor",
+      "file": "/assets/models/hanging_picture_frame_01/hanging_picture_frame_01_1k.gltf",
+      "thumbnail": "/assets/models/hanging_picture_frame_01/thumb.jpg",
+      "sizeBytes": 397466,
+      "dimensions": {
+        "width": 0.594,
+        "height": 0.841,
+        "depth": 0.016
+      },
+      "triangles": 2586,
+      "source": "https://polyhaven.com/a/hanging_picture_frame_01",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "hanging_picture_frame_02",
+      "label": "Картина в белой раме",
+      "category": "decor",
+      "file": "/assets/models/hanging_picture_frame_02/hanging_picture_frame_02_1k.gltf",
+      "thumbnail": "/assets/models/hanging_picture_frame_02/thumb.jpg",
+      "sizeBytes": 696031,
+      "dimensions": {
+        "width": 0.752,
+        "height": 0.5,
+        "depth": 0.033
+      },
+      "triangles": 3678,
+      "source": "https://polyhaven.com/a/hanging_picture_frame_02",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "standing_picture_frame_02",
+      "label": "Фоторамка белая",
+      "category": "decor",
+      "file": "/assets/models/standing_picture_frame_02/standing_picture_frame_02_1k.gltf",
+      "thumbnail": "/assets/models/standing_picture_frame_02/thumb.jpg",
+      "sizeBytes": 569572,
+      "dimensions": {
+        "width": 0.217,
+        "height": 0.266,
+        "depth": 0.102
+      },
+      "triangles": 2986,
+      "normalize": {
+        "rotationY": 270
+      },
+      "source": "https://polyhaven.com/a/standing_picture_frame_02",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "ornate_mirror_01",
+      "label": "Зеркало в латунной раме",
+      "category": "decor",
+      "file": "/assets/models/ornate_mirror_01/ornate_mirror_01_1k.gltf",
+      "thumbnail": "/assets/models/ornate_mirror_01/thumb.jpg",
+      "sizeBytes": 677241,
+      "dimensions": {
+        "width": 0.486,
+        "height": 0.744,
+        "depth": 0.026
+      },
+      "triangles": 14246,
+      "source": "https://polyhaven.com/a/ornate_mirror_01",
+      "license": "CC0",
+      "author": "James Ray Cock"
+    },
+    {
+      "id": "wall_clock",
+      "label": "Настенные часы",
+      "category": "decor",
+      "file": "/assets/models/wall_clock/wall_clock_1k.gltf",
+      "thumbnail": "/assets/models/wall_clock/thumb.jpg",
+      "sizeBytes": 1564880,
+      "dimensions": {
+        "width": 0.32,
+        "height": 0.32,
+        "depth": 0.047
+      },
+      "triangles": 3658,
+      "source": "https://polyhaven.com/a/wall_clock",
+      "license": "CC0",
+      "author": "PierreB3D"
+    },
+    {
+      "id": "glam_velvet_sofa",
+      "label": "Диван бархатный",
+      "category": "seating",
+      "file": "/assets/models/glam_velvet_sofa/glam_velvet_sofa.gltf",
+      "thumbnail": "/assets/models/glam_velvet_sofa/thumb.jpg",
+      "sizeBytes": 1000245,
+      "dimensions": {
+        "width": 2.188,
+        "height": 0.788,
+        "depth": 1.023
+      },
+      "triangles": 4196,
+      "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/GlamVelvetSofa",
+      "license": "CC-BY 4.0",
+      "author": "Eric Chadwick, Wayfair LLC"
+    },
+    {
+      "id": "sheen_velvet_chair",
+      "label": "Кресло бархатное",
+      "category": "seating",
+      "file": "/assets/models/sheen_velvet_chair/sheen_velvet_chair.gltf",
+      "thumbnail": "/assets/models/sheen_velvet_chair/thumb.jpg",
+      "sizeBytes": 2747036,
+      "dimensions": {
+        "width": 0.827,
+        "height": 0.686,
+        "depth": 0.57
+      },
+      "triangles": 39808,
+      "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SheenChair",
+      "license": "CC0",
+      "author": "Eric Chadwick, Wayfair LLC"
+    },
+    {
+      "id": "toilet_close_coupled",
+      "label": "Унитаз-компакт",
+      "category": "bathroom",
+      "file": "/assets/models/toilet_close_coupled/toilet_close_coupled.gltf",
+      "thumbnail": "/assets/models/toilet_close_coupled/thumb.jpg",
+      "sizeBytes": 57575,
+      "dimensions": {
+        "width": 0.419,
+        "height": 0.663,
+        "depth": 0.634
+      },
+      "triangles": 2050,
+      "source": "https://opengameart.org/content/toilets",
+      "license": "CC0",
+      "author": "loafbrr"
+    },
+    {
+      "id": "pedestal_sink",
+      "label": "Раковина на пьедестале",
+      "category": "bathroom",
+      "file": "/assets/models/pedestal_sink/pedestal_sink.gltf",
+      "thumbnail": "/assets/models/pedestal_sink/thumb.jpg",
+      "sizeBytes": 23239,
+      "dimensions": {
+        "width": 0.5,
+        "height": 0.855,
+        "depth": 0.305
+      },
+      "triangles": 718,
+      "source": "https://opengameart.org/content/toilets",
+      "license": "CC0",
+      "author": "loafbrr"
+    },
+    {
+      "id": "wall_sink",
+      "label": "Раковина подвесная",
+      "category": "bathroom",
+      "file": "/assets/models/wall_sink/wall_sink.gltf",
+      "thumbnail": "/assets/models/wall_sink/thumb.jpg",
+      "sizeBytes": 20015,
+      "dimensions": {
+        "width": 0.5,
+        "height": 0.326,
+        "depth": 0.305
+      },
+      "triangles": 606,
+      "source": "https://opengameart.org/content/toilets",
+      "license": "CC0",
+      "author": "loafbrr"
+    },
+    {
+      "id": "kitchen_base_120",
+      "label": "Кухонный модуль 120 см",
+      "category": "kitchen",
+      "file": "/assets/models/kitchen_base_120/kitchen_base_120.gltf",
+      "thumbnail": "/assets/models/kitchen_base_120/thumb.jpg",
+      "sizeBytes": 423914,
+      "dimensions": {
+        "width": 1.2,
+        "height": 0.92,
+        "depth": 0.62
+      },
+      "triangles": 4116,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "kitchen_sink_120",
+      "label": "Кухонный модуль с мойкой",
+      "category": "kitchen",
+      "file": "/assets/models/kitchen_sink_120/kitchen_sink_120.gltf",
+      "thumbnail": "/assets/models/kitchen_sink_120/thumb.jpg",
+      "sizeBytes": 678164,
+      "dimensions": {
+        "width": 1.2,
+        "height": 1.312,
+        "depth": 0.62
+      },
+      "triangles": 8212,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "kitchen_hob_oven_60",
+      "label": "Модуль с варочной панелью и духовкой",
+      "category": "kitchen",
+      "file": "/assets/models/kitchen_hob_oven_60/kitchen_hob_oven_60.gltf",
+      "thumbnail": "/assets/models/kitchen_hob_oven_60/thumb.jpg",
+      "sizeBytes": 691545,
+      "dimensions": {
+        "width": 0.6,
+        "height": 0.928,
+        "depth": 0.64
+      },
+      "triangles": 7428,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "kitchen_island",
+      "label": "Кухонный остров",
+      "category": "kitchen",
+      "file": "/assets/models/kitchen_island/kitchen_island.gltf",
+      "thumbnail": "/assets/models/kitchen_island/thumb.jpg",
+      "sizeBytes": 2482525,
+      "dimensions": {
+        "width": 2.4,
+        "height": 0.92,
+        "depth": 1.018
+      },
+      "triangles": 7644,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "fridge_french_door",
+      "label": "Холодильник French Door",
+      "category": "kitchen",
+      "file": "/assets/models/fridge_french_door/fridge_french_door.gltf",
+      "thumbnail": "/assets/models/fridge_french_door/thumb.jpg",
+      "sizeBytes": 618027,
+      "dimensions": {
+        "width": 0.91,
+        "height": 1.78,
+        "depth": 0.771
+      },
+      "triangles": 6132,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "bathtub_freestanding",
+      "label": "Ванна отдельностоящая",
+      "category": "bathroom",
+      "file": "/assets/models/bathtub_freestanding/bathtub_freestanding.gltf",
+      "thumbnail": "/assets/models/bathtub_freestanding/thumb.jpg",
+      "sizeBytes": 111134,
+      "dimensions": {
+        "width": 1.86,
+        "height": 0.974,
+        "depth": 0.81
+      },
+      "triangles": 4000,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "shower_walk_in",
+      "label": "Душевое ограждение",
+      "category": "bathroom",
+      "file": "/assets/models/shower_walk_in/shower_walk_in.gltf",
+      "thumbnail": "/assets/models/shower_walk_in/thumb.jpg",
+      "sizeBytes": 373882,
+      "dimensions": {
+        "width": 1.2,
+        "height": 2.119,
+        "depth": 0.9
+      },
+      "triangles": 5236,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "vanity_walnut",
+      "label": "Тумба с раковиной",
+      "category": "bathroom",
+      "file": "/assets/models/vanity_walnut/vanity_walnut.gltf",
+      "thumbnail": "/assets/models/vanity_walnut/thumb.jpg",
+      "sizeBytes": 2173342,
+      "dimensions": {
+        "width": 1.02,
+        "height": 1.053,
+        "depth": 0.546
+      },
+      "triangles": 7144,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "washing_machine",
+      "label": "Стиральная машина",
+      "category": "appliances",
+      "file": "/assets/models/washing_machine/washing_machine.gltf",
+      "thumbnail": "/assets/models/washing_machine/thumb.jpg",
+      "sizeBytes": 336920,
+      "dimensions": {
+        "width": 0.6,
+        "height": 0.85,
+        "depth": 0.614
+      },
+      "triangles": 5340,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "bed_upholstered",
+      "label": "Кровать с мягким изголовьем",
+      "category": "bedroom",
+      "file": "/assets/models/bed_upholstered/bed_upholstered.gltf",
+      "thumbnail": "/assets/models/bed_upholstered/thumb.jpg",
+      "sizeBytes": 2697859,
+      "dimensions": {
+        "width": 1.96,
+        "height": 1.18,
+        "depth": 2.17
+      },
+      "triangles": 10584,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "nightstand_walnut",
+      "label": "Прикроватная тумба (орех)",
+      "category": "bedroom",
+      "file": "/assets/models/nightstand_walnut/nightstand_walnut.gltf",
+      "thumbnail": "/assets/models/nightstand_walnut/thumb.jpg",
+      "sizeBytes": 2035929,
+      "dimensions": {
+        "width": 0.55,
+        "height": 0.52,
+        "depth": 0.451
+      },
+      "triangles": 3580,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "dining_table_walnut",
+      "label": "Обеденный стол (орех)",
+      "category": "tables",
+      "file": "/assets/models/dining_table_walnut/dining_table_walnut.gltf",
+      "thumbnail": "/assets/models/dining_table_walnut/thumb.jpg",
+      "sizeBytes": 2300708,
+      "dimensions": {
+        "width": 2.2,
+        "height": 0.76,
+        "depth": 1
+      },
+      "triangles": 5880,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "rug_wool",
+      "label": "Ковёр шерстяной",
+      "category": "decor",
+      "file": "/assets/models/rug_wool/rug_wool.gltf",
+      "thumbnail": "/assets/models/rug_wool/thumb.jpg",
+      "sizeBytes": 2049626,
+      "dimensions": {
+        "width": 3,
+        "height": 0.012,
+        "depth": 2
+      },
+      "triangles": 588,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "rug_round_boucle",
+      "label": "Ковёр круглый букле",
+      "category": "decor",
+      "file": "/assets/models/rug_round_boucle/rug_round_boucle.gltf",
+      "thumbnail": "/assets/models/rug_round_boucle/thumb.jpg",
+      "sizeBytes": 1288600,
+      "dimensions": {
+        "width": 2,
+        "height": 0.012,
+        "depth": 2
+      },
+      "triangles": 384,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "floor_lamp_drum",
+      "label": "Торшер",
+      "category": "lighting",
+      "file": "/assets/models/floor_lamp_drum/floor_lamp_drum.gltf",
+      "thumbnail": "/assets/models/floor_lamp_drum/thumb.jpg",
+      "sizeBytes": 955657,
+      "dimensions": {
+        "width": 0.5,
+        "height": 1.65,
+        "depth": 0.5
+      },
+      "triangles": 704,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "floor_mirror_arch",
+      "label": "Напольное зеркало",
+      "category": "decor",
+      "file": "/assets/models/floor_mirror_arch/floor_mirror_arch.gltf",
+      "thumbnail": "/assets/models/floor_mirror_arch/thumb.jpg",
+      "sizeBytes": 1862716,
+      "dimensions": {
+        "width": 0.84,
+        "height": 1.932,
+        "depth": 0.22
+      },
+      "triangles": 1597,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "tv_65",
+      "label": "Телевизор 65″",
+      "category": "appliances",
+      "file": "/assets/models/tv_65/tv_65.gltf",
+      "thumbnail": "/assets/models/tv_65/thumb.jpg",
+      "sizeBytes": 243818,
+      "dimensions": {
+        "width": 1.45,
+        "height": 0.92,
+        "depth": 0.26
+      },
+      "triangles": 2364,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
     }
   ]
 }
