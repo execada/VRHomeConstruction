@@ -1,6 +1,6 @@
 /**
- * Свойства проёма: тип (окно/дверь), ширина, высота, отступ от пола,
- * положение вдоль стены, удаление.
+ * Свойства проёма: тип (окно/дверь), дверь в проёме (модель, открывание, петли, цвет),
+ * ширина, высота, отступ от пола (0 — панорамное окно), положение вдоль стены, удаление.
  * @module widgets/editor-inspector/ui/OpeningInspector
  */
 
@@ -10,6 +10,7 @@ import { isWallSide, WALL_LABELS } from '@/features/editor-3d/lib/walls';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import type { Opening } from '@/features/editor-3d/types';
 import { Button, FieldRow, NumberField, Section, Segmented } from '@/shared/ui/controls';
+import { DoorEditor } from './DoorEditor';
 import { InspectorHeader } from './InspectorHeader';
 
 const TYPE_OPTIONS = [
@@ -24,14 +25,20 @@ export const OpeningInspector: React.FC<{ hostId: string; opening: Opening }> = 
   if (!host) return null;
   const [uMin, uMax] = openingCenterRange(opening.width, host);
   const [sMin, sMax] = openingSillRange(opening, host);
-  const where = isWallSide(hostId) ? `${WALL_LABELS[hostId]} стена` : 'Перегородка';
+  const where = isWallSide(hostId) ? `${WALL_LABELS[hostId]} стена` : 'Внутренняя стена';
+  const title = opening.type === 'window' ? 'Окно' : opening.door ? 'Дверь' : 'Дверной проём';
 
   return (
     <>
-      <InspectorHeader icon={opening.type === 'window' ? 'window' : 'door'} title={opening.type === 'window' ? 'Окно' : 'Дверь'} subtitle={where} />
+      <InspectorHeader icon={opening.type === 'window' ? 'window' : 'door'} title={title} subtitle={where} />
       <Section title="Тип">
         <Segmented ariaLabel="Тип проёма" options={TYPE_OPTIONS} value={opening.type} onChange={(type) => o.setType(hostId, opening.id, type)} />
       </Section>
+      {opening.type === 'door' && (
+        <Section title="Дверь">
+          <DoorEditor hostId={hostId} opening={opening} />
+        </Section>
+      )}
       <Section title="Размер проёма">
         <FieldRow>
           <NumberField label="Ширина" unit="см" scale={100} precision={0} min={OPENING_LIMITS.minWidth} max={host.length} value={opening.width} onChange={(width) => o.resize(hostId, opening.id, { width })} />

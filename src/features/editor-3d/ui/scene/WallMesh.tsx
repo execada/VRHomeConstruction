@@ -48,7 +48,7 @@ const DraggableOpening: React.FC<{ side: WallSide; frame: WallFrame; opening: Op
   selected,
 }) => {
   const handlers = useOpeningDrag(side, frame, opening);
-  return <OpeningMesh opening={opening} thickness={thickness} selected={selected} {...handlers} />;
+  return <OpeningMesh opening={opening} thickness={thickness} wallHeight={frame.height} selected={selected} {...handlers} />;
 };
 
 export const WallMesh: React.FC<WallMeshProps> = memo(

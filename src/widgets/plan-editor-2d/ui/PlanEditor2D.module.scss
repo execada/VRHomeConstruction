@@ -119,6 +119,12 @@
   pointer-events: none;
 }
 
+.doorLeaf {
+  stroke: var(--text-2);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
 .windowLine {
   stroke: var(--accent-3);
   stroke-width: 1.5;

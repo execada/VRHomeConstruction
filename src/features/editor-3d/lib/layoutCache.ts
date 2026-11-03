@@ -4,7 +4,9 @@
  * @module editor-3d/lib/layoutCache
  */
 
+import type { Obb } from '@/shared/lib/math/geometry2d';
 import { detectRooms, type DetectedRoom } from './rooms';
+import { walkObstacles, type WalkScene } from './walkObstacles';
 import { analyzeWalls, type WallLayout } from './wallJoints';
 import type { Partition, RoomDimensions } from '../types';
 
@@ -24,3 +26,21 @@ export const cachedWallLayout: (dims: RoomDimensions, partitions: Partition[]) =
 
 /** Помещения текущей планировки. */
 export const cachedRooms: (dims: RoomDimensions, partitions: Partition[]) => DetectedRoom[] = memoLast(detectRooms);
+
+let lastWalk: { scene: WalkScene; value: Obb[] } | null = null;
+
+/** Препятствия стен и дверей для хождения (пересчёт только при изменении стен и проёмов). */
+export function cachedWalkObstacles(scene: WalkScene): Obb[] {
+  const prev = lastWalk?.scene;
+  const same =
+    prev &&
+    prev.dimensions === scene.dimensions &&
+    prev.outerWalls === scene.outerWalls &&
+    prev.removedWalls === scene.removedWalls &&
+    prev.openings === scene.openings &&
+    prev.partitions === scene.partitions;
+  if (same && lastWalk) return lastWalk.value;
+  const value = walkObstacles(scene, cachedWallLayout(scene.dimensions, scene.partitions));
+  lastWalk = { scene, value };
+  return value;
+}

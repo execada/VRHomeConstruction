@@ -1,18 +1,24 @@
 /**
- * Наполнение проёма: окно (рама, импосты, стекло, подоконник) или дверь (коробка, полотно, ручка).
- * Рисуется в локальной системе стены; стекло не отбрасывает тень, поэтому солнце проходит внутрь.
+ * Наполнение проёма: окно (рама, импосты, стекло, подоконник; панорамное — без подоконника)
+ * или дверь (коробка, наличники, полотна на петлях — см. DoorMesh). Пустой дверной проём
+ * остаётся открытым. Рисуется в локальной системе стены; стекло не отбрасывает тень,
+ * поэтому солнце проходит внутрь.
  * @module editor-3d/ui/scene/OpeningMesh
  */
 
 import React, { memo } from 'react';
 import { Edges } from '@react-three/drei';
+import { openingSill } from '../../lib/openings';
 import type { Opening } from '../../types';
+import { DoorMesh } from './DoorMesh';
 import { HELPER_DATA, NO_RAYCAST, type ScenePointerEvent } from './pointer';
 
 interface OpeningMeshProps {
   opening: Opening;
   /** Толщина стены, м */
   thickness: number;
+  /** Высота стены, м */
+  wallHeight: number;
   selected: boolean;
   onPointerDown?: (e: ScenePointerEvent) => void;
   onPointerMove?: (e: ScenePointerEvent) => void;
@@ -22,8 +28,9 @@ interface OpeningMeshProps {
 
 const FRAME = 0.06;
 const FRAME_COLOR = '#f4f1ec';
-const DOOR_COLOR = '#c8b49a';
 const SELECTED = '#c9a96e';
+/** Ниже этой высоты окно панорамное — подоконника нет. */
+const MIN_SILL_BOARD = 0.05;
 
 /** Брусок рамы (бросает тень, при срезе стены скрывается). */
 const Bar: React.FC<{ size: [number, number, number]; pos: [number, number, number]; color?: string }> = ({
@@ -54,32 +61,18 @@ const WindowFill: React.FC<{ opening: Opening; thickness: number }> = ({ opening
         <planeGeometry args={[w - FRAME, h - FRAME]} />
         <meshStandardMaterial color="#cfe3f0" transparent opacity={0.16} roughness={0.05} metalness={0.1} depthWrite={false} />
       </mesh>
-      <Bar size={[w + 0.1, 0.035, thickness / 2 + 0.08]} pos={[0, -h / 2 - 0.0175, thickness / 4 + 0.04]} color="#ece7df" />
-    </>
-  );
-};
-
-const DoorFill: React.FC<{ opening: Opening; thickness: number }> = ({ opening, thickness }) => {
-  const { width: w, height: h } = opening;
-  const casing = thickness + 0.02;
-  return (
-    <>
-      <Bar size={[FRAME, h, casing]} pos={[-w / 2 + FRAME / 2, 0, 0]} />
-      <Bar size={[FRAME, h, casing]} pos={[w / 2 - FRAME / 2, 0, 0]} />
-      <Bar size={[w, FRAME, casing]} pos={[0, h / 2 - FRAME / 2, 0]} />
-      <Bar size={[w - FRAME * 2, h - FRAME, 0.04]} pos={[0, -FRAME / 2, 0]} color={DOOR_COLOR} />
-      <mesh position={[w / 2 - FRAME - 0.09, -h / 2 + 1.0, 0.04]} rotation={[Math.PI / 2, 0, 0]} castShadow userData={{ hideOnCut: true }}>
-        <cylinderGeometry args={[0.012, 0.012, 0.12, 12]} />
-        <meshStandardMaterial color="#8c8f94" metalness={0.8} roughness={0.3} />
-      </mesh>
+      {openingSill(opening) >= MIN_SILL_BOARD && (
+        <Bar size={[w + 0.1, 0.035, thickness / 2 + 0.08]} pos={[0, -h / 2 - 0.0175, thickness / 4 + 0.04]} color="#ece7df" />
+      )}
     </>
   );
 };
 
 /** Проём в локальной системе стены (u, y — центр проёма). */
-export const OpeningMesh: React.FC<OpeningMeshProps> = memo(({ opening, thickness, selected, ...handlers }) => (
+export const OpeningMesh: React.FC<OpeningMeshProps> = memo(({ opening, thickness, wallHeight, selected, ...handlers }) => (
   <group position={[opening.position[0], opening.position[1], 0]} {...handlers}>
-    {opening.type === 'window' ? <WindowFill opening={opening} thickness={thickness} /> : <DoorFill opening={opening} thickness={thickness} />}
+    {opening.type === 'window' && <WindowFill opening={opening} thickness={thickness} />}
+    {opening.type === 'door' && opening.door && <DoorMesh opening={opening} door={opening.door} thickness={thickness} wallHeight={wallHeight} />}
     {/* Невидимая «ручка» для выбора: весь проём кликабелен */}
     <mesh userData={{ hideOnCut: true }}>
       <boxGeometry args={[opening.width, opening.height, thickness + 0.04]} />

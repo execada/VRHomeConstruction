@@ -41,7 +41,7 @@ const PartitionOpening: React.FC<{ partition: Partition; frame: WallFrame; openi
   selected,
 }) => {
   const handlers = useOpeningDrag(partition.id, frame, opening);
-  return <OpeningMesh opening={opening} thickness={partition.size[2]} selected={selected} {...handlers} />;
+  return <OpeningMesh opening={opening} thickness={partition.size[2]} wallHeight={partition.size[1]} selected={selected} {...handlers} />;
 };
 
 export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, shape, fallbackFinish, selected, selectedOpeningId }) => {
