@@ -15,7 +15,8 @@ async function viewportCenter(page: Page): Promise<{ x: number; y: number }> {
 test('мебель встаёт на пол, отмена/повтор, 2D и автосохранение', async ({ page }) => {
   await useLowGraphics(page);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Новый проект' }).click();
+  // У пустого аккаунта (как в CI) есть ещё кнопка в пустом состоянии — берём кнопку «+» в шапке вкладок.
+  await page.getByRole('button', { name: 'Новый проект' }).first().click();
   await page.getByRole('dialog', { name: 'Выбор стартового шаблона' }).getByRole('button', { name: /Пустой проект/ }).click();
   await waitForScene(page);
   const id = projectIdFromUrl(page);

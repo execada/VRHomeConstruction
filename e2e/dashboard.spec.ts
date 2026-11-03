@@ -28,7 +28,8 @@ test('проект из шаблона: избранное, теги, поиск
   await useLowGraphics(page);
   await page.goto('/');
 
-  await page.getByRole('button', { name: 'Новый проект' }).click();
+  // У пустого аккаунта (как в CI) есть ещё кнопка в пустом состоянии — берём кнопку «+» в шапке вкладок.
+  await page.getByRole('button', { name: 'Новый проект' }).first().click();
   await page.getByRole('dialog', { name: 'Выбор стартового шаблона' }).getByRole('button', { name: /Готовый макет/ }).click();
   await page.getByRole('dialog', { name: 'Готовые макеты' }).getByRole('button', { name: 'Создать проект из шаблона «Кабинет»' }).click();
   await waitForScene(page);
