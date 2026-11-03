@@ -33,6 +33,8 @@ export interface SupportSurface {
   area: Obb;
   /** Свободная высота над поверхностью (до полки выше или потолка), м */
   clearance: number;
+  /** Сверху у опоры ничего нет (столешница, верх стеллажа) — в отличие от полки под другой полкой */
+  openTop: boolean;
 }
 
 /** Предпочтительная поверхность: опора и высота уровня (например, где предмет стоит сейчас). */
@@ -76,6 +78,7 @@ function toWorld(support: FurnitureItem, surface: ModelSurface, ceiling: number)
       angle,
     },
     clearance: Math.min(surface.clearance * s, ceiling - y),
+    openTop: !Number.isFinite(surface.clearance),
   };
 }
 
@@ -147,25 +150,69 @@ export function surfaceAtPoint(
   return under.length > 0 ? rank(under, height, prefer)[0] : null;
 }
 
+/** Где луч входит в пространство над поверхностью и где на ней встанет предмет (параметры луча). */
+interface RaySpan {
+  enter: number;
+  rest: number;
+}
+
+/** Луч достигает открытой сверху поверхности внутри её прямоугольника. */
+function rayToOpenTop(ray: Ray3, surface: SupportSurface): RaySpan | null {
+  const dy = ray.direction[1];
+  if (dy >= -1e-9) return null;
+  const t = (surface.y - ray.origin[1]) / dy;
+  const point: Vec2 = [ray.origin[0] + ray.direction[0] * t, ray.origin[2] + ray.direction[2] * t];
+  return t > 0 && pointInObb(point, surface.area) ? { enter: t, rest: t } : null;
+}
+
 /**
- * Поверхность, на которую указывает луч: ближайшая вдоль луча, увиденная сверху
- * (луч сквозь проём стеллажа попадает на полку, на которую смотрит пользователь).
- * @returns поверхность и точка попадания на плане или null
+ * Луч входит в пространство полки — между ней и полкой выше (метод плит в системе координат
+ * поверхности): через проём ячейки, в том числе упираясь в её заднюю стенку. Снизу сквозь
+ * саму полку не входит.
+ */
+function rayIntoShelf(ray: Ray3, surface: SupportSurface): RaySpan | null {
+  const { center, half, angle } = surface.area;
+  const o = toLocal(sub2([ray.origin[0], ray.origin[2]], center), angle);
+  const d = toLocal([ray.direction[0], ray.direction[2]], angle);
+  const slabs: ReadonlyArray<readonly [number, number, number, number]> = [
+    [o[0], d[0], -half[0], half[0]],
+    [ray.origin[1], ray.direction[1], surface.y, surface.y + surface.clearance],
+    [o[1], d[1], -half[1], half[1]],
+  ];
+  const span = slabs.reduce(
+    (acc, [p, v, lo, hi], axis) => {
+      if (Math.abs(v) < 1e-12) return p < lo || p > hi ? { ...acc, exit: -Infinity } : acc;
+      const [near, far] = [(lo - p) / v, (hi - p) / v].sort((a, b) => a - b);
+      return { enter: Math.max(acc.enter, near), exit: Math.min(acc.exit, far), axis: near > acc.enter ? axis : acc.axis };
+    },
+    { enter: -Infinity, exit: Infinity, axis: -1 },
+  );
+  if (!Number.isFinite(span.exit) || span.exit < Math.max(span.enter, 0)) return null;
+  if (span.axis === 1 && ray.direction[1] > 0 && span.enter >= 0) return null;
+  const enter = Math.max(span.enter, 0);
+  const plane = ray.direction[1] < 0 ? (surface.y - ray.origin[1]) / ray.direction[1] : Infinity;
+  return { enter, rest: plane >= enter && plane <= span.exit ? plane : span.exit };
+}
+
+/**
+ * Поверхность, на которую указывает луч: первая вдоль луча. Открытую столешницу луч должен
+ * достать, а в полку под другой полкой достаточно направить его через проём (даже в заднюю
+ * стенку ячейки); контроллер VR ниже полки может целиться в неё снизу вверх. Из вариантов
+ * одного уровня опоры выбирается тот, где предмет помещается (у ТВ-тумбы — не под экраном).
+ * @returns поверхность и точка на плане, куда встанет предмет, или null
  */
 export function surfaceByRay(surfaces: readonly SupportSurface[], ray: Ray3, height: number): { surface: SupportSurface; point: Vec2 } | null {
-  const [ox, oy, oz] = ray.origin;
-  const [dx, dy, dz] = ray.direction;
-  if (dy >= -1e-9) return null;
   const hits = surfaces.flatMap((surface) => {
-    const t = (surface.y - oy) / dy;
-    const point: Vec2 = [ox + dx * t, oz + dz * t];
-    return t > 0 && pointInObb(point, surface.area) ? [{ surface, point, t }] : [];
+    const span = surface.openTop ? rayToOpenTop(ray, surface) : rayIntoShelf(ray, surface);
+    if (!span) return [];
+    const point: Vec2 = [ray.origin[0] + ray.direction[0] * span.rest, ray.origin[2] + ray.direction[2] * span.rest];
+    return [{ surface, point, t: span.enter }];
   });
   if (hits.length === 0) return null;
-  const nearest = Math.min(...hits.map((h) => h.t));
-  const sameLevel = hits.filter((h) => h.t - nearest < 1e-6);
-  const best = rank(sameLevel.map((h) => h.surface), height, null)[0];
-  const hit = sameLevel.find((h) => h.surface === best)!;
+  const first = hits.reduce((a, b) => (b.t < a.t ? b : a));
+  const level = hits.filter((h) => h.surface.supportId === first.surface.supportId && Math.abs(h.surface.y - first.surface.y) < SAME_LEVEL);
+  const best = rank(level.map((h) => h.surface), height, null)[0];
+  const hit = level.find((h) => h.surface === best) ?? first;
   return { surface: hit.surface, point: hit.point };
 }
 

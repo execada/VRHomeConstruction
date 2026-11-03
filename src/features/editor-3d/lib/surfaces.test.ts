@@ -60,9 +60,11 @@ describe('supportSurfaces', () => {
     expect(surfaces[0].area.center[1]).toBeCloseTo(-1.4);
   });
 
-  it('limits the free height by the ceiling', () => {
+  it('limits the free height by the ceiling but keeps the top open for aiming', () => {
     const [top] = supportSurfaces(item('wardrobe', { height: 2.2 }), undefined, 2.7);
     expect(top.clearance).toBeCloseTo(0.5);
+    expect(top.openTop).toBe(true);
+    expect(supportSurfaces(item('shelf'), shelfLevels, 2.7).map((s) => s.openTop)).toEqual([true, false, false]);
   });
 });
 
@@ -77,14 +79,37 @@ describe('picking a surface', () => {
     expect(fromAbove?.point[0]).toBeCloseTo(0);
   });
 
-  it('ignores rays that look up or miss every surface', () => {
-    expect(surfaceByRay(shelves, { origin: [0, 0.3, 2], direction: [0, 0.5, -1] }, 0.2)).toBeNull();
+  it('targets the space above a shelf: pointing at the back of a cubby picks that cubby', () => {
+    // Луч упирается в заднюю стенку ячейки над полкой 0.52, не доходя до её плоскости.
+    const atBack = surfaceByRay(shelves, { origin: [0, 0.8, 2], direction: [0, -0.05, -1] }, 0.2);
+    expect(atBack?.surface.y).toBeCloseTo(0.52);
+    expect(atBack?.point[1]).toBeCloseTo(-0.15);
+  });
+
+  it('lets a controller below a shelf aim up into it, but not through the board from underneath', () => {
+    const up = surfaceByRay(shelves, { origin: [0, 0.3, 2], direction: [0, 0.5, -1] }, 0.2);
+    expect(up?.surface.y).toBeCloseTo(0.92);
+    expect(surfaceByRay(shelves, { origin: [0, 0.05, 0], direction: [0, 1, 0] }, 0.2)).toBeNull();
+  });
+
+  it('passes over an open desk in front of the bookcase instead of sticking to its edge', () => {
+    // Стол 1.4 × 0.7 высотой 0.75 перед стеллажом (стеллаж — в начале координат, стол — ближе к камере);
+    // потолок ограничивает свободную высоту, но верх стола остаётся открытым.
+    const desk = supportSurfaces(item('desk', { position: [0, 0, 0.8] }), undefined, 2.7);
+    const overDesk = surfaceByRay([...desk, ...shelves], { origin: [0, 1.6, 2.5], direction: [0, -0.5, -1.25] }, 0.2);
+    // Луч проходит над краем стола (на высоте столешницы он уже за ним) и входит в ячейку на высоте 0.66.
+    expect(overDesk?.surface.supportId).toBe('shelf');
+    expect(overDesk?.surface.y).toBeCloseTo(0.52);
+  });
+
+  it('ignores rays that miss every surface', () => {
     expect(surfaceByRay(shelves, { origin: [3, 3, 0], direction: [0, -1, 0] }, 0.2)).toBeNull();
+    expect(surfaceByRay(shelves, { origin: [0, 0.3, 2], direction: [0, 0, 0] }, 0.2)).toBeNull();
   });
 
   it('prefers the variant of a level where the item fits', () => {
-    const low: SupportSurface = { supportId: 'tv', y: 0.4, area: { center: [0, 0], half: [0.7, 0.2], angle: 0 }, clearance: 0.06 };
-    const open: SupportSurface = { ...low, area: { center: [0, 0.1], half: [0.7, 0.1], angle: 0 }, clearance: Infinity };
+    const low: SupportSurface = { supportId: 'tv', y: 0.4, area: { center: [0, 0], half: [0.7, 0.2], angle: 0 }, clearance: 0.06, openTop: false };
+    const open: SupportSurface = { ...low, area: { center: [0, 0.1], half: [0.7, 0.1], angle: 0 }, clearance: 2.3, openTop: true };
     expect(surfaceByRay([low, open], { origin: [0, 2, 0.1], direction: [0, -1, 0] }, 0.3)?.surface).toBe(open);
     expect(surfaceAtPoint([low, open], [0, 0.1], 0.3, null)).toBe(open);
   });

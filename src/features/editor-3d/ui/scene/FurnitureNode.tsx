@@ -116,6 +116,11 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
           setHovered(true);
         }}
         onPointerOut={() => setHovered(false)}
+        onClick={(e) => {
+          // Клик по предмету не «проваливается» к полу или стене за ним (иначе выделение
+          // переходило на них). При размещении из каталога клик нужен плоскости размещения.
+          if (interactionStore.getState().mode !== 'placing') e.stopPropagation();
+        }}
       >
         <group scale={item.scale}>
           <NormalizedModel path={item.modelPath} look={look} onMeasured={onMeasured} measureSurfaces={isSupport} />

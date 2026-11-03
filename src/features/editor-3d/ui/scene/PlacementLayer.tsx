@@ -2,7 +2,8 @@
  * Размещение модели из каталога: полупрозрачный «призрак» следует за курсором по полу,
  * сразу «прижат» к полу и к ближайшей стене, краснеет, если места нет. Небольшие предметы
  * (лампа, ваза, книги) встают на столешницу или полку, на которую указывает курсор.
- * Клик ставит предмет; Shift+клик — поставить и продолжить; Esc — отмена; R — поворот.
+ * Клик ставит предмет туда, где стоит призрак (обрабатывает вьюпорт, см. SceneViewport);
+ * Shift+клик — поставить и продолжить; Esc — отмена; R — поворот.
  * @module editor-3d/ui/scene/PlacementLayer
  */
 
@@ -13,7 +14,7 @@ import { useExternalStore } from '@/shared/lib/externalStore';
 import { selectors as editorSelectors } from '../../selectors';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { interaction, interactionStore } from '../../model/interactionStore';
-import { HELPER_DATA, isClick, rayToFloor, toRay3, type SceneMouseEvent, type ScenePointerEvent } from './pointer';
+import { HELPER_DATA, rayToFloor, toRay3, type ScenePointerEvent } from './pointer';
 
 const GHOST_LOOK = { ghost: true };
 const INVALID_LOOK = { ghost: true, invalid: true };
@@ -30,19 +31,9 @@ const PlacementSurface: React.FC<{ path: string }> = ({ path }) => {
     if (hit) interaction.setGhost(commands.furniture.previewPlacement(path, hit, placingAngle, options));
   };
 
-  const commit = (e: SceneMouseEvent) => {
-    if (!isClick(e)) return;
-    e.stopPropagation();
-    const state = interactionStore.getState();
-    if (!state.ghost) return;
-    const { center, angle, supportId, elevation } = state.ghost;
-    const id = commands.furniture.place(path, state.placingName ?? '', center, angle, { supportId, elevation });
-    if (id && !e.shiftKey) interaction.reset();
-  };
-
   return (
     <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} onPointerMove={update} onClick={commit}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} onPointerMove={update}>
         <planeGeometry args={[dims.width + 8, dims.depth + 8]} />
         <meshBasicMaterial visible={false} />
       </mesh>

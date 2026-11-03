@@ -14,6 +14,7 @@ import { furnitureSizesCache } from '@/features/furniture/sizesCache';
 import { surfacesStore } from '@/features/furniture/surfacesCache';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { useExternalStore } from '@/shared/lib/externalStore';
+import { pointInObb, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { selectors as editorSelectors } from '../../selectors';
 import { interactionStore } from '../../model/interactionStore';
 import { itemSizes } from '../../lib/placement';
@@ -44,12 +45,14 @@ function useSubject(): FurnitureItem | null {
   }, [mode, path, name, activeId, items]);
 }
 
-/** Где предмет сейчас: опора и высота (у призрака — его поверхность). */
-function useActiveSurface(subject: FurnitureItem | null): { supportId: string | null; y: number } {
+/** Где предмет сейчас: опора, высота и центр на плане (у призрака — его поверхность). */
+function useActiveSurface(subject: FurnitureItem | null): { supportId: string | null; y: number; center: Vec2 } {
   const ghostSupport = useExternalStore(interactionStore, (s) => s.ghost?.supportId ?? null);
   const ghostY = useExternalStore(interactionStore, (s) => s.ghost?.elevation ?? 0);
-  if (subject?.id === '__hint__') return { supportId: ghostSupport, y: ghostY };
-  return { supportId: subject?.supportId ?? null, y: subject?.position[1] ?? 0 };
+  const ghostX = useExternalStore(interactionStore, (s) => s.ghost?.center[0] ?? 0);
+  const ghostZ = useExternalStore(interactionStore, (s) => s.ghost?.center[1] ?? 0);
+  if (subject?.id === '__hint__') return { supportId: ghostSupport, y: ghostY, center: [ghostX, ghostZ] };
+  return { supportId: subject?.supportId ?? null, y: subject?.position[1] ?? 0, center: [subject?.position[0] ?? 0, subject?.position[2] ?? 0] };
 }
 
 const HintPlane: React.FC<{ surface: SupportSurface; active: boolean }> = ({ surface, active }) => (
@@ -78,7 +81,8 @@ export const SurfaceHints: React.FC = () => {
   }, [subject, items, measured, ceiling]);
 
   if (surfaces.length === 0) return null;
-  const isActive = (s: SupportSurface) => s.supportId === active.supportId && Math.abs(s.y - active.y) < SAME_LEVEL;
+  const isActive = (s: SupportSurface) =>
+    s.supportId === active.supportId && Math.abs(s.y - active.y) < SAME_LEVEL && pointInObb(active.center, s.area);
   return (
     <group userData={HELPER_DATA}>
       {surfaces.map((s) => (
