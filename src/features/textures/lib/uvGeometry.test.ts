@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Box3 } from 'three';
-import { boxWithUv, prismWithUv, roundedEndBox } from './uvGeometry';
+import { boxWithUv, prismWithUv } from './uvGeometry';
 
 describe('boxWithUv', () => {
   it('maps front faces to meters divided by tile size', () => {
@@ -27,22 +27,6 @@ describe('boxWithUv', () => {
         .map((i) => uv.getX(i));
     };
     expect(Math.max(...frontU(left))).toBeCloseTo(Math.min(...frontU(right)));
-  });
-});
-
-describe('roundedEndBox', () => {
-  it('falls back to a plain box without radius', () => {
-    expect(roundedEndBox([2, 2.7, 0.1], 0, { start: true, end: true }, [0, 0, 0], 1).type).toBe('BoxGeometry');
-  });
-
-  it('builds a centered extruded shape with the requested size', () => {
-    const geometry = roundedEndBox([2, 2.7, 0.2], 0.1, { start: true, end: true }, [0, 0, 0], 1);
-    const box = new Box3().setFromBufferAttribute(geometry.getAttribute('position') as never);
-    expect(box.max.x - box.min.x).toBeCloseTo(2);
-    expect(box.max.y - box.min.y).toBeCloseTo(2.7);
-    expect(box.max.z - box.min.z).toBeCloseTo(0.2);
-    expect(box.min.y).toBeCloseTo(-1.35);
-    expect(geometry.getAttribute('uv').count).toBe(geometry.getAttribute('position').count);
   });
 });
 

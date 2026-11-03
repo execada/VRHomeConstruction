@@ -5,7 +5,7 @@
  * @module textures/lib/uvGeometry
  */
 
-import { BoxGeometry, BufferAttribute, BufferGeometry, ExtrudeGeometry, Float32BufferAttribute, Shape, ShapeUtils, Vector2 } from 'three';
+import { BoxGeometry, BufferAttribute, BufferGeometry, Float32BufferAttribute, ShapeUtils, Vector2 } from 'three';
 
 type Vec3 = readonly [number, number, number];
 
@@ -51,46 +51,6 @@ export function applyBoxProjectionUv<T extends BufferGeometry>(geometry: T, offs
  */
 export function boxWithUv(size: Vec3, offset: Vec3, tile: number, topTile = tile): BoxGeometry {
   return applyBoxProjectionUv(new BoxGeometry(size[0], size[1], size[2]), offset, tile, topTile);
-}
-
-/**
- * Бокс со скруглёнными вертикальными рёбрами на концах (скругление углов перегородки).
- * @param size - [длина, высота, толщина]
- * @param radius - радиус скругления (≤ половины толщины)
- * @param ends - какие концы скруглять
- */
-export function roundedEndBox(
-  size: Vec3,
-  radius: number,
-  ends: { start: boolean; end: boolean },
-  offset: Vec3,
-  tile: number,
-  topTile = tile,
-): BufferGeometry {
-  const [length, height, thickness] = size;
-  const r = Math.max(0, Math.min(radius, thickness / 2, length / 2));
-  if (r < 1e-4 || (!ends.start && !ends.end)) return boxWithUv(size, offset, tile, topTile);
-
-  const hl = length / 2;
-  const ht = thickness / 2;
-  const rs = ends.start ? r : 0;
-  const re = ends.end ? r : 0;
-  const shape = new Shape();
-  shape.moveTo(-hl + rs, -ht);
-  shape.lineTo(hl - re, -ht);
-  if (re) shape.quadraticCurveTo(hl, -ht, hl, -ht + re);
-  shape.lineTo(hl, ht - re);
-  if (re) shape.quadraticCurveTo(hl, ht, hl - re, ht);
-  shape.lineTo(-hl + rs, ht);
-  if (rs) shape.quadraticCurveTo(-hl, ht, -hl, ht - rs);
-  shape.lineTo(-hl, -ht + rs);
-  if (rs) shape.quadraticCurveTo(-hl, -ht, -hl + rs, -ht);
-
-  const geometry = new ExtrudeGeometry(shape, { depth: height, bevelEnabled: false, curveSegments: 8 });
-  // Форма построена в плоскости XY и выдавлена по Z: поворачиваем так, чтобы высота шла по Y.
-  geometry.rotateX(-Math.PI / 2);
-  geometry.translate(0, -height / 2, 0);
-  return applyBoxProjectionUv(geometry, offset, tile, topTile);
 }
 
 type Point2 = readonly [number, number];
