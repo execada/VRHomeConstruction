@@ -76,6 +76,17 @@ export function carrySupported(before: readonly FurnitureItem[], after: readonly
 }
 
 /**
+ * Применить новые положения предметов не на опорах (досадка после перегородок, изменение
+ * размеров комнаты) и перенести предметы на опорах вместе с их опорами. Порядок сохраняется.
+ * @param before - вся мебель до изменения
+ * @param floor - новые положения предметов, стоящих не на опорах
+ */
+export function withCarried(before: readonly FurnitureItem[], floor: readonly FurnitureItem[]): FurnitureItem[] {
+  const moved = new Map(floor.map((i) => [i.id, i] as const));
+  return carrySupported(before, before.map((i) => moved.get(i.id) ?? i));
+}
+
+/**
  * Починить связи из недоверенного документа: опоры нет — предмет ставится на пол;
  * ссылка на себя или на предмет, который сам стоит на опоре, — связь снимается.
  */

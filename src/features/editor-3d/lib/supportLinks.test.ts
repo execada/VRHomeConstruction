@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { furnitureRole } from './supportRole';
-import { carrySupported, carryWith, inferSupportLinks, itemsOn, normalizeSupportLinks, repairSupportLinks, stackLevel, withoutSupport } from './supportLinks';
+import {
+  carrySupported,
+  carryWith,
+  inferSupportLinks,
+  itemsOn,
+  normalizeSupportLinks,
+  repairSupportLinks,
+  stackLevel,
+  withCarried,
+  withoutSupport,
+} from './supportLinks';
 
 const item = (id: string, extra: Partial<FurnitureItem> = {}): FurnitureItem => ({
   id,
@@ -51,6 +61,14 @@ describe('carrying items with their support', () => {
     expect(result[1].position[0]).toBeCloseTo(0.9);
     expect(result[3]).toBe(book);
     expect(carrySupported(before, before)).toEqual(before);
+  });
+
+  it('applies new floor positions and carries the items standing on moved supports', () => {
+    const chair = item('chair', { position: [2, 0, 2] });
+    const result = withCarried([desk, lamp, chair], [{ ...desk, position: [0, 0, 1] }, { ...chair, position: [1.5, 0, 2] }]);
+    expect(result.map((i) => i.id)).toEqual(['desk', 'lamp', 'chair']);
+    expect(result[1].position).toEqual([0.4, 0.75, 1.1]);
+    expect(result[2].position[0]).toBe(1.5);
   });
 
   it('lists items on a support and their stack level', () => {

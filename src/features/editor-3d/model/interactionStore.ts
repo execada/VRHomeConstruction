@@ -15,6 +15,10 @@ export interface PlacementGhost {
   center: Vec2;
   angle: number;
   valid: boolean;
+  /** Высота низа призрака: 0 — пол, иначе высота поверхности опоры */
+  elevation: number;
+  /** Опора, на поверхности которой стоит призрак (null — пол) */
+  supportId: string | null;
 }
 
 export interface InteractionState {
