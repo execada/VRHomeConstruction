@@ -73,3 +73,12 @@ export function textureThumbnail(def: TextureDef): string | null {
   thumbnailCache.set(def.id, url);
   return url;
 }
+
+/**
+ * Картинка для заливки узором (2D-план): карта цвета, а не превью — у текстур из манифеста
+ * превью бывает рендером шара. Процедурные текстуры отдают сгенерированную плитку.
+ * @param def - текстура каталога
+ */
+export function texturePatternImage(def: TextureDef): string | null {
+  return def.maps?.color ?? textureThumbnail(def);
+}

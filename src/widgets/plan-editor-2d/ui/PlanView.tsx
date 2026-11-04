@@ -9,7 +9,7 @@ import { useSelector } from 'react-redux';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { resolveTexture } from '@/features/textures/lib/catalog';
-import { textureThumbnail } from '@/features/textures/lib/textureCache';
+import { texturePatternImage } from '@/features/textures/lib/textureCache';
 import { selectTextureCatalog } from '@/features/textures/model/selectors';
 import { fitViewBox } from '../lib/plan';
 import { useSvgViewport } from '../model/useSvgInteraction';
@@ -28,7 +28,7 @@ const FloorFill: React.FC<{ width: number; depth: number }> = ({ width, depth })
   const finish = useSelector(editorSelectors.selectFinishes).floor;
   const catalog = useSelector(selectTextureCatalog);
   const def = resolveTexture(catalog, finish.textureId, 'floor');
-  const thumb = def ? textureThumbnail(def) : null;
+  const thumb = def ? texturePatternImage(def) : null;
   const tile = (def?.tileMeters ?? 1) * finish.scale;
   return (
     <>

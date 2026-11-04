@@ -8,7 +8,7 @@ vi.mock('three', async (importOriginal) => {
   return { ...actual, TextureLoader: class { loadAsync = loadAsync; } };
 });
 
-import { loadTexture, proceduralTexture, textureThumbnail } from './textureCache';
+import { loadTexture, proceduralTexture, texturePatternImage, textureThumbnail } from './textureCache';
 
 describe('loadTexture', () => {
   it('настраивает повтор и цветовое пространство; файл грузится один раз', async () => {
@@ -41,5 +41,18 @@ describe('процедурные текстуры без DOM', () => {
 
   it('готовое превью из каталога возвращается как есть', () => {
     expect(textureThumbnail({ ...def, thumbnail: '/t/thumb.jpg' })).toBe('/t/thumb.jpg');
+  });
+});
+
+describe('texturePatternImage', () => {
+  const base: TextureDef = { id: 'marble', label: 'Мрамор', category: 'floor', tileMeters: 1, roughness: 0.4 };
+
+  it('для текстуры из манифеста — карта цвета, а не превью (превью бывает рендером шара)', () => {
+    const def: TextureDef = { ...base, thumbnail: '/assets/textures/marble/thumb.jpg', maps: { color: '/assets/textures/marble/color.jpg' } };
+    expect(texturePatternImage(def)).toBe('/assets/textures/marble/color.jpg');
+  });
+
+  it('без карт — готовое превью', () => {
+    expect(texturePatternImage({ ...base, thumbnail: 'data:image/png;base64,AAAA' })).toBe('data:image/png;base64,AAAA');
   });
 });
