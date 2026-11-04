@@ -9,6 +9,7 @@ import { SelectionFeature } from '@/features/selection';
 import { sceneLoadActions } from '@/features/editor-3d/sceneActions';
 import { createEmptyScene } from '@/features/editor-3d/lib/scene/build';
 import type { FurnitureItem } from '@/features/furniture/types';
+import { interaction } from '@/features/editor-3d/model/interactionStore';
 import { HistoryFeature } from './index';
 import { SAME_TARGET_WINDOW_MS } from './lib/coalesce';
 
@@ -78,6 +79,31 @@ describe('history saga', () => {
 
     store.dispatch(HistoryFeature.actions.undoRequested());
     expect(store.getState().furniture.items[0].position[0]).toBe(0);
+  });
+
+  it('undoes a drag of a support with the items on it as one step, even with pauses', () => {
+    const store = setup();
+    const desk = { ...chair(0), id: 'desk', name: 'Письменный стол', modelPath: 'primitive:desk' };
+    const lamp = { ...chair(0.3), id: 'lamp', name: 'Настольная лампа', position: [0.3, 0.75, 0] as [number, number, number], supportId: 'desk' };
+    store.dispatch(furnitureActions.loadFurniture([desk, lamp]));
+    vi.advanceTimersByTime(SAME_TARGET_WINDOW_MS + 10);
+    interaction.startGesture('dragging', 'desk');
+    for (let i = 1; i <= 6; i += 1) {
+      vi.advanceTimersByTime(i === 3 ? SAME_TARGET_WINDOW_MS * 2 : 16);
+      const dx = i * 0.1;
+      store.dispatch(
+        furnitureActions.updateFurnitureItems({
+          id: 'desk',
+          items: [{ ...desk, position: [dx, 0, 0] }, { ...lamp, position: [0.3 + dx, 0.75, 0] }],
+        }),
+      );
+    }
+    interaction.reset();
+    expect(store.getState().history.past).toHaveLength(1);
+
+    store.dispatch(HistoryFeature.actions.undoRequested());
+    expect(store.getState().furniture.items.map((i) => i.position[0])).toEqual([0, 0.3]);
+    expect(store.getState().furniture.items[1].supportId).toBe('desk');
   });
 
   it('ignores UI-only actions and size measurements', () => {

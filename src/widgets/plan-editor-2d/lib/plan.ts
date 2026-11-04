@@ -7,6 +7,7 @@
 
 import { dot2, obbCorners, sub2, type Obb, type Rect, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { furnitureFootprint, itemSizes } from '@/features/editor-3d/lib/placement';
+import { stackLevel } from '@/features/editor-3d/lib/supportLinks';
 import type { WallFrame } from '@/features/editor-3d/lib/walls';
 import type { FurnitureItem } from '@/features/furniture/types';
 
@@ -65,8 +66,17 @@ export interface WallProjection {
 }
 
 /**
+ * Порядок отрисовки мебели на плане: ковры и низкие предметы снизу, предметы на поверхностях
+ * опор (лампа на столе, книги на полке) — поверх своих опор.
+ */
+export function planDrawOrder(items: readonly FurnitureItem[]): FurnitureItem[] {
+  return [...items].sort((a, b) => stackLevel(a) - stackLevel(b) || itemSizes(a).height - itemSizes(b).height);
+}
+
+/**
  * Мебель, стоящая у стены (ближе maxDepth), в проекции на её плоскость.
- * Отсортирована от дальних к ближним, чтобы ближние рисовались поверх.
+ * Отсортирована от дальних к ближним, чтобы ближние рисовались поверх;
+ * предметы на опорах — поверх своих опор (ваза на полке стеллажа не прячется за ним).
  */
 export function itemsNearWall(items: FurnitureItem[], frame: WallFrame, maxDepth: number): WallProjection[] {
   return items
@@ -78,7 +88,7 @@ export function itemsNearWall(items: FurnitureItem[], frame: WallFrame, maxDepth
       return { item, u0: Math.min(...us), u1: Math.max(...us), bottom, top: bottom + itemSizes(item).height, depth };
     })
     .filter((p) => p.depth < maxDepth && p.depth > -0.5)
-    .sort((a, b) => b.depth - a.depth);
+    .sort((a, b) => stackLevel(a.item) - stackLevel(b.item) || b.depth - a.depth);
 }
 
 /** Центр предмета после сдвига вдоль стены на du. */

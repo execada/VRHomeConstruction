@@ -1,6 +1,7 @@
 /**
- * Свойства предмета мебели: положение, поворот, высота над полом, масштаб,
- * тонирование, закрепление, дублирование и удаление.
+ * Свойства предмета мебели: положение, поворот, высота над полом, опора (на чём стоит
+ * предмет или сколько предметов стоит на нём), масштаб, тонирование, закрепление,
+ * дублирование и удаление.
  * @module widgets/editor-inspector/ui/FurnitureInspector
  */
 
@@ -8,13 +9,36 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { selectFurnitureCatalog } from '@/features/furniture/model/selectors';
+import { selectors as furnitureSelectors } from '@/features/furniture/selectors';
 import { catalogEntry, HEAVY_MODEL_BYTES } from '@/features/furniture/catalog';
 import { itemSizes } from '@/features/editor-3d/lib/placement';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
+import { pluralize } from '@/shared/lib/plural';
 import { Button, ColorField, FieldRow, IconButton, NumberField, Section, Slider, Toggle } from '@/shared/ui/controls';
 import { InspectorHeader, Readout } from './InspectorHeader';
 import { cm, toDegrees, toRadians } from '../lib/format';
 import styles from './EditorInspector.module.scss';
+
+/** Связь с опорой: на чём стоит предмет (и кнопка «на пол») или сколько предметов стоит на нём. */
+const SupportInfo: React.FC<{ item: FurnitureItem }> = ({ item }) => {
+  const commands = useSceneCommands();
+  const items = useSelector(furnitureSelectors.selectFurnitureItems);
+  const support = item.supportId ? items.find((i) => i.id === item.supportId) : undefined;
+  const carried = items.filter((i) => i.supportId === item.id).length;
+  if (support) {
+    return (
+      <>
+        <Readout label="Стоит на" value={support.name || 'опоре'} />
+        <div className={styles.actions}>
+          <Button size="sm" icon="download" disabled={item.locked} title="Снять с поверхности на пол рядом" onClick={() => commands.furniture.dropToFloor(item.id)}>
+            Поставить на пол
+          </Button>
+        </div>
+      </>
+    );
+  }
+  return carried > 0 ? <Readout label="На поверхности" value={pluralize(carried, ['предмет', 'предмета', 'предметов'])} /> : null;
+};
 
 export const FurnitureInspector: React.FC<{ item: FurnitureItem }> = ({ item }) => {
   const commands = useSceneCommands();
@@ -37,6 +61,7 @@ export const FurnitureInspector: React.FC<{ item: FurnitureItem }> = ({ item }) 
           <NumberField label="Z" unit="см" scale={100} precision={0} value={item.position[2]} disabled={item.locked} onChange={(z) => f.move(item.id, [item.position[0], z])} />
         </FieldRow>
         <NumberField label="Высота над полом" unit="см" scale={100} precision={0} min={0} value={item.position[1]} disabled={item.locked} onChange={(y) => f.setElevation(item.id, y)} />
+        <SupportInfo item={item} />
         <Slider
           label="Поворот"
           value={toDegrees(item.rotation[1])}

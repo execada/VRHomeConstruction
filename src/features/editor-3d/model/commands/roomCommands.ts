@@ -9,6 +9,7 @@ import { actions as furnitureActions } from '@/features/furniture/slice';
 import { WALL_THICKNESS_LIMITS } from '../../constants';
 import { anchorForDraggedWall, resizeRoom, type ResizeAnchor } from '../../lib/roomResize';
 import { SCENE_LIMITS } from '../../lib/scene/schema';
+import { withCarried } from '../../lib/supportLinks';
 import { actions as editorActions } from '../../slice';
 import type { FinishTarget, LightConfig, RoomDimensions, SurfaceFinish, WallSide } from '../../types';
 import type { CommandContext } from './context';
@@ -28,17 +29,20 @@ export function createRoomCommands(ctx: CommandContext) {
 
   /**
    * Изменить размеры комнаты. Проёмы, перегородки и мебель пересчитываются,
-   * чтобы остаться внутри и на своих местах относительно неподвижных стен.
+   * чтобы остаться внутри и на своих местах относительно неподвижных стен;
+   * предметы на опорах (лампа на столе) едут вместе со своей опорой.
    */
   function resize(next: RoomDimensions, anchor: ResizeAnchor = {}): void {
     const { dimensions, openings, partitions } = editor();
     const target = clampDimensions(next);
     if (target.width === dimensions.width && target.height === dimensions.height && target.depth === dimensions.depth) return;
-    const result = resizeRoom({ dimensions, openings, partitions, furniture: ctx.getState().furniture.items }, target, anchor);
+    const furniture = ctx.getState().furniture.items;
+    const floor = furniture.filter((i) => !i.supportId);
+    const result = resizeRoom({ dimensions, openings, partitions, furniture: floor }, target, anchor);
     ctx.dispatch(editorActions.setDimensions(result.dimensions));
     ctx.dispatch(editorActions.setOpenings(result.openings));
     ctx.dispatch(editorActions.setPartitions(result.partitions));
-    ctx.dispatch(furnitureActions.replaceFurniture(result.furniture));
+    ctx.dispatch(furnitureActions.replaceFurniture(withCarried(furniture, result.furniture)));
   }
 
   return {

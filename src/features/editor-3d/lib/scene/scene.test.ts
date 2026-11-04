@@ -132,6 +132,43 @@ describe('parseSceneDocument', () => {
   });
 });
 
+describe('support links in the document', () => {
+  const desk = { id: 'desk', name: 'Письменный стол', modelPath: 'primitive:desk', position: [0, 0, 0], rotation: [0, 0, 0], scale: 1, height: 0.75 };
+  const lamp = { id: 'lamp', name: 'Настольная лампа', modelPath: 'primitive:desk', position: [0.3, 0.75, 0], rotation: [0, 0, 0], scale: 1 };
+
+  it('keeps supportId as an optional field of v2 (old documents stay valid)', () => {
+    const withLink = { ...createEmptyScene(), furniture: [desk, { ...lamp, supportId: 'desk' }] };
+    const parsed = sceneDocumentSchema.safeParse(withLink);
+    expect(parsed.success && parsed.data.furniture[1].supportId).toBe('desk');
+    expect(sceneDocumentSchema.safeParse({ ...createEmptyScene(), furniture: [desk, lamp] }).success).toBe(true);
+  });
+
+  it('rejects malformed support ids', () => {
+    const bad = { ...createEmptyScene(), furniture: [desk, { ...lamp, supportId: 'x'.repeat(65) }] };
+    expect(sceneDocumentSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('repairs broken links and restores links of items already standing on supports when loading', () => {
+    const orphan = { ...lamp, id: 'orphan', position: [1, 0.75, 1], supportId: 'gone' };
+    const result = parseSceneDocument({ ...createEmptyScene(), furniture: [desk, lamp, orphan] });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.doc.furniture[1].supportId).toBe('desk');
+    expect(result.doc.furniture[2].supportId).toBeUndefined();
+    expect(result.doc.furniture[2].position).toEqual([1, 0, 1]);
+  });
+
+  it('normalizes links in salvaged and migrated documents too', () => {
+    const salvaged = parseSceneDocument({ ...createEmptyScene(), light: null, furniture: [desk, lamp] });
+    expect(salvaged.ok && salvaged.doc.furniture[1].supportId).toBe('desk');
+    // В v1 y — середина модели: стол 0.75 м с центром на 0.375, лампа 0.9 м с центром на 1.2.
+    const v1Desk = { ...desk, position: [0, 0.375, 0] };
+    const v1Lamp = { ...lamp, height: 0.9, position: [0.3, 1.2, 0] };
+    const migrated = parseSceneDocument({ dimensions: { width: 4, height: 3, depth: 4 }, furniture: [v1Desk, v1Lamp] });
+    expect(migrated.ok && migrated.doc.furniture[1].supportId).toBe('desk');
+  });
+});
+
 describe('model path validation', () => {
   it.each([
     ['primitive:sofa', true],

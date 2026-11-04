@@ -5,7 +5,7 @@
  * @module furniture/lib/modelLook
  */
 
-import { Box3, Color, Group, Light, Material, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import { Box3, Color, Euler, Group, Light, Material, Matrix4, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, Quaternion, Vector3 } from 'three';
 import {
   isIdentityNormalization,
   resolveNormalization,
@@ -88,6 +88,19 @@ function cloneForScene(scene: Object3D): Object3D {
 }
 
 /** Обёртка, применяющая поворот осей и масштаб нормализации к клону. */
+/**
+ * Матрица нормализации — то же преобразование, что у обёртки {@link wrapNormalized}:
+ * поворот (порядок YXZ: ось «вверх», затем фасад) и равномерный масштаб.
+ * @param n - нормализация модели
+ */
+export function normalizationMatrix(n: Normalization): Matrix4 {
+  return new Matrix4().compose(
+    new Vector3(),
+    new Quaternion().setFromEuler(new Euler(n.rotationX, n.rotationY, 0, 'YXZ')),
+    new Vector3(n.scale, n.scale, n.scale),
+  );
+}
+
 function wrapNormalized(object: Object3D, n: Normalization): Object3D {
   const root = new Group();
   root.name = 'normalized';

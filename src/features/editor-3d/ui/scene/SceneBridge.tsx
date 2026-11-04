@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Raycaster, Vector2, type Camera, type Object3D, type Scene, type WebGLRenderer } from 'three';
 import { sceneBridgeStore } from '../../model/sceneBridge';
-import { rayToFloor } from './pointer';
+import { rayToFloor, toRay3 } from './pointer';
 
 const JPEG_QUALITY = 0.72;
 
@@ -36,15 +36,18 @@ export const SceneBridge: React.FC = () => {
 
   useEffect(() => {
     const raycaster = new Raycaster();
+    /** Направить луч из камеры через экранную точку (false — холст ещё не размечен). */
+    const aim = (clientX: number, clientY: number): boolean => {
+      const { camera, gl } = get();
+      const rect = gl.domElement.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return false;
+      const ndc = new Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+      raycaster.setFromCamera(ndc, camera);
+      return true;
+    };
     sceneBridgeStore.setState({
-      screenToFloor: (clientX, clientY) => {
-        const { camera, gl } = get();
-        const rect = gl.domElement.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return null;
-        const ndc = new Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
-        raycaster.setFromCamera(ndc, camera);
-        return rayToFloor(raycaster.ray);
-      },
+      screenToFloor: (clientX, clientY) => (aim(clientX, clientY) ? rayToFloor(raycaster.ray) : null),
+      screenToRay: (clientX, clientY) => (aim(clientX, clientY) ? toRay3(raycaster.ray) : null),
       capture: (maxWidth) => {
         const { gl, scene, camera } = get();
         renderWithoutHelpers(gl, scene, camera);
@@ -58,7 +61,7 @@ export const SceneBridge: React.FC = () => {
         return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
       },
     });
-    return () => sceneBridgeStore.setState({ screenToFloor: null, capture: null, fps: 0 });
+    return () => sceneBridgeStore.setState({ screenToFloor: null, screenToRay: null, capture: null, fps: 0 });
   }, [get]);
 
   useFrame((_, delta) => {

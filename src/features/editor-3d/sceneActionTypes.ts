@@ -30,6 +30,7 @@ export const SCENE_EDIT_ACTION_TYPES: string[] = [
   editorActions.setPartitions,
   furnitureActions.addFurniture,
   furnitureActions.updateFurniture,
+  furnitureActions.updateFurnitureItems,
   furnitureActions.duplicateFurniture,
   furnitureActions.removeFurniture,
   furnitureActions.replaceFurniture,

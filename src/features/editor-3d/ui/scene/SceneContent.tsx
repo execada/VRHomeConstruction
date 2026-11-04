@@ -1,6 +1,6 @@
 /**
  * Содержимое 3D-сцены редактора: окружение, солнце, свет, комната, мебель,
- * размещение из каталога, сетка привязки и VR-инструменты.
+ * размещение из каталога, подсказки поверхностей опор, сетка привязки и VR-инструменты.
  * @module editor-3d/ui/scene/SceneContent
  */
 
@@ -23,6 +23,7 @@ import { RoomLights } from './RoomLights';
 import { RoomShell } from './RoomShell';
 import { SceneBridge } from './SceneBridge';
 import { SunLight } from './SunLight';
+import { SurfaceHints } from './SurfaceHints';
 
 interface SceneContentProps {
   /** Сохранить проект (кнопка VR-меню) */
@@ -65,6 +66,7 @@ export const SceneContent: React.FC<SceneContentProps> = ({ onSave }) => {
       <RoomShell cutaway={cutaway} />
       <FurnitureLayer />
       <PlacementLayer />
+      <SurfaceHints />
       <SnapGrid />
       {inXR && (
         <>

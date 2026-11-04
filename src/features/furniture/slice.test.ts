@@ -62,6 +62,17 @@ describe('furniture slice', () => {
     expect(state.selectedFurniture).toMatchObject(sizes);
   });
 
+  it('обновляет несколько предметов одним действием (опора с предметами на ней)', () => {
+    let state = reducer(initial(), actions.loadFurniture([item('desk'), item('lamp', { supportId: 'desk' }), item('chair')]));
+    state = reducer(state, actions.selectFurniture('lamp'));
+    const moved = [item('desk', { position: [1, 0, 0] }), item('lamp', { supportId: 'desk', position: [1, 0.75, 0] })];
+    const next = reducer(state, actions.updateFurnitureItems({ id: 'desk', items: moved }));
+    expect(next.items.map((i) => i.position[0])).toEqual([1, 1, 0]);
+    expect(next.items[2]).toBe(state.items[2]);
+    expect(next.selectedFurniture?.position).toEqual([1, 0.75, 0]);
+    expect(state.items[0].position).toEqual([0, 0, 0]);
+  });
+
   it('загрузка, замена и сброс', () => {
     let state = reducer(initial(), actions.loadFurniture([item('a'), item('b')]));
     state = reducer(state, actions.replaceFurniture([item('c')]));

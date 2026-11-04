@@ -44,7 +44,9 @@ export function useEditorShortcuts(): void {
         interaction.rotatePlacing(delta);
         const ghost = s.ghost;
         const angle = interactionStore.getState().placingAngle;
-        if (ghost) interaction.setGhost(commands.furniture.previewPlacement(s.placingPath, ghost.center, angle));
+        // Повернуть призрак на той же поверхности (или на полу), где он стоит.
+        const aim = ghost ? { supportId: ghost.supportId, elevation: ghost.elevation } : {};
+        if (ghost) interaction.setGhost(commands.furniture.previewPlacement(s.placingPath, ghost.center, angle, { name: s.placingName ?? '', aim }));
         return;
       }
       commands.rotateSelection(delta);

@@ -1,12 +1,14 @@
 /**
  * Помощники для событий указателя в сцене: пересечение луча с полом и плоскостью стены,
- * захват указателя на время перетаскивания, отличие клика от поворота камеры.
+ * луч для выбора поверхности опоры, захват указателя на время перетаскивания,
+ * отличие клика от поворота камеры.
  * @module editor-3d/ui/scene/pointer
  */
 
 import type { ThreeEvent } from '@react-three/fiber';
 import { Plane, Vector3, type Ray } from 'three';
 import type { Vec2 } from '@/shared/lib/math/geometry2d';
+import type { Ray3 } from '../../lib/surfaces';
 import { worldToWall, type WallFrame } from '../../lib/walls';
 
 export type ScenePointerEvent = ThreeEvent<PointerEvent>;
@@ -27,6 +29,11 @@ const UP = new Vector3(0, 1, 0);
 export function rayToFloor(ray: Ray, height = 0): Vec2 | null {
   const hit = ray.intersectPlane(new Plane(UP, -height), new Vector3());
   return hit ? [hit.x, hit.z] : null;
+}
+
+/** Луч three.js → луч команд сцены (выбор поверхности опоры, на которую указывают). */
+export function toRay3(ray: Ray): Ray3 {
+  return { origin: [ray.origin.x, ray.origin.y, ray.origin.z], direction: [ray.direction.x, ray.direction.y, ray.direction.z] };
 }
 
 /** Точка пересечения луча с рабочей гранью стены в её локальных координатах. */

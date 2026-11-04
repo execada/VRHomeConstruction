@@ -146,6 +146,11 @@
   cursor: move;
 }
 
+/* Предмет на поверхности опоры (лампа на столе) — пунктир поверх опоры. */
+.itemOnSurface {
+  stroke-dasharray: 4 2;
+}
+
 .itemSelected {
   fill: var(--accent-soft);
   stroke: var(--accent);
