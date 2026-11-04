@@ -12,6 +12,7 @@ import { createEmptyScene } from '@/features/editor-3d/lib/scene/build';
 import type { SceneDocument } from '@/features/editor-3d/lib/scene/schema';
 import type { Partition, RoomDimensions } from '@/features/editor-3d/types';
 import { againstWall, allWalls, doorOn, finish, itemAt, windowOn } from './compose';
+import { penthouse } from './penthouse';
 
 /** Встроенный шаблон. */
 export interface BuiltinTemplate {
@@ -154,6 +155,13 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
   { id: 'kitchen', name: 'Кухня-столовая', description: 'Кухонный гарнитур, обеденный стол на четверых', area: 16.2, build: kitchen },
   { id: 'office', name: 'Кабинет', description: 'Рабочее место у окна, стеллаж и хранение', area: 10.9, build: office },
   { id: 'studio', name: 'Студия', description: 'Гостиная, кухня и спальня за перегородкой', area: 29.9, build: studio },
+  {
+    id: 'city-penthouse',
+    name: 'Апартаменты 150 м²',
+    description: 'Пентхаус с панорамным остеклением, балконом на всю ширину и видом на мегаполис на закате',
+    area: 150,
+    build: penthouse,
+  },
 ];
 
 /** Найти встроенный шаблон по id. */

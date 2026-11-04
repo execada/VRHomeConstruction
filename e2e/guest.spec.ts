@@ -34,7 +34,7 @@ test('шаблоны видны без входа, а создание прое�
   await page.goto('/templates');
   await expect(page.getByRole('heading', { name: 'Шаблоны' })).toBeVisible();
   const builtins = page.getByRole('region', { name: 'Встроенные' });
-  await expect(builtins.getByRole('button', { name: /Создать проект из шаблона/ })).toHaveCount(5);
+  await expect(builtins.getByRole('button', { name: /Создать проект из шаблона/ })).toHaveCount(6);
 
   await page.getByRole('searchbox', { name: 'Поиск' }).fill('кровать');
   await expect(builtins.getByRole('button', { name: /Создать проект из шаблона/ })).toHaveCount(1);
