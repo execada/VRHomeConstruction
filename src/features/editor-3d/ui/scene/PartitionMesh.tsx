@@ -1,7 +1,8 @@
 /**
  * Внутренняя стена (перегородка) в 3D: тело с проёмами и стыками с другими стенами
  * (торцы «на ус», по грани соседней стены, скруглённые), перетаскивание по полу,
- * выделение, создание проёмов инструментами окна/двери.
+ * выделение, создание проёмов инструментами окна/двери. От первого лица стена
+ * не перетаскивается (зажатая кнопка — осмотр) и выделяется кликом.
  * @module editor-3d/ui/scene/PartitionMesh
  */
 
@@ -10,15 +11,17 @@ import { useSelector } from 'react-redux';
 import { Edges } from '@react-three/drei';
 import { add2, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { selectors as editorSelectors } from '../../selectors';
+import { isPointerBusy } from '../../model/interactionStore';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { partitionMaterial } from '../../lib/partitions';
 import type { InteriorWallShape } from '../../lib/wallJoints';
 import { partitionFrame, type WallFrame } from '../../lib/walls';
 import type { Opening, Partition, SurfaceFinish } from '../../types';
 import { OpeningMesh } from './OpeningMesh';
-import { HELPER_DATA, NO_RAYCAST, rayToFloor, rayToWall } from './pointer';
+import { HELPER_DATA, NO_RAYCAST, isClick, rayToFloor, rayToWall, type SceneMouseEvent } from './pointer';
 import { useDragGesture } from './useDragGesture';
 import { InteriorWallPieces } from './InteriorWallPieces';
+import { useWalkingCheck } from './useWalkingCheck';
 import { useOpeningDrag } from './useOpeningDrag';
 import { useWallLook } from './useWallLook';
 
@@ -49,6 +52,7 @@ export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, sh
   const activeTool = useSelector(editorSelectors.selectActiveTool);
   const look = useWallLook(partition.finish ?? fallbackFinish, partitionMaterial(partition));
   const frame = useMemo(() => partitionFrame(partition), [partition]);
+  const isWalking = useWalkingCheck();
   const [length, height, thickness] = partition.size;
 
   const drag = useDragGesture<{ offset: Vec2; planeY: number }>({
@@ -60,6 +64,7 @@ export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, sh
         commands.openings.add(partition.id, activeTool, hit?.u ?? 0);
         return null;
       }
+      if (isWalking()) return null;
       commands.select({ kind: 'partition', id: partition.id });
       const planeY = e.point.y;
       const hit = rayToFloor(e.ray, planeY);
@@ -72,9 +77,15 @@ export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, sh
     onEnd: () => commands.partitions.endGesture(),
   });
 
+  const handleClick = (e: SceneMouseEvent) => {
+    if (activeTool === 'window' || activeTool === 'door' || !isWalking() || isPointerBusy() || !isClick(e)) return;
+    e.stopPropagation();
+    commands.select({ kind: 'partition', id: partition.id });
+  };
+
   return (
     <group position={[partition.position[0], 0, partition.position[2]]} rotation={[0, partition.rotation[1], 0]}>
-      <group {...drag}>
+      <group {...drag} onClick={handleClick}>
         <InteriorWallPieces spans={shape?.spans ?? []} length={length} height={height} openings={partition.openings} look={look} />
       </group>
       {partition.openings.map((o) => (

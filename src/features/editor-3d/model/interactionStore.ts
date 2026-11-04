@@ -77,6 +77,11 @@ const initialState: InteractionState = {
 
 export const interactionStore = createExternalStore<InteractionState>(initialState);
 
+/** Идёт размещение модели из каталога или рисование стен: объекты сцены не перехватывают указатель. */
+export function isPointerBusy(state: InteractionState = interactionStore.getState()): boolean {
+  return state.mode === 'placing' || state.drawingWalls;
+}
+
 /** Операции над состоянием взаимодействия. */
 export const interaction = {
   /** Начать размещение модели из каталога */

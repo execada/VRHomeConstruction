@@ -11,7 +11,7 @@ import { Edges } from '@react-three/drei';
 import { openingSill } from '../../lib/openings';
 import type { Opening } from '../../types';
 import { DoorMesh } from './DoorMesh';
-import { HELPER_DATA, NO_RAYCAST, type ScenePointerEvent } from './pointer';
+import { HELPER_DATA, NO_RAYCAST, type SceneMouseEvent, type ScenePointerEvent } from './pointer';
 
 interface OpeningMeshProps {
   opening: Opening;
@@ -24,6 +24,7 @@ interface OpeningMeshProps {
   onPointerMove?: (e: ScenePointerEvent) => void;
   onPointerUp?: (e: ScenePointerEvent) => void;
   onPointerCancel?: (e: ScenePointerEvent) => void;
+  onClick?: (e: SceneMouseEvent) => void;
 }
 
 const FRAME = 0.06;

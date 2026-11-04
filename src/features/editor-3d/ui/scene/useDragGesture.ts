@@ -6,7 +6,7 @@
  */
 
 import { useMemo, useRef } from 'react';
-import { interaction, interactionStore, type InteractionMode } from '../../model/interactionStore';
+import { interaction, isPointerBusy, type InteractionMode } from '../../model/interactionStore';
 import { capturePointer, releasePointer, type ScenePointerEvent } from './pointer';
 
 interface DragGestureOptions<C> {
@@ -44,8 +44,7 @@ export function useDragGesture<C>(options: DragGestureOptions<C>): DragHandlers 
     };
     return {
       onPointerDown: (e) => {
-        const state = interactionStore.getState();
-        if (e.button !== 0 || state.mode === 'placing' || state.drawingWalls) return;
+        if (e.button !== 0 || isPointerBusy()) return;
         e.stopPropagation();
         const ctx = latest.current.onStart(e);
         if (ctx === null) return;
