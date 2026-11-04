@@ -8,6 +8,7 @@ import { EnvironmentFeature } from '@/features/environment';
 import { SelectionFeature } from '@/features/selection';
 import { sceneLoadActions } from '@/features/editor-3d/sceneActions';
 import { createEmptyScene } from '@/features/editor-3d/lib/scene/build';
+import { uniformOuterWalls } from '@/features/editor-3d/constants';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { interaction } from '@/features/editor-3d/model/interactionStore';
 import { HistoryFeature } from './index';
@@ -134,7 +135,7 @@ describe('history saga', () => {
     store.dispatch(furnitureActions.addFurniture(chair(0)));
     store.dispatch(HistoryFeature.actions.undoRequested());
     vi.advanceTimersByTime(1000);
-    store.dispatch(editorActions.setWallThickness(0.3));
+    store.dispatch(editorActions.setOuterWalls(uniformOuterWalls(0.3)));
     expect(store.getState().history.future).toHaveLength(0);
   });
 

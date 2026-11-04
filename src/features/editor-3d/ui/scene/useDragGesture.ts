@@ -44,7 +44,8 @@ export function useDragGesture<C>(options: DragGestureOptions<C>): DragHandlers 
     };
     return {
       onPointerDown: (e) => {
-        if (e.button !== 0 || interactionStore.getState().mode === 'placing') return;
+        const state = interactionStore.getState();
+        if (e.button !== 0 || state.mode === 'placing' || state.drawingWalls) return;
         e.stopPropagation();
         const ctx = latest.current.onStart(e);
         if (ctx === null) return;

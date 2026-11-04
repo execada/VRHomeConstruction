@@ -21,6 +21,8 @@ interface TextFieldProps {
   maxLength?: number;
   multiline?: boolean;
   disabled?: boolean;
+  onBlur?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 
 export const TextField: React.FC<TextFieldProps> = ({ label, value, onChange, error, hint, multiline, type = 'text', ...rest }) => {

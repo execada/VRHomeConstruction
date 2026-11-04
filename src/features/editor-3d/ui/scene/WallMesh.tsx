@@ -8,23 +8,26 @@ import React, { memo, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Edges } from '@react-three/drei';
 import type { Group } from 'three';
-import { useFinishMaterial } from '@/features/textures/model/useFinishMaterial';
 import { selectors as editorSelectors } from '../../selectors';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { isWallFacingAway, wallBox, wallFrame, type WallFrame } from '../../lib/walls';
-import type { Opening, RoomDimensions, SurfaceFinish, WallSide } from '../../types';
+import type { Opening, OuterWalls, RoomDimensions, SurfaceFinish, WallSide } from '../../types';
 import { useCutaway } from './cutaway';
 import { OpeningMesh } from './OpeningMesh';
 import { HELPER_DATA, isClick, NO_RAYCAST, rayToWall, type SceneMouseEvent } from './pointer';
 
 const WALL_SELECTION_DATA = { ...HELPER_DATA, hideOnCut: true };
 import { useOpeningDrag } from './useOpeningDrag';
+import { useWallLook } from './useWallLook';
 import { WallPieces } from './WallPieces';
 
 interface WallMeshProps {
   side: WallSide;
   dims: RoomDimensions;
-  thickness: number;
+  /** Конструкция всех внешних стен (толщина соседей нужна для углов) */
+  outerWalls: OuterWalls;
+  /** Удалённые стены (на их углы стена не заходит) */
+  removed: WallSide[];
   openings: Opening[];
   finish: SurfaceFinish;
   /** Выделена ли стена */
@@ -45,16 +48,17 @@ const DraggableOpening: React.FC<{ side: WallSide; frame: WallFrame; opening: Op
   selected,
 }) => {
   const handlers = useOpeningDrag(side, frame, opening);
-  return <OpeningMesh opening={opening} thickness={thickness} selected={selected} {...handlers} />;
+  return <OpeningMesh opening={opening} thickness={thickness} wallHeight={frame.height} selected={selected} {...handlers} />;
 };
 
 export const WallMesh: React.FC<WallMeshProps> = memo(
-  ({ side, dims, thickness, openings, finish, selected, selectedOpeningId, cutaway }) => {
+  ({ side, dims, outerWalls, removed, openings, finish, selected, selectedOpeningId, cutaway }) => {
     const commands = useSceneCommands();
     const activeTool = useSelector(editorSelectors.selectActiveTool);
     const frame = useMemo(() => wallFrame(side, dims), [side, dims]);
-    const box = useMemo(() => wallBox(side, dims, thickness), [side, dims, thickness]);
-    const { material, tile } = useFinishMaterial(finish, 'wall');
+    const box = useMemo(() => wallBox(side, dims, outerWalls, removed), [side, dims, outerWalls, removed]);
+    const thickness = box.thickness;
+    const look = useWallLook(finish, outerWalls[side].material);
     const shouldCut = useMemo(
       () => (cutaway ? (camera: { position: { x: number; z: number } }) => isWallFacingAway(frame, [camera.position.x, camera.position.z]) : null),
       [cutaway, frame],
@@ -62,7 +66,7 @@ export const WallMesh: React.FC<WallMeshProps> = memo(
     const ref = useCutaway<Group>(shouldCut);
 
     const handleClick = (e: SceneMouseEvent) => {
-      if (!isClick(e)) return;
+      if (!isClick(e) || activeTool === 'partition') return;
       e.stopPropagation();
       if (activeTool === 'window' || activeTool === 'door') {
         const hit = rayToWall(e.ray, frame);
@@ -75,15 +79,7 @@ export const WallMesh: React.FC<WallMeshProps> = memo(
     return (
       <group ref={ref} position={[box.base[0], 0, box.base[1]]} rotation={[0, box.rotationY, 0]}>
         <group onClick={handleClick}>
-          <WallPieces
-            uMin={-box.length / 2}
-            uMax={box.length / 2}
-            height={dims.height}
-            thickness={thickness}
-            openings={openings}
-            material={material}
-            tile={tile}
-          />
+          <WallPieces uMin={box.uMin} uMax={box.uMax} height={dims.height} thickness={thickness} openings={openings} look={look} />
         </group>
         {openings.map((o) => (
           <DraggableOpening key={o.id} side={side} frame={frame} opening={o} thickness={thickness} selected={o.id === selectedOpeningId} />

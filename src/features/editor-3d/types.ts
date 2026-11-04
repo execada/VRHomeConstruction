@@ -8,6 +8,11 @@
  * @module editor-3d/types
  */
 
+import type { DoorSpec } from './lib/doors';
+import type { WallMaterialId } from './lib/wallMaterials';
+
+export type { DoorSpec, WallMaterialId };
+
 /** Внутренние размеры комнаты, м. */
 export interface RoomDimensions {
   width: number;
@@ -38,6 +43,8 @@ export interface Opening {
   width: number;
   /** Высота проёма (метры) */
   height: number;
+  /** Дверь, установленная в дверной проём (нет — пустой проём, через него можно пройти) */
+  door?: DoorSpec;
 }
 
 /**
@@ -92,6 +99,20 @@ export interface RoomFinishes {
 export type FinishTarget = 'floor' | 'ceiling' | 'walls' | WallSide;
 
 /**
+ * Конструкция внешней стены: толщина (стена растёт наружу, внутренние размеры комнаты
+ * не меняются) и материал. Отделка лицевой грани хранится отдельно, в `finishes.walls`.
+ */
+export interface OuterWallSpec {
+  /** Толщина, м */
+  thickness: number;
+  /** Конструкционный материал */
+  material: WallMaterialId;
+}
+
+/** Конструкция всех четырёх внешних стен. */
+export type OuterWalls = Record<WallSide, OuterWallSpec>;
+
+/**
  * Перегородка (внутренняя стена), которую можно добавить в комнату.
  */
 export interface Partition {
@@ -109,6 +130,27 @@ export interface Partition {
   finish?: SurfaceFinish;
   /** Радиус скругления углов, м (0 — прямые углы) */
   cornerRadius?: number;
+  /** Конструкционный материал (если не задан — гипсокартон) */
+  material?: WallMaterialId;
+}
+
+/**
+ * Вид помещения. Лоджия и балкон — летние помещения: в общую площадь квартиры
+ * входят с понижающим коэффициентом (0,5 и 0,3).
+ */
+export type RoomKind = 'room' | 'loggia' | 'balcony';
+
+/**
+ * Подпись помещения: название и вид. Помещения вычисляются по стенам, поэтому подпись
+ * привязана к точке внутри помещения и «находит» его по этой точке.
+ */
+export interface RoomLabel {
+  id: string;
+  name: string;
+  /** Точка внутри помещения [x, z] */
+  anchor: [number, number];
+  /** Вид помещения (по умолчанию — обычное) */
+  kind?: RoomKind;
 }
 
 /** Как задаётся цвет света комнаты. */
@@ -146,8 +188,8 @@ export interface EditorState {
   materials: RoomMaterials;
   /** Отделка поверхностей комнаты */
   finishes: RoomFinishes;
-  /** Толщина внешних стен, м */
-  wallThickness: number;
+  /** Толщина и материал каждой внешней стены */
+  outerWalls: OuterWalls;
   /** Удалённые (скрытые) внешние стены */
   removedWalls: WallSide[];
   /** Конфигурация освещения */
@@ -158,8 +200,10 @@ export interface EditorState {
   activeTool: Tool;
   /** Проёмы, сгруппированные по идентификатору стены */
   openings: { [wallId: string]: Opening[] };
-  /** Список перегородок */
+  /** Список перегородок (внутренних стен) */
   partitions: Partition[];
+  /** Названия и виды помещений */
+  rooms: RoomLabel[];
   /** Цвета перегородок (ключ – id перегородки) */
   partitionColors: { [partitionId: string]: string };
   /** Идентификатор стены, выбранной для просмотра в 2D */
@@ -187,9 +231,10 @@ export interface EditorState {
 export interface EditorScenePayload {
   dimensions: RoomDimensions;
   finishes: RoomFinishes;
-  wallThickness: number;
+  outerWalls: OuterWalls;
   removedWalls: WallSide[];
   light: LightConfig;
   openings: { [wallId: string]: Opening[] };
   partitions: Partition[];
+  rooms: RoomLabel[];
 }

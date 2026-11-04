@@ -1,6 +1,6 @@
 /**
- * Комната: размеры, толщина стен, список стен (выбор, удаление/возврат, проёмы),
- * перегородки (добавить, выбрать, удалить) и инструменты проёмов.
+ * Комната: размеры, толщина стен, внешние стены (выбор, удаление/возврат, проёмы),
+ * внутренние стены (рисование, выбор, удаление), помещения с площадями и инструменты проёмов.
  * @module widgets/editor-panel/ui/RoomPanel
  */
 
@@ -8,12 +8,18 @@ import React from 'react';
 import cn from 'classnames';
 import { useDispatch, useSelector } from 'react-redux';
 import { WALL_THICKNESS_LIMITS } from '@/features/editor-3d/constants';
+import { selectRooms } from '@/features/editor-3d/layoutSelectors';
+import { uniformThickness } from '@/features/editor-3d/lib/outerWalls';
+import { partitionMaterial } from '@/features/editor-3d/lib/partitions';
+import { ROOM_KINDS, totalArea } from '@/features/editor-3d/lib/roomLabels';
+import { wallMaterial } from '@/features/editor-3d/lib/wallMaterials';
 import { SCENE_LIMITS } from '@/features/editor-3d/lib/scene/schema';
 import { WALL_LABELS, WALL_SIDES } from '@/features/editor-3d/lib/walls';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { actions as editorActions } from '@/features/editor-3d/slice';
 import { selectors as selectionSelectors } from '@/features/selection/selectors';
+import { formatArea } from '@/shared/lib/units';
 import { Button, FieldRow, IconButton, NumberField, Section } from '@/shared/ui/controls';
 import styles from './EditorPanel.module.scss';
 
@@ -46,17 +52,42 @@ const PartitionsList: React.FC = () => {
   const commands = useSceneCommands();
   const partitions = useSelector(editorSelectors.selectPartitions);
   const selection = useSelector(selectionSelectors.selectSelection);
-  if (partitions.length === 0) return <span className={styles.muted}>Перегородок пока нет</span>;
+  if (partitions.length === 0) return <span className={styles.muted}>Внутренних стен пока нет — нарисуйте их на полу</span>;
   return (
     <div className={styles.list}>
       {partitions.map((p, i) => (
         <div key={p.id} className={cn(styles.listRow, selection?.kind === 'partition' && selection.id === p.id && styles.listRowSelected)}>
           <button type="button" className={styles.listName} onClick={() => commands.select({ kind: 'partition', id: p.id })}>
-            Перегородка {i + 1} <span className={styles.muted}>· {Math.round(p.size[0] * 100)} см</span>
+            Стена {i + 1}{' '}
+            <span className={styles.muted}>
+              · {wallMaterial(partitionMaterial(p)).label.toLowerCase()}, {Math.round(p.size[2] * 100)} × {Math.round(p.size[0] * 100)} см
+            </span>
           </button>
-          <IconButton icon="trash" size="sm" label="Удалить перегородку" onClick={() => commands.partitions.remove(p.id)} />
+          <IconButton icon="trash" size="sm" label="Удалить стену" onClick={() => commands.partitions.remove(p.id)} />
         </div>
       ))}
+    </div>
+  );
+};
+
+const RoomsList: React.FC = () => {
+  const commands = useSceneCommands();
+  const rooms = useSelector(selectRooms);
+  const selected = useSelector(selectionSelectors.selectSelectedRoom);
+  return (
+    <div className={styles.list}>
+      {rooms.map((r) => (
+        <div key={r.key} className={cn(styles.listRow, selected?.key === r.key && styles.listRowSelected)}>
+          <button type="button" className={styles.listName} onClick={() => commands.select({ kind: 'room', point: [r.center[0], r.center[1]] })}>
+            {r.name}{' '}
+            <span className={styles.muted}>
+              · {formatArea(r.area)}
+              {r.kind !== 'room' ? ` · ${ROOM_KINDS[r.kind].label.toLowerCase()}` : ''}
+            </span>
+          </button>
+        </div>
+      ))}
+      <span className={styles.muted}>Общая площадь: {formatArea(totalArea(rooms))} (лоджии ×0,5, балконы ×0,3)</span>
     </div>
   );
 };
@@ -65,7 +96,8 @@ export const RoomPanel: React.FC = () => {
   const dispatch = useDispatch();
   const commands = useSceneCommands();
   const dims = useSelector(editorSelectors.selectDimensions);
-  const thickness = useSelector(editorSelectors.selectWallThickness);
+  const outerWalls = useSelector(editorSelectors.selectOuterWalls);
+  const thickness = uniformThickness(outerWalls);
   const tool = useSelector(editorSelectors.selectActiveTool);
 
   return (
@@ -78,21 +110,33 @@ export const RoomPanel: React.FC = () => {
         </FieldRow>
         <FieldRow>
           <NumberField label="Высота стен" unit="м" min={SCENE_LIMITS.height[0]} max={SCENE_LIMITS.height[1]} value={dims.height} onChange={(height) => commands.room.resize({ ...dims, height })} />
-          <NumberField label="Толщина стен" unit="см" scale={100} precision={1} min={WALL_THICKNESS_LIMITS[0]} max={WALL_THICKNESS_LIMITS[1]} value={thickness} onChange={(t) => commands.room.setWallThickness(t)} />
+          <NumberField
+            label={thickness === null ? 'Толщина стен (разная)' : 'Толщина стен'}
+            unit="см"
+            scale={100}
+            precision={1}
+            min={WALL_THICKNESS_LIMITS[0]}
+            max={WALL_THICKNESS_LIMITS[1]}
+            value={thickness ?? outerWalls.front.thickness}
+            onChange={(t) => commands.room.setWallThickness(t)}
+          />
         </FieldRow>
       </Section>
       <Section title="Стены">
         <WallsList />
       </Section>
       <Section
-        title="Перегородки"
+        title="Внутренние стены"
         action={
           <Button size="sm" icon="plus" variant={tool === 'partition' ? 'primary' : 'secondary'} onClick={() => dispatch(editorActions.setActiveTool(tool === 'partition' ? 'select' : 'partition'))}>
-            {tool === 'partition' ? 'Кликните по полу' : 'Добавить'}
+            {tool === 'partition' ? 'Готово' : 'Нарисовать'}
           </Button>
         }
       >
         <PartitionsList />
+      </Section>
+      <Section title="Помещения">
+        <RoomsList />
       </Section>
       <Section title="Проёмы">
         <div className={styles.actions}>

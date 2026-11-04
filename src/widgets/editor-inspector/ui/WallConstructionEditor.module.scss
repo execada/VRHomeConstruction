@@ -1,0 +1,82 @@
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.preview {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: var(--r-sm);
+  border: 2px solid transparent;
+  background-color: var(--surface);
+  background-size: cover;
+  background-position: center;
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.tile:hover .preview {
+  transform: translateY(-1px);
+}
+
+.selected .preview {
+  border-color: var(--accent);
+}
+
+.name {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--text-2);
+}
+
+.selected .name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.hint {
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.preset {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.preset:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.presetActive {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}

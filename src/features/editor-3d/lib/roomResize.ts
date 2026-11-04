@@ -3,17 +3,19 @@
  *
  * Комната всегда центрирована в начале координат, поэтому при перетаскивании одной стены
  * всё содержимое сдвигается так, чтобы противоположная стена осталась на месте.
- * После сдвига проёмы, перегородки и мебель приводятся к новым границам.
+ * После сдвига проёмы, перегородки и мебель приводятся к новым границам; концы внутренних
+ * стен, примыкавшие к внешним стенам, остаются примкнутыми (стена удлиняется или укорачивается).
  * @module editor-3d/lib/roomResize
  */
 
-import { add2, dot2, type Vec2 } from '@/shared/lib/math/geometry2d';
+import { add2, clamp, dot2, type Rect, type Vec2 } from '@/shared/lib/math/geometry2d';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { normalizeWallOpenings } from './openings';
-import { clampPartition } from './partitions';
+import { clampPartition, partitionEndpoints, partitionFromEndpoints } from './partitions';
+import { JOINT_TOLERANCE } from './wallJoints';
 import { buildObstacles, findFreeSpot, furnitureSubject, resolvePlacement } from './placement';
 import { interiorRect, isWallSide, wallFrame, WALL_SIDES } from './walls';
-import type { Opening, Partition, RoomDimensions, WallSide } from '../types';
+import type { Opening, Partition, RoomDimensions, RoomLabel, WallSide } from '../types';
 
 /** Содержимое комнаты, затрагиваемое изменением размеров. */
 export interface RoomContent {
@@ -21,6 +23,8 @@ export interface RoomContent {
   openings: { [wallId: string]: Opening[] };
   partitions: Partition[];
   furniture: FurnitureItem[];
+  /** Подписи помещений (сдвигаются вместе с содержимым) */
+  rooms?: RoomLabel[];
 }
 
 /** Какие стены остаются на месте (по каждой оси). */
@@ -61,20 +65,34 @@ function resizeOpenings(openings: RoomContent['openings'], next: RoomDimensions,
   }, Object.fromEntries(Object.entries(openings).filter(([id]) => !isWallSide(id))));
 }
 
+/** Конец стены после сдвига: примкнутый к внешней стене конец остаётся на её грани. */
+function followBoundary(point: Vec2, shift: Vec2, before: Rect, after: Rect): Vec2 {
+  const near = (a: number, b: number) => Math.abs(a - b) <= JOINT_TOLERANCE;
+  const [x, z] = add2(point, shift);
+  const nx = near(point[0], before.minX) ? after.minX : near(point[0], before.maxX) ? after.maxX : x;
+  const nz = near(point[1], before.minZ) ? after.minZ : near(point[1], before.maxZ) ? after.maxZ : z;
+  return [clamp(nx, after.minX, after.maxX), clamp(nz, after.minZ, after.maxZ)];
+}
+
 /** Сдвинуть перегородки; перегородки «во всю высоту» следуют за новой высотой. */
 function resizePartitions(partitions: Partition[], prev: RoomDimensions, next: RoomDimensions, shift: Vec2): Partition[] {
+  const before = interiorRect(prev);
+  const after = interiorRect(next);
   return partitions.map((p) => {
     const fullHeight = Math.abs(p.size[1] - prev.height) < 1e-3;
+    const sized: Partition = { ...p, size: [p.size[0], fullHeight ? next.height : p.size[1], p.size[2]] };
+    const [a, b] = partitionEndpoints(p).map((end) => followBoundary(end, shift, before, after));
+    const rebuilt = partitionFromEndpoints(sized, a, b, next);
+    if (rebuilt !== sized) return rebuilt;
     const center = add2([p.position[0], p.position[2]], shift);
-    return clampPartition(
-      {
-        ...p,
-        position: [center[0], p.position[1], center[1]],
-        size: [p.size[0], fullHeight ? next.height : p.size[1], p.size[2]],
-      },
-      next,
-    );
+    return clampPartition({ ...sized, position: [center[0], p.position[1], center[1]] }, next);
   });
+}
+
+/** Сдвинуть подписи помещений вместе с содержимым. */
+function resizeLabels(labels: RoomLabel[], next: RoomDimensions, shift: Vec2): RoomLabel[] {
+  const r = interiorRect(next);
+  return labels.map((l) => ({ ...l, anchor: [clamp(l.anchor[0] + shift[0], r.minX, r.maxX), clamp(l.anchor[1] + shift[1], r.minZ, r.maxZ)] }));
 }
 
 /** Сдвинуть мебель и заново разрешить столкновения в новых границах. */
@@ -108,5 +126,6 @@ export function resizeRoom(content: RoomContent, next: RoomDimensions, anchor: R
     openings: resizeOpenings(content.openings, next, shift),
     partitions,
     furniture: resizeFurniture(content.furniture, partitions, next, shift),
+    rooms: resizeLabels(content.rooms ?? [], next, shift),
   };
 }

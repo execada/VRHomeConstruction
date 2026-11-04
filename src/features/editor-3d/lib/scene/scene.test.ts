@@ -3,6 +3,7 @@ import { DEFAULT_ENVIRONMENT } from '@/features/environment/constants';
 import { openingSill } from '../openings';
 import { buildSceneDocument, createEmptyScene, flattenOpenings, groupOpenings, toEditorPayload } from './build';
 import { migrateFurniture, migrateLight, migrateV1 } from './migrate';
+import { legacyPartitionMaterial, migrateV2 } from './migrateV2';
 import { parseSceneDocument } from './parse';
 import { modelPathSchema, sceneDocumentSchema } from './schema';
 
@@ -88,6 +89,73 @@ describe('migrateV1', () => {
   });
 });
 
+/** Документ v2 (как его сохраняла предыдущая версия приложения). */
+function v2Document(): Record<string, unknown> {
+  const { outerWalls: _walls, ...rest } = createEmptyScene({ width: 5, height: 2.8, depth: 4 });
+  return {
+    ...rest,
+    schemaVersion: 2,
+    wallThickness: 0.3,
+    partitions: [
+      { id: 'thin', position: [0, 1.4, 0], rotation: [0, 0, 0], size: [2, 2.8, 0.1], openings: [] },
+      { id: 'thick', position: [1, 1.4, 0], rotation: [0, Math.PI / 2, 0], size: [2, 2.8, 0.2], openings: [] },
+    ],
+  };
+}
+
+describe('migrateV2', () => {
+  it('turns the shared wall thickness into per-wall construction', () => {
+    const doc = migrateV2(v2Document()) as { outerWalls: Record<string, { thickness: number; material: string }>; schemaVersion: number };
+    expect(doc.schemaVersion).toBe(3);
+    expect(Object.values(doc.outerWalls)).toEqual(Array(4).fill({ thickness: 0.3, material: 'brick' }));
+    expect('wallThickness' in doc).toBe(false);
+  });
+
+  it('assigns materials to old partitions by thickness', () => {
+    const doc = migrateV2(v2Document()) as { partitions: Array<{ id: string; material: string }> };
+    expect(doc.partitions.map((p) => p.material)).toEqual(['drywall', 'aerated']);
+    expect(legacyPartitionMaterial(0.12)).toBe('drywall');
+    expect(legacyPartitionMaterial(0.25)).toBe('aerated');
+  });
+
+  it('keeps explicit materials and tolerates broken values', () => {
+    const doc = migrateV2({ ...v2Document(), wallThickness: 'thick', partitions: [{ id: 'x', material: 'brick' }, 7] });
+    expect((doc.outerWalls as { front: { thickness: number } }).front.thickness).toBe(0.2);
+    expect(doc.partitions).toEqual([{ id: 'x', material: 'brick' }, 7]);
+    const clamped = migrateV2({ ...v2Document(), wallThickness: 5 });
+    expect((clamped.outerWalls as { left: { thickness: number } }).left.thickness).toBeCloseTo(0.6);
+  });
+
+  it('is applied when parsing a v2 project and yields a valid v3 document', () => {
+    const result = parseSceneDocument(v2Document());
+    expect(result.ok && result.migrated).toBe(true);
+    if (!result.ok) return;
+    expect(sceneDocumentSchema.safeParse(result.doc).success).toBe(true);
+    expect(result.doc.outerWalls.right.thickness).toBeCloseTo(0.3);
+    expect(result.doc.partitions[1].material).toBe('aerated');
+  });
+
+  it('installs the old flat door leaf into v2 doorways (outer and interior walls)', () => {
+    const doc = {
+      ...v2Document(),
+      openings: [{ id: 'd', wallId: 'back', type: 'door', position: [0, 1.05], width: 0.9, height: 2.1 }],
+      partitions: [{ id: 'p', position: [0, 1.4, 0], rotation: [0, 0, 0], size: [2, 2.8, 0.1], openings: [{ id: 'pd', wallId: 'p', type: 'door', position: [0, 1.05], width: 0.8, height: 2.1 }] }],
+    };
+    const result = parseSceneDocument(doc);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.doc.openings[0].door).toMatchObject({ style: 'flush', open: false });
+    expect(result.doc.partitions[0].openings[0].door).toMatchObject({ style: 'flush' });
+    expect(parseSceneDocument(v1).ok && (parseSceneDocument(v1) as { doc: { openings: Array<{ type: string; door?: unknown }> } }).doc.openings.find((o) => o.type === 'door')?.door).toBeTruthy();
+  });
+
+  it('salvages a v2 project with broken items after migration', () => {
+    const broken = { ...v2Document(), furniture: [{ id: 'bad', modelPath: 'javascript:alert(1)' }] };
+    const result = parseSceneDocument(broken);
+    expect(result.ok && result.dropped).toBe(1);
+  });
+});
+
 describe('parseSceneDocument', () => {
   it('rejects non-objects', () => {
     expect(parseSceneDocument(null).ok).toBe(false);
@@ -129,6 +197,22 @@ describe('parseSceneDocument', () => {
     expect(result.doc.light).toEqual(doc.light);
     expect(result.doc.removedWalls).toEqual(['front']);
     expect(sceneDocumentSchema.safeParse(result.doc).success).toBe(true);
+  });
+
+  it('salvages outer walls side by side', () => {
+    const doc = createEmptyScene();
+    const broken = { ...doc, outerWalls: { ...doc.outerWalls, left: { thickness: 0.3, material: 'aerated' }, back: { thickness: -1, material: 'brick' } } };
+    const result = parseSceneDocument(broken);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.doc.outerWalls.left).toEqual({ thickness: 0.3, material: 'aerated' });
+    expect(result.doc.outerWalls.back).toEqual(doc.outerWalls.back);
+  });
+
+  it('migrates v1 projects straight to the current format', () => {
+    const result = parseSceneDocument(v1);
+    expect(result.ok && result.doc.schemaVersion).toBe(3);
+    expect(result.ok && result.doc.partitions[0].material).toBe('drywall');
   });
 });
 

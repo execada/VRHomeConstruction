@@ -80,7 +80,8 @@
 }
 
 .wall {
-  fill: var(--text-2);
+  stroke: var(--text-2);
+  stroke-width: 1;
   cursor: ew-resize;
 }
 
@@ -88,13 +89,14 @@
   cursor: ns-resize;
 }
 
-.wallSelected {
-  fill: var(--accent);
+.wallViewed {
+  stroke: var(--accent-3);
+  stroke-width: 2;
 }
 
-.wallViewed {
+.wallSelected {
   stroke: var(--accent);
-  stroke-width: 2;
+  stroke-width: 3;
 }
 
 .opening {
@@ -117,6 +119,12 @@
   pointer-events: none;
 }
 
+.doorLeaf {
+  stroke: var(--text-2);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
 .windowLine {
   stroke: var(--accent-3);
   stroke-width: 1.5;
@@ -124,12 +132,70 @@
 }
 
 .partition {
-  fill: var(--text-2);
+  stroke: var(--text-2);
+  stroke-width: 1;
   cursor: move;
 }
 
 .partitionSelected {
-  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.room {
+  fill: rgb(255 255 255 / 18%);
+  stroke: none;
+  cursor: pointer;
+}
+
+.room:hover {
+  fill: rgb(201 169 110 / 16%);
+}
+
+.roomOutdoor {
+  fill: rgb(150 190 220 / 22%);
+}
+
+.roomSelected {
+  fill: rgb(201 169 110 / 30%);
+}
+
+.roomName {
+  fill: var(--text);
+  font-weight: 700;
+  pointer-events: none;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgb(255 255 255 / 70%);
+  stroke-width: 0.03;
+}
+
+.roomArea {
+  fill: var(--text);
+  font-weight: 600;
+  pointer-events: none;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgb(255 255 255 / 75%);
+  stroke-width: 0.03;
+}
+
+.drawLayer {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.draftWall {
+  fill: rgb(201 169 110 / 45%);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+}
+
+.snapMarker {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
 }
 
 .handle {

@@ -3,7 +3,8 @@
  * @module editor-3d/constants
  */
 
-import { RoomColors, LightConfig, RoomFinishes, SurfaceFinish } from './types';
+import { DEFAULT_OUTER_MATERIAL } from './lib/wallMaterials';
+import { RoomColors, LightConfig, OuterWalls, RoomFinishes, SurfaceFinish } from './types';
 
 /** Размеры комнаты по умолчанию */
 export const DEFAULT_ROOM_WIDTH = 4;
@@ -38,6 +39,13 @@ export const LIGHT_LIMITS = {
 /** Толщина внешних стен по умолчанию и допустимый диапазон, м */
 export const DEFAULT_WALL_THICKNESS = 0.2;
 export const WALL_THICKNESS_LIMITS = [0.05, 0.6] as const;
+/** Внешние стены одинаковой толщины и материала. */
+export function uniformOuterWalls(thickness: number = DEFAULT_WALL_THICKNESS, material = DEFAULT_OUTER_MATERIAL): OuterWalls {
+  const spec = { thickness, material };
+  return { front: spec, back: spec, left: spec, right: spec };
+}
+/** Внешние стены новой комнаты: кирпич 20 см */
+export const DEFAULT_OUTER_WALLS: OuterWalls = uniformOuterWalls();
 /** Однотонная отделка */
 const plain = (color: string): SurfaceFinish => ({ textureId: null, color, scale: 1 });
 /** Отделка новой комнаты: деревянный пол, светлые стены, белый потолок */

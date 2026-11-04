@@ -1,6 +1,6 @@
 /**
  * Меню на запястье левой руки (VR): каталог мебели, действия с выделенным предметом,
- * свет, солнце, сохранение и выход из VR. Показ/скрытие — кнопка Y левого контроллера.
+ * открыть/закрыть выделенную дверь, свет, солнце, сохранение и выход из VR. Показ/скрытие — кнопка Y левого контроллера.
  * Нажатия — лучом правого контроллера.
  * @module vr/ui/VrMenu
  */
@@ -41,11 +41,18 @@ const MainPage: React.FC<VrMenuProps & { openCatalog: () => void }> = ({ onSave,
   const commands = useSceneCommands();
   const session = useXR((s) => s.session);
   const selection = useSelector(selectionSelectors.selectSelection);
+  const opening = useSelector(selectionSelectors.selectSelectedOpeningLive);
   const light = useSelector(editorSelectors.selectLightConfig);
   const sun = useSelector(environmentSelectors.selectSun);
   const hasItem = selection?.kind === 'furniture';
+  const door = opening?.opening.door;
   const actions: Array<{ label: string; run: () => void; disabled?: boolean; accent?: boolean }> = [
     { label: 'Каталог', run: openCatalog, accent: true },
+    {
+      label: door?.open ? 'Закрыть дверь' : 'Открыть дверь',
+      run: () => opening && commands.openings.toggleDoor(opening.hostId, opening.opening.id),
+      disabled: !door,
+    },
     { label: 'Повернуть 90°', run: () => commands.rotateSelection(Math.PI / 2), disabled: !hasItem },
     { label: 'Копия', run: () => commands.duplicateSelection(), disabled: !hasItem },
     { label: 'Удалить', run: () => commands.deleteSelection(), disabled: !selection },

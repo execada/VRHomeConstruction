@@ -1,6 +1,7 @@
 /**
  * Команды проёмов: создать окно/дверь, перемещать вдоль стены, менять ширину, высоту,
- * отступ от пола и тип, удалять. Работают одинаково для внешних стен и перегородок.
+ * отступ от пола и тип, удалять; установить, снять, открыть и закрыть дверь.
+ * Работают одинаково для внешних стен и перегородок.
  * @module editor-3d/model/commands/openingCommands
  */
 
@@ -16,9 +17,12 @@ import {
   withSill,
   type OpeningHost,
 } from '../../lib/openings';
-import { isWallSide, wallFrame } from '../../lib/walls';
+import { DEFAULT_DOOR, normalizeDoor, type DoorSpec } from '../../lib/doors';
+import { cachedWallLayout } from '../../lib/layoutCache';
+import { isWallSide } from '../../lib/walls';
 import type { Opening, Partition } from '../../types';
 import { createId, type CommandContext } from './context';
+import { interiorWallHost, outerWallHost } from './layoutSync';
 
 /** Стена или перегородка с её проёмами. */
 interface HostInfo {
@@ -31,16 +35,16 @@ const OPENING_LABEL: Record<Opening['type'], string> = { window: 'окна', doo
 
 /** Создать команды проёмов. */
 export function createOpeningCommands(ctx: CommandContext) {
-  /** Найти стену/перегородку по id. */
+  /** Найти стену/перегородку по id (с зонами стыков, куда проёмы не заходят). */
   function hostInfo(hostId: string): HostInfo | null {
     const { editor } = ctx.getState();
+    const layout = cachedWallLayout(editor.dimensions, editor.partitions);
     if (isWallSide(hostId)) {
       if (editor.removedWalls.includes(hostId)) return null;
-      const frame = wallFrame(hostId, editor.dimensions);
-      return { host: { length: frame.length, height: frame.height }, list: editor.openings[hostId] ?? [], partition: null };
+      return { host: outerWallHost(hostId, editor.dimensions, layout), list: editor.openings[hostId] ?? [], partition: null };
     }
     const partition = editor.partitions.find((p) => p.id === hostId);
-    return partition ? { host: { length: partition.size[0], height: partition.size[1] }, list: partition.openings, partition } : null;
+    return partition ? { host: interiorWallHost(partition, layout), list: partition.openings, partition } : null;
   }
 
   /** Записать изменённый проём. */
@@ -69,11 +73,12 @@ export function createOpeningCommands(ctx: CommandContext) {
     add(hostId: string, type: Opening['type'], preferredU = 0): Opening | null {
       const info = hostInfo(hostId);
       if (!info) return null;
-      const opening = createOpening({ id: createId(type), type, wallId: hostId, host: info.host, others: info.list, preferredU });
-      if (!opening) {
+      const created = createOpening({ id: createId(type), type, wallId: hostId, host: info.host, others: info.list, preferredU });
+      if (!created) {
         ctx.notify(`На этой стене нет места для ${OPENING_LABEL[type]}`);
         return null;
       }
+      const opening: Opening = type === 'door' ? { ...created, door: DEFAULT_DOOR } : created;
       if (info.partition) {
         ctx.dispatch(editorActions.addOpeningToPartition({ partitionId: hostId, opening }));
       } else {
@@ -103,13 +108,37 @@ export function createOpeningCommands(ctx: CommandContext) {
       change(hostId, id, (o, info, others) => moveOpening(o, { u, y: o.position[1] }, info.host, others));
     },
 
-    /** Превратить окно в дверь и наоборот (размеры — стандартные для типа). */
+    /** Превратить окно в дверь (с дверью по умолчанию) и наоборот (размеры — стандартные для типа). */
     setType(hostId: string, id: string, type: Opening['type']): void {
       change(hostId, id, (o, info, others) => {
         const defaults = OPENING_DEFAULTS[type];
-        const converted = withSill({ ...o, type, height: defaults.height }, type === 'door' ? 0 : Math.max(defaults.sill, openingSill(o)));
+        const { door: _door, ...rest } = o;
+        const base: Opening = type === 'door' ? { ...rest, type, door: DEFAULT_DOOR } : { ...rest, type };
+        const converted = withSill({ ...base, height: defaults.height }, type === 'door' ? 0 : Math.max(defaults.sill, openingSill(o)));
         return resizeOpening(clampOpening(converted, info.host), {}, info.host, others);
       });
+    },
+
+    /**
+     * Установить или изменить дверь в дверном проёме (null — снять полотно, оставить пустой проём).
+     * @param hostId - стена или перегородка
+     * @param id - проём
+     * @param patch - модель, петли, сторона открывания, открыта ли, цвет
+     */
+    setDoor(hostId: string, id: string, patch: Partial<DoorSpec> | null): void {
+      change(hostId, id, (o) => {
+        if (o.type !== 'door') return o;
+        if (patch === null) {
+          const { door: _door, ...rest } = o;
+          return rest;
+        }
+        return { ...o, door: normalizeDoor(patch, o.door ?? DEFAULT_DOOR) };
+      });
+    },
+
+    /** Открыть или закрыть дверь (если она установлена). */
+    toggleDoor(hostId: string, id: string): void {
+      change(hostId, id, (o) => (o.door ? { ...o, door: { ...o.door, open: !o.door.open } } : o));
     },
 
     /** Удалить проём. */

@@ -1,7 +1,8 @@
 /**
  * Логика проёмов (окон и дверей): размеры по умолчанию, ограничения,
- * отступ от пола, перемещение вдоль стены без наложения на соседние проёмы.
- * Все функции чистые и возвращают новые объекты.
+ * отступ от пола, перемещение вдоль стены без наложения на соседние проёмы
+ * и на стыки с другими стенами. Окна могут быть панорамными: от пола до потолка
+ * и почти во всю длину стены. Все функции чистые и возвращают новые объекты.
  * @module editor-3d/lib/openings
  */
 
@@ -15,6 +16,8 @@ export interface OpeningHost {
   length: number;
   /** Высота, м */
   height: number;
+  /** Участки вдоль стены, занятые стыками с другими стенами (проём туда не заходит) */
+  blocked?: ReadonlyArray<readonly [number, number]>;
 }
 
 /** Размеры проёмов по умолчанию. */
@@ -26,16 +29,17 @@ export const OPENING_DEFAULTS: Record<Opening['type'], { width: number; height: 
 /** Ограничения размеров и положения проёмов, м. */
 export const OPENING_LIMITS = {
   minWidth: 0.4,
-  maxWidth: 4,
+  /** Панорамное остекление — почти во всю длину стены */
+  maxWidth: 20,
   minHeight: 0.4,
-  /** Отступ проёма от торцов стены */
+  /** Отступ проёма от торцов стены и от стыков с другими стенами */
   edgeMargin: 0.1,
   /** Минимальный простенок между проёмами */
   gap: 0.1,
-  /** Минимальная перемычка над проёмом */
-  topMargin: 0.05,
-  /** Минимальный подоконник окна */
-  minWindowSill: 0.1,
+  /** Минимальная перемычка над проёмом (0 — проём до потолка) */
+  topMargin: 0,
+  /** Минимальный подоконник окна (0 — панорамное окно от пола) */
+  minWindowSill: 0,
 } as const;
 
 /** Отступ проёма от пола (низ проёма). */
@@ -99,10 +103,14 @@ export function openingsOverlap(a: Opening, b: Opening, gap: number = OPENING_LI
 /** Свободные интервалы для центра проёма заданной ширины. */
 function freeCenterIntervals(width: number, host: OpeningHost, others: Opening[]): Array<[number, number]> {
   const [uMin, uMax] = openingCenterRange(width, host);
-  const blocked = others.map((o) => {
-    const reach = (o.width + width) / 2 + OPENING_LIMITS.gap - TOUCH_EPS;
-    return [o.position[0] - reach, o.position[0] + reach] as const;
-  });
+  const reach = width / 2 + OPENING_LIMITS.edgeMargin - TOUCH_EPS;
+  const blocked = [
+    ...others.map((o) => {
+      const r = (o.width + width) / 2 + OPENING_LIMITS.gap - TOUCH_EPS;
+      return [o.position[0] - r, o.position[0] + r] as const;
+    }),
+    ...(host.blocked ?? []).map(([a, b]) => [a - reach, b + reach] as const),
+  ];
   if (uMax - uMin > 1e-9) return freeIntervals(uMin, uMax, blocked);
   // Проём во всю допустимую ширину стены: единственная позиция — центр.
   const isBlocked = blocked.some(([a, b]) => uMin > a + 1e-9 && uMin < b - 1e-9);

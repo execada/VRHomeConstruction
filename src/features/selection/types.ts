@@ -14,7 +14,8 @@ export type SceneSelection =
   | { kind: 'wall'; side: WallSide }
   | { kind: 'floor' }
   | { kind: 'ceiling' }
-  | { kind: 'room' };
+  /** Помещение, в котором находится точка [x, z] (помещения вычисляются по стенам) */
+  | { kind: 'room'; point: [number, number] };
 
 /** Состояние выделения (Redux slice). */
 export interface SelectionState {

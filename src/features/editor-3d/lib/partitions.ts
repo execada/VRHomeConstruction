@@ -5,10 +5,11 @@
  * @module editor-3d/lib/partitions
  */
 
-import { clamp, clampObbToRect, length2, normalizeAngle, sub2, type Vec2, add2, scale2, rotateLocal } from '@/shared/lib/math/geometry2d';
+import { clamp, length2, normalizeAngle, sub2, type Rect, type Vec2, add2, scale2, rotateLocal } from '@/shared/lib/math/geometry2d';
 import { normalizeWallOpenings } from './openings';
+import { DEFAULT_INTERIOR_MATERIAL, isWallMaterialId } from './wallMaterials';
 import { interiorRect } from './walls';
-import type { Partition, RoomDimensions, SurfaceFinish } from '../types';
+import type { Partition, RoomDimensions, SurfaceFinish, WallMaterialId } from '../types';
 
 /** Ограничения размеров перегородки, м. */
 export const PARTITION_LIMITS = {
@@ -29,20 +30,37 @@ export function maxCornerRadius(partition: Pick<Partition, 'size'>): number {
 /** Центр перегородки на полу. */
 const centerOf = (p: Partition): Vec2 => [p.position[0], p.position[2]];
 
+/** Стена с меньшим синусом угла к внешней стене считается ей параллельной. */
+const PARALLEL_SIN = Math.sin((10 * Math.PI) / 180);
+
+/**
+ * Вписать ось стены в комнату: концы — внутри (на внутренних гранях внешних стен можно,
+ * это Т-стык), параллельная внешней стене стена не заходит в неё своей толщиной.
+ * Слишком длинная стена укорачивается с сохранением направления.
+ */
+function fitAxis(center: Vec2, length: number, angle: number, half: number, rect: Rect): { center: Vec2; length: number } {
+  const dir = rotateLocal([1, 0], angle);
+  const insetX = Math.abs(dir[0]) < PARALLEL_SIN ? half : 0;
+  const insetZ = Math.abs(dir[1]) < PARALLEL_SIN ? half : 0;
+  const r = { minX: rect.minX + insetX, maxX: rect.maxX - insetX, minZ: rect.minZ + insetZ, maxZ: rect.maxZ - insetZ };
+  const ex = (Math.abs(dir[0]) * length) / 2;
+  const ez = (Math.abs(dir[1]) * length) / 2;
+  const k = Math.min(1, ex > 1e-9 ? (r.maxX - r.minX) / (2 * ex) : 1, ez > 1e-9 ? (r.maxZ - r.minZ) / (2 * ez) : 1);
+  const fit = (v: number, min: number, max: number, e: number) => (max - min < 2 * e ? (min + max) / 2 : clamp(v, min + e, max - e));
+  return { center: [fit(center[0], r.minX, r.maxX, ex * k), fit(center[1], r.minZ, r.maxZ, ez * k)], length: length * k };
+}
+
 /**
  * Привести перегородку к допустимому виду: размеры, высота центра, только поворот по Y,
  * радиус скругления, положение внутри комнаты и проёмы.
  */
 export function clampPartition(partition: Partition, dims: RoomDimensions): Partition {
-  const maxLength = Math.max(dims.width, dims.depth);
-  const length = clamp(partition.size[0], PARTITION_LIMITS.minLength, maxLength);
+  const maxLength = Math.hypot(dims.width, dims.depth);
   const height = clamp(partition.size[1], PARTITION_LIMITS.minHeight, dims.height);
   const thickness = clamp(partition.size[2], PARTITION_LIMITS.minThickness, PARTITION_LIMITS.maxThickness);
   const angle = normalizeAngle(partition.rotation[1]);
-  const fitted = clampObbToRect(
-    { center: centerOf(partition), half: [length / 2, thickness / 2], angle },
-    interiorRect(dims),
-  );
+  const fitted = fitAxis(centerOf(partition), clamp(partition.size[0], PARTITION_LIMITS.minLength, maxLength), angle, thickness / 2, interiorRect(dims));
+  const length = fitted.length;
   const size: [number, number, number] = [length, height, thickness];
   return {
     ...partition,
@@ -56,7 +74,7 @@ export function clampPartition(partition: Partition, dims: RoomDimensions): Part
 
 /**
  * Создать перегородку на всю высоту комнаты.
- * @param params - id, центр на полу [x, z], поворот, размеры комнаты, отделка, длина
+ * @param params - id, центр на полу [x, z], поворот, размеры комнаты, отделка, длина, материал, толщина
  */
 export function createPartition(params: {
   id: string;
@@ -65,6 +83,8 @@ export function createPartition(params: {
   dims: RoomDimensions;
   finish?: SurfaceFinish;
   length?: number;
+  material?: WallMaterialId;
+  thickness?: number;
 }): Partition {
   const { id, center, angle = 0, dims, finish, length = PARTITION_DEFAULTS.length } = params;
   return clampPartition(
@@ -72,13 +92,19 @@ export function createPartition(params: {
       id,
       position: [center[0], dims.height / 2, center[1]],
       rotation: [0, angle, 0],
-      size: [Math.min(length, Math.max(dims.width, dims.depth) * 0.6), dims.height, PARTITION_DEFAULTS.thickness],
+      size: [Math.min(length, Math.max(dims.width, dims.depth) * 0.6), dims.height, params.thickness ?? PARTITION_DEFAULTS.thickness],
       openings: [],
       finish,
       cornerRadius: PARTITION_DEFAULTS.cornerRadius,
+      material: params.material ?? DEFAULT_INTERIOR_MATERIAL,
     },
     dims,
   );
+}
+
+/** Материал внутренней стены (старые стены без материала — гипсокартон). */
+export function partitionMaterial(partition: Pick<Partition, 'material'>): WallMaterialId {
+  return isWallMaterialId(partition.material) ? partition.material : DEFAULT_INTERIOR_MATERIAL;
 }
 
 /** Концы перегородки на полу [начало, конец] (вдоль локальной +X). */

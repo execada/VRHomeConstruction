@@ -4,6 +4,8 @@
  */
 
 import { createSelector } from '@reduxjs/toolkit';
+import { selectRooms } from '@/features/editor-3d/layoutSelectors';
+import { roomAt } from '@/features/editor-3d/lib/rooms';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { selectors as furnitureSelectors } from '@/features/furniture/selectors';
 import { name, SelectionState } from './slice';
@@ -42,6 +44,11 @@ const selectSelectedOpeningLive = createSelector(
   },
 );
 
+/** Выделенное помещение (актуальные данные по точке выделения) */
+const selectSelectedRoom = createSelector([selectSelection, selectRooms], (sel, rooms) =>
+  sel?.kind === 'room' ? roomAt(rooms, sel.point) : null,
+);
+
 /** id выделенного объекта (для подсветки в 2D/3D) */
 const selectSelectedId = createSelector(selectSelection, (sel) => {
   if (!sel) return null;
@@ -56,5 +63,6 @@ export const selectors = {
   selectSelectedItem,
   selectSelectedPartitionLive,
   selectSelectedOpeningLive,
+  selectSelectedRoom,
   selectSelectedId,
 };

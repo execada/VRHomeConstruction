@@ -24,6 +24,7 @@ export const PlanEditor2D: React.FC = () => {
   const commands = useSceneCommands();
   const viewed = useSelector(editorSelectors.selectViewedWallId);
   const removed = useSelector(editorSelectors.selectRemovedWalls);
+  const tool = useSelector(editorSelectors.selectActiveTool);
   const side: WallSide = isWallSide(viewed) ? viewed : 'front';
 
   const pickWall = (next: WallSide) => {
@@ -36,7 +37,9 @@ export const PlanEditor2D: React.FC = () => {
       <div className={styles.bar}>
         <Segmented ariaLabel="Стена" options={WALL_OPTIONS} value={side} onChange={pickWall} />
         <span className={styles.hint}>
-          Тяните стены, проёмы, перегородки и мебель мышью · колесо — масштаб · двойной клик — показать всё
+          {tool === 'partition'
+            ? 'Кликните начало и конец стены · концы липнут к стенам · правая кнопка или Esc — закончить'
+            : 'Тяните стены, проёмы и мебель мышью · клик по помещению — название и площадь · колесо — масштаб'}
         </span>
         <Button size="sm" icon="window" disabled={removed.includes(side)} onClick={() => commands.openings.add(side, 'window')}>
           Окно
@@ -44,8 +47,13 @@ export const PlanEditor2D: React.FC = () => {
         <Button size="sm" icon="door" disabled={removed.includes(side)} onClick={() => commands.openings.add(side, 'door')}>
           Дверь
         </Button>
-        <Button size="sm" icon="partition" onClick={() => commands.partitions.add()}>
-          Перегородка
+        <Button
+          size="sm"
+          icon="partition"
+          variant={tool === 'partition' ? 'primary' : 'secondary'}
+          onClick={() => dispatch(editorActions.setActiveTool(tool === 'partition' ? 'select' : 'partition'))}
+        >
+          {tool === 'partition' ? 'Готово' : 'Стена'}
         </Button>
       </div>
       <div className={styles.views}>

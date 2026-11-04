@@ -1,5 +1,6 @@
 /**
- * Миграция документа сцены v1 → v2.
+ * Миграция документа сцены v1 → v3 (формат v2 при этом пропускается: поля v3
+ * заполняются так же, как при миграции v2 → v3, см. migrateV2).
  *
  * Отличия v1:
  * - цвета и материалы поверхностей в `colors` / `materials` вместо `finishes`;
@@ -13,12 +14,14 @@ import { DEFAULT_ENVIRONMENT } from '@/features/environment/constants';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { clamp } from '@/shared/lib/math/geometry2d';
 import { isHexColor } from '@/shared/lib/color/colorTemperature';
-import { DEFAULT_FINISHES, DEFAULT_LIGHT, DEFAULT_WALL_THICKNESS } from '../../constants';
+import { DEFAULT_FINISHES, DEFAULT_LIGHT, DEFAULT_OUTER_WALLS } from '../../constants';
 import type { LightConfig, Opening, Partition, RoomDimensions, RoomFinishes, SurfaceFinish } from '../../types';
 import { clampOpening } from '../openings';
 import { clampPartition } from '../partitions';
 import { isWallSide, wallFrame } from '../walls';
 import { createEmptyScene } from './build';
+import { LEGACY_DOOR } from '../doors';
+import { legacyPartitionMaterial } from './migrateV2';
 import { furnitureSchema, modelPathSchema, SCENE_LIMITS, SCENE_SCHEMA_VERSION, type SceneDocument } from './schema';
 
 type Loose = Record<string, unknown>;
@@ -84,6 +87,7 @@ function migrateOpening(raw: Loose, hostHeight: number, mirrorU: boolean): Openi
     position: [mirrorU ? -u : u, y + hostHeight / 2],
     width: clamp(num(raw.width, 0.9), 0.1, 10),
     height: clamp(num(raw.height, 1.2), 0.1, 10),
+    ...(type === 'door' ? { door: LEGACY_DOOR } : {}),
   };
 }
 
@@ -118,6 +122,7 @@ export function migratePartitions(raw: unknown, dims: RoomDimensions): Partition
       openings: openings.map((o) => ({ ...o, wallId: id })),
       finish: color ? { textureId: null, color, scale: 1 } : undefined,
       cornerRadius: 0,
+      material: legacyPartitionMaterial(size[2]),
     };
     return [clampPartition(partition, dims)];
   });
@@ -145,7 +150,7 @@ export function migrateFurniture(raw: unknown): FurnitureItem[] {
 }
 
 /**
- * Перевести документ v1 в v2.
+ * Перевести документ v1 в текущий формат.
  * @param raw - roomData v1 (объект без schemaVersion или со schemaVersion = 1)
  */
 export function migrateV1(raw: Loose): SceneDocument {
@@ -153,13 +158,14 @@ export function migrateV1(raw: Loose): SceneDocument {
   return {
     schemaVersion: SCENE_SCHEMA_VERSION,
     dimensions,
-    wallThickness: DEFAULT_WALL_THICKNESS,
+    outerWalls: DEFAULT_OUTER_WALLS,
     finishes: migrateFinishes(raw.colors, raw.materials),
     removedWalls: [],
     light: migrateLight(raw.light),
     environment: DEFAULT_ENVIRONMENT,
     openings: migrateWallOpenings(raw.openings, dimensions),
     partitions: migratePartitions(raw.partitions, dimensions),
+    rooms: [],
     furniture: migrateFurniture(raw.furniture),
   };
 }

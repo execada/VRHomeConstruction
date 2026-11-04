@@ -1,8 +1,9 @@
 /**
  * Камера от первого лица: зажатая левая кнопка мыши — осмотреться, WASD — идти,
- * Shift — бег, Space — прыжок, Ctrl/C — присесть.
- * Со столкновениями нельзя пройти сквозь стены, перегородки и мебель (скольжение вдоль них);
- * без столкновений — свободный полёт по участку вокруг комнаты.
+ * Shift — бег, Space — прыжок, Ctrl/C — присесть, клик по двери — открыть/закрыть.
+ * Со столкновениями нельзя пройти сквозь стены, закрытые двери, окна и мебель (скольжение
+ * вдоль них); через пустые проёмы и открытые двери можно переходить из комнаты в комнату
+ * и выйти на участок. Без столкновений — свободный полёт по участку вокруг комнаты.
  * @module camera/ui/FirstPersonRig
  */
 
@@ -12,7 +13,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import type { RootState } from '@/app/store';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
-import { furnitureFootprint, isFlatItem, partitionFootprint } from '@/features/editor-3d/lib/placement';
+import { cachedWalkObstacles } from '@/features/editor-3d/lib/layoutCache';
+import { furnitureFootprint, isFlatItem } from '@/features/editor-3d/lib/placement';
 import { interiorRect } from '@/features/editor-3d/lib/walls';
 import { clamp, type Rect } from '@/shared/lib/math/geometry2d';
 import { selectors } from '../selectors';
@@ -29,6 +31,8 @@ const JUMP_VELOCITY = 4.2;
 const GRAVITY = 14;
 const PITCH_LIMIT = Math.PI / 2.1;
 const REPORT_INTERVAL = 0.5;
+/** Участок вокруг квартиры, по которому можно ходить, м. */
+const LOT_MARGIN = 6;
 
 export const FirstPersonRig: React.FC = () => {
   const store = useStore<RootState>();
@@ -39,8 +43,8 @@ export const FirstPersonRig: React.FC = () => {
   const motion = useRef({ eye: STAND_EYE, jump: 0, velocity: 0, sinceReport: 0 });
   const bounds = useMemo<Rect>(() => {
     const rect = interiorRect(dims);
-    return collisions ? rect : { minX: rect.minX - 6, maxX: rect.maxX + 6, minZ: rect.minZ - 6, maxZ: rect.maxZ + 6 };
-  }, [dims, collisions]);
+    return { minX: rect.minX - LOT_MARGIN, maxX: rect.maxX + LOT_MARGIN, minZ: rect.minZ - LOT_MARGIN, maxZ: rect.maxZ + LOT_MARGIN };
+  }, [dims]);
 
   useEffect(() => {
     const restore = takeRestorePose('fps');
@@ -75,7 +79,7 @@ export const FirstPersonRig: React.FC = () => {
       const state = store.getState();
       const obstacles = collisions
         ? [
-            ...state.editor.partitions.map(partitionFootprint),
+            ...cachedWalkObstacles(state.editor),
             ...state.furniture.items.filter((f) => !isFlatItem(f) && f.position[1] < m.eye).map(furnitureFootprint),
           ]
         : [];

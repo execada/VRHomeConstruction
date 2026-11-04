@@ -36,6 +36,24 @@ func validScene() map[string]interface{} {
 	}
 }
 
+// sceneV3 — документ сцены v3: конструкция внешних стен, материалы внутренних стен,
+// двери в проёмах и названия помещений.
+func sceneV3() map[string]interface{} {
+	wall := map[string]interface{}{"thickness": 0.25, "material": "brick"}
+	door := map[string]interface{}{"style": "panel", "hinge": "start", "swing": "front", "open": false, "color": "#efe9df"}
+	opening := map[string]interface{}{"id": "d1", "wallId": "p1", "type": "door", "position": []interface{}{0.0, 1.05}, "width": 0.9, "height": 2.1, "door": door}
+	return map[string]interface{}{
+		"schemaVersion": 3.0,
+		"dimensions":    map[string]interface{}{"width": 12.0, "height": 2.8, "depth": 12.5},
+		"outerWalls":    map[string]interface{}{"front": wall, "back": wall, "left": wall, "right": wall},
+		"partitions": []interface{}{map[string]interface{}{
+			"id": "p1", "position": []interface{}{0.0, 1.4, 0.0}, "rotation": []interface{}{0.0, 0.0, 0.0},
+			"size": []interface{}{4.0, 2.8, 0.1}, "material": "drywall", "openings": []interface{}{opening},
+		}},
+		"rooms": []interface{}{map[string]interface{}{"id": "r1", "name": "Лоджия", "anchor": []interface{}{1.0, 5.5}, "kind": "loggia"}},
+	}
+}
+
 // nestedObject строит документ из levels вложенных объектов (корень — уровень 1).
 func nestedObject(levels int) map[string]interface{} {
 	root := map[string]interface{}{}
@@ -98,6 +116,8 @@ func TestValidateRoomDataAcceptsValidDocuments(t *testing.T) {
 		"max furniture":        map[string]interface{}{"furniture": items(maxFurnitureItems)},
 		"max partitions":       map[string]interface{}{"partitions": items(maxPartitionItems)},
 		"max openings":         map[string]interface{}{"openings": items(maxOpeningItems)},
+		"max rooms":            map[string]interface{}{"rooms": items(maxRoomLabelItems)},
+		"scene v3":             sceneV3(),
 	}
 	for name, doc := range docs {
 		t.Run(name, func(t *testing.T) {
@@ -207,6 +227,8 @@ func TestValidateRoomDataArrayCaps(t *testing.T) {
 		"too much furniture":  {map[string]interface{}{"furniture": items(maxFurnitureItems + 1)}, "furniture must contain at most 500"},
 		"too many partitions": {map[string]interface{}{"partitions": items(maxPartitionItems + 1)}, "partitions must contain at most 100"},
 		"too many openings":   {map[string]interface{}{"openings": items(maxOpeningItems + 1)}, "openings must contain at most 300"},
+		"too many rooms":      {map[string]interface{}{"rooms": items(maxRoomLabelItems + 1)}, "rooms must contain at most 100"},
+		"rooms object":        {map[string]interface{}{"rooms": map[string]interface{}{}}, "rooms must be an array"},
 		"bson array over cap": {map[string]interface{}{"furniture": primitive.A(items(maxFurnitureItems + 1))}, "furniture"},
 		"furniture object":    {map[string]interface{}{"furniture": map[string]interface{}{}}, "furniture must be an array"},
 		"openings null":       {map[string]interface{}{"openings": nil}, "openings must be an array"},

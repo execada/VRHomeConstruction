@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { withSill } from './openings';
-import { createPartition } from './partitions';
+import { createPartition, partitionEndpoints, partitionFromEndpoints } from './partitions';
 import { anchorForDraggedWall, resizeRoom, resizeShift, type RoomContent } from './roomResize';
 import { wallFrame, wallToWorld } from './walls';
 
@@ -75,6 +75,17 @@ describe('resizeRoom', () => {
   it('makes full-height partitions follow the new ceiling height', () => {
     const after = resizeRoom(content(), { ...dims, height: 2.6 });
     expect(after.partitions[0].size[1]).toBeCloseTo(2.6);
+  });
+
+  it('keeps interior walls attached to the outer walls they touched', () => {
+    const across = partitionFromEndpoints(createPartition({ id: 'x', center: [0, 0], dims }), [0.5, -2], [0.5, 2], dims);
+    const before: RoomContent = { ...content(), partitions: [across], rooms: [{ id: 'r', name: 'Кухня', anchor: [1, 1] }] };
+    const after = resizeRoom(before, { ...dims, depth: 5 }, anchorForDraggedWall('front'));
+    const [a, b] = partitionEndpoints(after.partitions[0]);
+    expect(a[1]).toBeCloseTo(-2.5);
+    expect(b[1]).toBeCloseTo(2.5);
+    expect(after.partitions[0].size[0]).toBeCloseTo(5);
+    expect(after.rooms?.[0].anchor).toEqual([1, expect.closeTo(0.5)]);
   });
 
   it('keeps door sills on the floor when the height changes', () => {

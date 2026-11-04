@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LIGHT } from './constants';
+import { DEFAULT_LIGHT, uniformOuterWalls } from './constants';
 import { createEmptyScene } from './lib/scene/build';
 import { actions, reducer } from './slice';
 import type { Opening, Partition, SurfaceFinish } from './types';
@@ -59,9 +59,9 @@ describe('editor slice: комната и вид', () => {
 
   it('толщина стен, скрытые стены и сброс', () => {
     let state = initial();
-    state = reducer(state, actions.setWallThickness(0.3));
+    state = reducer(state, actions.setOuterWalls(uniformOuterWalls(0.3, 'aerated')));
     state = reducer(state, actions.setRemovedWalls(['front']));
-    expect(state.wallThickness).toBe(0.3);
+    expect(state.outerWalls.left).toEqual({ thickness: 0.3, material: 'aerated' });
     expect(state.removedWalls).toEqual(['front']);
     expect(reducer(state, actions.resetEditor())).toEqual(initial());
   });
@@ -137,13 +137,15 @@ describe('editor slice: загрузка сцены', () => {
       actions.loadScene({
         dimensions: doc.dimensions,
         finishes: doc.finishes,
-        wallThickness: doc.wallThickness,
+        outerWalls: doc.outerWalls,
         removedWalls: doc.removedWalls,
         light: doc.light,
         openings: {},
         partitions: [],
+        rooms: [{ id: 'r', name: 'Кухня', anchor: [0, 0] }],
       }),
     );
+    expect(state.rooms[0].name).toBe('Кухня');
     expect(state.dimensions.width).toBe(6);
     expect(state.selectedPartition).toBeNull();
     expect(state.selectedOpening).toBeNull();

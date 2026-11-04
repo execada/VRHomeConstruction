@@ -9,7 +9,7 @@ import cn from 'classnames';
 import { useSelector } from 'react-redux';
 import type { SurfaceFinish } from '@/features/editor-3d/types';
 import { ColorField, Slider } from '@/shared/ui/controls';
-import { texturesFor } from '../lib/catalog';
+import { BARE_FINISH_ID, isBareFinish, texturesFor } from '../lib/catalog';
 import { textureThumbnail } from '../lib/textureCache';
 import { selectTextureCatalog } from '../model/selectors';
 import type { TextureCategory } from '../types';
@@ -19,24 +19,43 @@ interface FinishEditorProps {
   category: TextureCategory;
   finish: SurfaceFinish;
   onChange: (finish: SurfaceFinish) => void;
+  /** Вариант «Без отделки» (стены): превью конструкционного материала */
+  bare?: { thumbnail: string | null };
 }
 
 const NEUTRAL_TINT = '#ffffff';
 
-export const FinishEditor: React.FC<FinishEditorProps> = memo(({ category, finish, onChange }) => {
+const BareTile: React.FC<{ selected: boolean; thumbnail: string | null; onPick: () => void }> = ({ selected, thumbnail, onPick }) => (
+  <button
+    type="button"
+    role="option"
+    aria-selected={selected}
+    className={cn(styles.tile, selected && styles.selected)}
+    onClick={onPick}
+    title="Без отделки: видна конструкция стены"
+  >
+    <span className={styles.preview} style={thumbnail ? { backgroundImage: `url("${thumbnail}")` } : undefined} />
+    <span className={styles.name}>Без отделки</span>
+  </button>
+);
+
+export const FinishEditor: React.FC<FinishEditorProps> = memo(({ category, finish, onChange, bare }) => {
   const catalog = useSelector(selectTextureCatalog);
   const textures = useMemo(() => texturesFor(catalog, category), [catalog, category]);
   const current = textures.find((t) => t.id === finish.textureId);
+  const isBare = isBareFinish(finish);
 
   const pick = (textureId: string | null) => {
     // Текстура выглядит как задумано с белым тонированием; однотонной поверхности нужен цвет.
-    const color = textureId && !finish.textureId ? NEUTRAL_TINT : finish.color;
-    onChange({ ...finish, textureId, color });
+    const toTexture = textureId !== null && textureId !== BARE_FINISH_ID;
+    const fromTexture = finish.textureId !== null && !isBare;
+    onChange({ ...finish, textureId, color: toTexture && !fromTexture ? NEUTRAL_TINT : finish.color });
   };
 
   return (
     <>
       <div className={styles.gallery} role="listbox" aria-label="Текстуры">
+        {bare && <BareTile selected={isBare} thumbnail={bare.thumbnail} onPick={() => pick(BARE_FINISH_ID)} />}
         <button
           type="button"
           role="option"
@@ -44,8 +63,8 @@ export const FinishEditor: React.FC<FinishEditorProps> = memo(({ category, finis
           className={cn(styles.tile, !finish.textureId && styles.selected)}
           onClick={() => pick(null)}
         >
-          <span className={cn(styles.preview, styles.plain)} style={{ backgroundColor: finish.textureId ? undefined : finish.color }}>
-            {finish.textureId ? 'Цвет' : ''}
+          <span className={cn(styles.preview, styles.plain)} style={{ backgroundColor: finish.textureId && !isBare ? undefined : finish.color }}>
+            {finish.textureId && !isBare ? 'Цвет' : ''}
           </span>
           <span className={styles.name}>Однотонная</span>
         </button>
@@ -67,7 +86,7 @@ export const FinishEditor: React.FC<FinishEditorProps> = memo(({ category, finis
           );
         })}
       </div>
-      {finish.textureId && (
+      {finish.textureId && !isBare && (
         <Slider
           label="Масштаб текстуры"
           value={finish.scale}
@@ -78,7 +97,11 @@ export const FinishEditor: React.FC<FinishEditorProps> = memo(({ category, finis
           onChange={(scale) => onChange({ ...finish, scale })}
         />
       )}
-      <ColorField label={finish.textureId ? 'Цвет тонирования' : 'Цвет'} value={finish.color} onChange={(color) => onChange({ ...finish, color })} />
+      {isBare ? (
+        <span className={styles.credit}>Отделки нет — видна кладка или обшивка стены.</span>
+      ) : (
+        <ColorField label={finish.textureId ? 'Цвет тонирования' : 'Цвет'} value={finish.color} onChange={(color) => onChange({ ...finish, color })} />
+      )}
       {current?.credit && (
         <span className={styles.credit}>
           {current.credit.author} · {current.credit.license}

@@ -13,7 +13,7 @@ import {
   DEFAULT_ROOM_DEPTH,
   DEFAULT_ROOM_HEIGHT,
   DEFAULT_ROOM_WIDTH,
-  DEFAULT_WALL_THICKNESS,
+  DEFAULT_OUTER_WALLS,
 } from '../../constants';
 import type { EditorScenePayload, EditorState, Opening, RoomDimensions } from '../../types';
 import { SCENE_SCHEMA_VERSION, type SceneDocument } from './schema';
@@ -21,7 +21,7 @@ import { SCENE_SCHEMA_VERSION, type SceneDocument } from './schema';
 /** Части состояния редактора, входящие в документ сцены. */
 export type EditorSceneSlice = Pick<
   EditorState,
-  'dimensions' | 'finishes' | 'wallThickness' | 'removedWalls' | 'light' | 'openings' | 'partitions'
+  'dimensions' | 'finishes' | 'outerWalls' | 'removedWalls' | 'light' | 'openings' | 'partitions' | 'rooms'
 >;
 
 /** Разложить проёмы по стенам. */
@@ -51,13 +51,14 @@ export function buildSceneDocument(
   return {
     schemaVersion: SCENE_SCHEMA_VERSION,
     dimensions: editor.dimensions,
-    wallThickness: editor.wallThickness,
+    outerWalls: editor.outerWalls,
     finishes: editor.finishes,
     removedWalls: editor.removedWalls,
     light: editor.light,
     environment,
     openings: flattenOpenings(editor.openings),
     partitions: editor.partitions,
+    rooms: editor.rooms,
     furniture,
   };
 }
@@ -67,11 +68,12 @@ export function toEditorPayload(doc: SceneDocument): EditorScenePayload {
   return {
     dimensions: doc.dimensions,
     finishes: doc.finishes,
-    wallThickness: doc.wallThickness,
+    outerWalls: doc.outerWalls,
     removedWalls: doc.removedWalls,
     light: doc.light,
     openings: groupOpenings(doc.openings),
     partitions: doc.partitions,
+    rooms: doc.rooms,
   };
 }
 
@@ -85,13 +87,14 @@ export function createEmptyScene(
   return {
     schemaVersion: SCENE_SCHEMA_VERSION,
     dimensions: dims,
-    wallThickness: DEFAULT_WALL_THICKNESS,
+    outerWalls: DEFAULT_OUTER_WALLS,
     finishes: DEFAULT_FINISHES,
     removedWalls: [],
     light: DEFAULT_LIGHT,
     environment: DEFAULT_ENVIRONMENT,
     openings: [],
     partitions: [],
+    rooms: [],
     furniture: [],
   };
 }

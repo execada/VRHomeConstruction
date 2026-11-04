@@ -24,6 +24,8 @@ export interface TextureDef {
   thumbnail?: string;
   /** Процедурная текстура (рисуется на canvas, без загрузки файлов) */
   draw?: TextureDraw;
+  /** Размер холста процедурной текстуры, px (по умолчанию 256) */
+  resolution?: number;
   /** Источник и лицензия (для экрана «Лицензии») */
   credit?: { source: string; license: string; author: string };
 }
