@@ -11,8 +11,8 @@ import { Environment, Lightformer } from '@react-three/drei';
 import { BackSide } from 'three';
 
 /**
- * Параметры сцены, которые drei применяет из каждого <Environment>.
- * Фон и окружение получают одинаковые значения, иначе последний смонтированный перезапишет чужие.
+ * Параметры сцены, которые drei применяет из <Environment>. Фон рисует отдельная сфера
+ * (site/PanoramaBackdrop), поэтому параметры фона здесь нейтральные.
  */
 export interface EnvSceneProps {
   backgroundIntensity: number;

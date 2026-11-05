@@ -23,10 +23,22 @@ const credit = {
 
 const entryId = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/);
 
+/**
+ * Участок вокруг квартиры для панорамы: `ground` — дом на земле (газон до горизонта),
+ * `elevated` — квартира на верхнем этаже высотки над городом (`elevation` — высота пола, м).
+ */
+export const panoramaSiteSchema = z.object({
+  kind: z.enum(['ground', 'elevated']),
+  elevation: z.number().min(10).max(500).optional(),
+});
+
 export const hdriEntrySchema = z.object({
   id: entryId,
   label: z.string().max(80),
   file: assetPath.refine((p) => p.endsWith('.hdr'), 'Ожидается .hdr'),
+  /** Фото для фона в высоком разрешении (equirect, LDR); без него фон — процедурное небо */
+  backplate: assetPath.refine((p) => /\.(jpe?g|webp)$/.test(p), 'Ожидается .jpg или .webp').optional(),
+  site: panoramaSiteSchema.optional(),
   thumbnail: assetPath,
   ...credit,
 });
@@ -114,6 +126,7 @@ export const modelEntrySchema = z.object({
 });
 
 export type HdriEntry = z.infer<typeof hdriEntrySchema>;
+export type PanoramaSite = z.infer<typeof panoramaSiteSchema>;
 export type TextureEntry = z.infer<typeof textureEntrySchema>;
 export type ModelEntry = z.infer<typeof modelEntrySchema>;
 export type ModelCategory = z.infer<typeof modelCategorySchema>;

@@ -18,13 +18,11 @@ import { selectors as cameraSelectors } from '@/features/camera/selectors';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { cachedWalkObstacles } from '@/features/editor-3d/lib/layoutCache';
 import { furnitureFootprint, isFlatItem } from '@/features/editor-3d/lib/placement';
-import { interiorRect } from '@/features/editor-3d/lib/walls';
+import { lotRect } from '@/features/editor-3d/lib/walls';
 import { interactionStore } from '@/features/editor-3d/model/interactionStore';
 import { useExternalStore } from '@/shared/lib/externalStore';
 import { sub2, type Obb, type Rect, type Vec2 } from '@/shared/lib/math/geometry2d';
 
-/** Участок вокруг квартиры, по которому можно ходить, м. */
-const LOT_MARGIN = 6;
 /** Высота глаз (мебель ниже — препятствие), м. */
 const EYE = 1.6;
 
@@ -39,10 +37,7 @@ export const VrRig: React.FC = () => {
 
   useXRControllerLocomotion(origin, { speed: 1.6 }, dragging ? false : { type: 'snap', degrees: 30 }, 'left');
 
-  const bounds = (): Rect => {
-    const r = interiorRect(dims);
-    return { minX: r.minX - LOT_MARGIN, maxX: r.maxX + LOT_MARGIN, minZ: r.minZ - LOT_MARGIN, maxZ: r.maxZ + LOT_MARGIN };
-  };
+  const bounds = (): Rect => lotRect(dims);
   const obstacles = (): Obb[] => {
     if (!collisions) return [];
     const { editor, furniture } = store.getState();

@@ -10,7 +10,7 @@ import { useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { selectors } from '../selectors';
-import { fixedViewPose, orbitLimits } from '../lib/views';
+import { CAMERA_FAR, fixedViewPose, orbitLimits } from '../lib/views';
 import { reportCameraPose, takeRestorePose } from '../model/cameraSession';
 import { useCameraTransition } from './useCameraTransition';
 import { useControlsLock } from './useControlsLock';
@@ -54,7 +54,7 @@ export const OrbitRig: React.FC = () => {
 
   return (
     <>
-      <PerspectiveCamera makeDefault fov={50} near={0.05} far={900} />
+      <PerspectiveCamera makeDefault fov={50} near={0.05} far={CAMERA_FAR} />
       <OrbitControls
         ref={controls}
         makeDefault

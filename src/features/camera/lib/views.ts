@@ -8,6 +8,9 @@ import type { FixedView } from '../types';
 
 type Vec3 = [number, number, number];
 
+/** Дальняя плоскость перспективных камер, м: земля и город вокруг квартиры видны почти до горизонта. */
+export const CAMERA_FAR = 4000;
+
 /** Положение камеры и точка, на которую она смотрит. */
 export interface ViewPose {
   position: Vec3;

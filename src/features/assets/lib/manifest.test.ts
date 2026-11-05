@@ -96,4 +96,23 @@ describe('parseManifest', () => {
     const m = parseManifest({ ...valid, hdris: [{ ...valid.hdris[0], file: '/assets/hdri/a.png' }] });
     expect(m.hdris).toHaveLength(0);
   });
+
+  it('accepts a backplate photo and the site around the apartment', () => {
+    const hdri = { ...valid.hdris[0], backplate: '/assets/hdri/meadow_4k.jpg', site: { kind: 'elevated', elevation: 90 } };
+    const [entry] = parseManifest({ ...valid, hdris: [hdri] }).hdris;
+    expect(entry.backplate).toBe('/assets/hdri/meadow_4k.jpg');
+    expect(entry.site).toEqual({ kind: 'elevated', elevation: 90 });
+  });
+
+  it('rejects unsafe backplates and unknown sites', () => {
+    const base = valid.hdris[0];
+    for (const hdri of [
+      { ...base, backplate: '/assets/hdri/meadow.exr' },
+      { ...base, backplate: 'https://example.com/a.jpg' },
+      { ...base, site: { kind: 'underwater' } },
+      { ...base, site: { kind: 'elevated', elevation: 5000 } },
+    ]) {
+      expect(parseManifest({ ...valid, hdris: [hdri] }).hdris).toHaveLength(0);
+    }
+  });
 });

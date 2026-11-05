@@ -22,6 +22,7 @@ import type { VrStore } from '@/features/vr/lib/createVrStore';
 import { SceneLoader } from './SceneLoader';
 import { FpsBadge, ViewportHint, ViewportToolbar } from './ViewportOverlays';
 import styles from './SceneViewport.module.scss';
+import { CAMERA_FAR } from '@/features/camera/lib/views';
 
 interface SceneViewportProps {
   xrStore: VrStore;
@@ -109,7 +110,7 @@ export const SceneViewport: React.FC<SceneViewportProps> = ({ xrStore, onSave })
         shadows={shadows}
         dpr={dpr}
         gl={{ antialias: graphics.antialias, powerPreference: 'high-performance', preserveDrawingBuffer: false }}
-        camera={{ position: [6, 5, 6], fov: 50, near: 0.05, far: 900 }}
+        camera={{ position: [6, 5, 6], fov: 50, near: 0.05, far: CAMERA_FAR }}
         onPointerMissed={() => commands.select(null)}
       >
         <XR store={xrStore}>

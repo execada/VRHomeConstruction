@@ -15,12 +15,13 @@ import type { RootState } from '@/app/store';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { cachedWalkObstacles } from '@/features/editor-3d/lib/layoutCache';
 import { furnitureFootprint, isFlatItem } from '@/features/editor-3d/lib/placement';
-import { interiorRect } from '@/features/editor-3d/lib/walls';
-import { clamp, type Rect } from '@/shared/lib/math/geometry2d';
+import { lotRect } from '@/features/editor-3d/lib/walls';
+import { clamp } from '@/shared/lib/math/geometry2d';
 import { selectors } from '../selectors';
 import { moveDirection, stepPlayer } from '../lib/firstPerson';
 import { reportCameraPose, takeRestorePose } from '../model/cameraSession';
 import { useFirstPersonInput } from './useFirstPersonInput';
+import { CAMERA_FAR } from '../lib/views';
 
 const WALK = 2.2;
 const SPRINT = 4.5;
@@ -31,8 +32,6 @@ const JUMP_VELOCITY = 4.2;
 const GRAVITY = 14;
 const PITCH_LIMIT = Math.PI / 2.1;
 const REPORT_INTERVAL = 0.5;
-/** Участок вокруг квартиры, по которому можно ходить, м. */
-const LOT_MARGIN = 6;
 
 export const FirstPersonRig: React.FC = () => {
   const store = useStore<RootState>();
@@ -41,10 +40,7 @@ export const FirstPersonRig: React.FC = () => {
   const gl = useThree((s) => s.gl);
   const input = useFirstPersonInput(gl.domElement);
   const motion = useRef({ eye: STAND_EYE, jump: 0, velocity: 0, sinceReport: 0 });
-  const bounds = useMemo<Rect>(() => {
-    const rect = interiorRect(dims);
-    return { minX: rect.minX - LOT_MARGIN, maxX: rect.maxX + LOT_MARGIN, minZ: rect.minZ - LOT_MARGIN, maxZ: rect.maxZ + LOT_MARGIN };
-  }, [dims]);
+  const bounds = useMemo(() => lotRect(dims), [dims]);
 
   useEffect(() => {
     const restore = takeRestorePose('fps');
@@ -109,5 +105,5 @@ export const FirstPersonRig: React.FC = () => {
     }
   });
 
-  return <PerspectiveCamera makeDefault fov={65} near={0.05} far={900} />;
+  return <PerspectiveCamera makeDefault fov={65} near={0.05} far={CAMERA_FAR} />;
 };

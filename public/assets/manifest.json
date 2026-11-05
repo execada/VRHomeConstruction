@@ -5,6 +5,10 @@
       "id": "meadow_2",
       "label": "Солнечный луг",
       "file": "/assets/hdri/meadow_2/meadow_2_2k.hdr",
+      "backplate": "/assets/hdri/meadow_2/meadow_2_4k.jpg",
+      "site": {
+        "kind": "ground"
+      },
       "thumbnail": "/assets/hdri/meadow_2/thumb.jpg",
       "source": "https://polyhaven.com/a/meadow_2",
       "license": "CC0",
@@ -14,6 +18,10 @@
       "id": "stuttgart_suburbs",
       "label": "Пригород, утро",
       "file": "/assets/hdri/stuttgart_suburbs/stuttgart_suburbs_2k.hdr",
+      "backplate": "/assets/hdri/stuttgart_suburbs/stuttgart_suburbs_4k.jpg",
+      "site": {
+        "kind": "ground"
+      },
       "thumbnail": "/assets/hdri/stuttgart_suburbs/thumb.jpg",
       "source": "https://polyhaven.com/a/stuttgart_suburbs",
       "license": "CC0",
@@ -23,6 +31,10 @@
       "id": "lilienstein",
       "label": "Опушка леса",
       "file": "/assets/hdri/lilienstein/lilienstein_2k.hdr",
+      "backplate": "/assets/hdri/lilienstein/lilienstein_4k.jpg",
+      "site": {
+        "kind": "ground"
+      },
       "thumbnail": "/assets/hdri/lilienstein/thumb.jpg",
       "source": "https://polyhaven.com/a/lilienstein",
       "license": "CC0",
@@ -32,6 +44,10 @@
       "id": "sunny_vondelpark",
       "label": "Парк, золотой час",
       "file": "/assets/hdri/sunny_vondelpark/sunny_vondelpark_2k.hdr",
+      "backplate": "/assets/hdri/sunny_vondelpark/sunny_vondelpark_4k.jpg",
+      "site": {
+        "kind": "ground"
+      },
       "thumbnail": "/assets/hdri/sunny_vondelpark/thumb.jpg",
       "source": "https://polyhaven.com/a/sunny_vondelpark",
       "license": "CC0",
@@ -41,6 +57,10 @@
       "id": "lythwood_field",
       "label": "Пасмурный день",
       "file": "/assets/hdri/lythwood_field/lythwood_field_2k.hdr",
+      "backplate": "/assets/hdri/lythwood_field/lythwood_field_4k.jpg",
+      "site": {
+        "kind": "ground"
+      },
       "thumbnail": "/assets/hdri/lythwood_field/thumb.jpg",
       "source": "https://polyhaven.com/a/lythwood_field",
       "license": "CC0",
@@ -50,6 +70,11 @@
       "id": "sunset_jhbcentral",
       "label": "Мегаполис на закате",
       "file": "/assets/hdri/sunset_jhbcentral/sunset_jhbcentral_2k.hdr",
+      "backplate": "/assets/hdri/sunset_jhbcentral/sunset_jhbcentral_4k.jpg",
+      "site": {
+        "kind": "elevated",
+        "elevation": 90
+      },
       "thumbnail": "/assets/hdri/sunset_jhbcentral/thumb.jpg",
       "source": "https://polyhaven.com/a/sunset_jhbcentral",
       "license": "CC0",
@@ -59,6 +84,11 @@
       "id": "shanghai_bund",
       "label": "Мегаполис ночью",
       "file": "/assets/hdri/shanghai_bund/shanghai_bund_2k.hdr",
+      "backplate": "/assets/hdri/shanghai_bund/shanghai_bund_4k.jpg",
+      "site": {
+        "kind": "elevated",
+        "elevation": 90
+      },
       "thumbnail": "/assets/hdri/shanghai_bund/thumb.jpg",
       "source": "https://polyhaven.com/a/shanghai_bund",
       "license": "CC0",

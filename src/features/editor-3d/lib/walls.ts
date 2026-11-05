@@ -91,6 +91,15 @@ export function interiorRect(dims: Pick<RoomDimensions, 'width' | 'depth'>): Rec
   return { minX: -dims.width / 2, maxX: dims.width / 2, minZ: -dims.depth / 2, maxZ: dims.depth / 2 };
 }
 
+/** Участок вокруг квартиры, по которому можно ходить от первого лица и в VR, м. */
+export const LOT_MARGIN = 6;
+
+/** Участок вокруг квартиры: внутренний прямоугольник, расширенный на LOT_MARGIN с каждой стороны. */
+export function lotRect(dims: Pick<RoomDimensions, 'width' | 'depth'>): Rect {
+  const r = interiorRect(dims);
+  return { minX: r.minX - LOT_MARGIN, maxX: r.maxX + LOT_MARGIN, minZ: r.minZ - LOT_MARGIN, maxZ: r.maxZ + LOT_MARGIN };
+}
+
 /**
  * Система координат внешней стены.
  * @param side - сторона стены

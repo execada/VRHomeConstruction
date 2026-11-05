@@ -6,6 +6,8 @@ import {
   interiorRect,
   isWallFacingAway,
   isWallSide,
+  LOT_MARGIN,
+  lotRect,
   nearestWall,
   openingHole,
   outerBounds,
@@ -158,6 +160,11 @@ describe('helpers', () => {
 
   it('builds the interior rectangle', () => {
     expect(interiorRect(dims)).toEqual({ minX: -2, maxX: 2, minZ: -3, maxZ: 3 });
+  });
+
+  it('extends the interior by the walkable lot', () => {
+    const m = LOT_MARGIN;
+    expect(lotRect(dims)).toEqual({ minX: -2 - m, maxX: 2 + m, minZ: -3 - m, maxZ: 3 + m });
   });
 
   it('finds the nearest wall', () => {

@@ -16,4 +16,4 @@ export const AssetsFeature = {
   selectors,
 };
 
-export type { AssetManifest, HdriEntry, TextureEntry, ModelEntry, ModelCategory } from './lib/manifest';
+export type { AssetManifest, HdriEntry, PanoramaSite, TextureEntry, ModelEntry, ModelCategory } from './lib/manifest';

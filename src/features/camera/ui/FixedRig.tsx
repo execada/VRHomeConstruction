@@ -9,7 +9,7 @@ import { useSelector } from 'react-redux';
 import { PerspectiveCamera } from '@react-three/drei';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { selectors } from '../selectors';
-import { fixedViewPose } from '../lib/views';
+import { CAMERA_FAR, fixedViewPose } from '../lib/views';
 import { useCameraTransition } from './useCameraTransition';
 
 const NO_CONTROLS = { current: null };
@@ -26,5 +26,5 @@ export const FixedRig: React.FC = () => {
     mounted.current = true;
   }, [view, dims, viewRequest, flyTo]);
 
-  return <PerspectiveCamera makeDefault fov={50} near={0.05} far={900} />;
+  return <PerspectiveCamera makeDefault fov={50} near={0.05} far={CAMERA_FAR} />;
 };

@@ -13,6 +13,11 @@ Downloaded on 2026-10-28 via the public Poly Haven API (api.polyhaven.com); file
 | lythwood_field | HDRI | Greg Zaal | https://polyhaven.com/a/lythwood_field | CC0 1.0 |
 | sunset_jhbcentral | HDRI | Greg Zaal, Dimitrios Savva | https://polyhaven.com/a/sunset_jhbcentral | CC0 1.0 |
 | shanghai_bund | HDRI | Greg Zaal | https://polyhaven.com/a/shanghai_bund | CC0 1.0 |
+
+Background photos (`hdri/*/*_4k.jpg`) are the same panoramas: Poly Haven "Tonemapped JPG" files downsized to 4096×2048 (downloaded on 2026-11-05); authors and license as above.
+
+| Asset id | Type | Author | Source | License |
+|---|---|---|---|---|
 | laminate_floor_02 | PBR texture | Dario Barresi, Charlotte Baglioni | https://polyhaven.com/a/laminate_floor_02 | CC0 1.0 |
 | wood_floor | PBR texture | Dimitrios Savva | https://polyhaven.com/a/wood_floor | CC0 1.0 |
 | plank_flooring_04 | PBR texture | Dimitrios Savva | https://polyhaven.com/a/plank_flooring_04 | CC0 1.0 |
@@ -29,6 +34,8 @@ Downloaded on 2026-10-28 via the public Poly Haven API (api.polyhaven.com); file
 | rustic_stone_wall_02 | PBR texture | Amal Kumar | https://polyhaven.com/a/rustic_stone_wall_02 | CC0 1.0 |
 | plastered_wall | PBR texture | Amal Kumar | https://polyhaven.com/a/plastered_wall | CC0 1.0 |
 | plaster_grey_04 | PBR texture | Rob Tuytel | https://polyhaven.com/a/plaster_grey_04 | CC0 1.0 |
+| leafy_grass | PBR texture (site lawn, `site/lawn`) | Charlotte Baglioni | https://polyhaven.com/a/leafy_grass | CC0 1.0 |
+| large_grey_tiles | PBR texture (rooftop terrace, `site/terrace`) | Rob Tuytel | https://polyhaven.com/a/large_grey_tiles | CC0 1.0 |
 
 ## 3D models
 
