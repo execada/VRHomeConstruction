@@ -4,13 +4,53 @@
       "source": "polyhaven",
       "id": "Sofa_01",
       "label": "Диван",
-      "category": "seating"
+      "category": "seating",
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [-0.42, 0.38, -0.171]
+        },
+        {
+          "id": "back-2",
+          "kind": "back",
+          "position": [0, 0.38, -0.171]
+        },
+        {
+          "id": "back-3",
+          "kind": "back",
+          "position": [0.42, 0.38, -0.171]
+        },
+        {
+          "id": "seat-1",
+          "kind": "seat",
+          "position": [-0.31, 0.38, 0.14]
+        },
+        {
+          "id": "seat-2",
+          "kind": "seat",
+          "position": [0.31, 0.38, 0.14]
+        }
+      ]
     },
     {
       "source": "polyhaven",
       "id": "modern_arm_chair_01",
       "label": "Кресло",
-      "category": "seating"
+      "category": "seating",
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [0, 0.53, -0.082],
+          "tilt": 25
+        },
+        {
+          "id": "seat-1",
+          "kind": "seat",
+          "position": [0, 0.54, 0.23]
+        }
+      ]
     },
     {
       "source": "polyhaven",
@@ -112,7 +152,15 @@
       "source": "polyhaven",
       "id": "mid_century_lounge_chair",
       "label": "Лаунж-кресло",
-      "category": "seating"
+      "category": "seating",
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [0, 0.39, 0.03],
+          "tilt": 30
+        }
+      ]
     },
     {
       "source": "polyhaven",
@@ -169,7 +217,36 @@
       "source": "polyhaven",
       "id": "throw_pillows_01",
       "label": "Декоративные подушки",
-      "category": "decor"
+      "category": "decor",
+      "cushion": {
+        "upright": true
+      }
+    },
+    {
+      "source": "local",
+      "id": "pillow_velvet_ochre",
+      "label": "Подушка бархатная",
+      "category": "decor",
+      "file": "pillow_velvet_ochre.gltf",
+      "cushion": {},
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "pillow_linen_sand",
+      "label": "Подушка льняная",
+      "category": "decor",
+      "file": "pillow_linen_sand.gltf",
+      "cushion": {},
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
     },
     {
       "source": "polyhaven",
@@ -252,7 +329,31 @@
         "url": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/GlamVelvetSofa",
         "attribution": "\"Glam Velvet Sofa\" by Eric Chadwick, (c) 2021 Wayfair LLC, from the Khronos glTF Sample Assets",
         "changes": "textures converted to JPEG, punctual light removed, model recentred"
-      }
+      },
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [-0.446, 0.45, -0.302],
+          "yaw": 11
+        },
+        {
+          "id": "back-2",
+          "kind": "back",
+          "position": [0, 0.45, -0.291]
+        },
+        {
+          "id": "back-3",
+          "kind": "back",
+          "position": [0.443, 0.44, -0.212],
+          "yaw": -22
+        },
+        {
+          "id": "seat-1",
+          "kind": "seat",
+          "position": [-0.72, 0.45, 0.12]
+        }
+      ]
     },
     {
       "source": "local",
@@ -264,7 +365,20 @@
         "author": "Eric Chadwick, Wayfair LLC",
         "license": "CC0",
         "url": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SheenChair"
-      }
+      },
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [0, 0.36, -0.112],
+          "tilt": 12
+        },
+        {
+          "id": "seat-1",
+          "kind": "seat",
+          "position": [0, 0.36, 0.07]
+        }
+      ]
     },
     {
       "source": "local",

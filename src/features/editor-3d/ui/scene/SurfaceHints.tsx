@@ -10,7 +10,6 @@ import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Edges } from '@react-three/drei';
 import { selectors as furnitureSelectors } from '@/features/furniture/selectors';
-import { furnitureSizesCache } from '@/features/furniture/sizesCache';
 import { surfacesStore } from '@/features/furniture/surfacesCache';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { useExternalStore } from '@/shared/lib/externalStore';
@@ -21,6 +20,7 @@ import { itemSizes } from '../../lib/placement';
 import { furnitureRole } from '../../lib/supportRole';
 import { roomSurfaces, surfacesFitting, type SupportSurface } from '../../lib/surfaces';
 import { HELPER_DATA, NO_RAYCAST } from './pointer';
+import { DRAFT_ID, useHintSubject } from './useHintSubject';
 
 /** Холодный цвет: хорошо виден на дереве, ткани и светлых столешницах. */
 const HINT_COLOR = '#3b8beb';
@@ -30,28 +30,13 @@ const ACTIVE_OPACITY = 0.45;
 const LIFT = 0.004;
 const SAME_LEVEL = 0.02;
 
-/** Предмет, для которого показываются поверхности: размещаемая модель или перетаскиваемый предмет. */
-function useSubject(): FurnitureItem | null {
-  const mode = useExternalStore(interactionStore, (s) => s.mode);
-  const path = useExternalStore(interactionStore, (s) => s.placingPath);
-  const name = useExternalStore(interactionStore, (s) => s.placingName);
-  const activeId = useExternalStore(interactionStore, (s) => s.activeId);
-  const items = useSelector(furnitureSelectors.selectFurnitureItems);
-  return useMemo(() => {
-    if (mode === 'dragging' && activeId) return items.find((i) => i.id === activeId) ?? null;
-    if (mode !== 'placing' || !path) return null;
-    const sizes = furnitureSizesCache.get(path);
-    return { id: '__hint__', name: name ?? '', modelPath: path, position: [0, 0, 0], rotation: [0, 0, 0], scale: 1, ...sizes };
-  }, [mode, path, name, activeId, items]);
-}
-
 /** Где предмет сейчас: опора, высота и центр на плане (у призрака — его поверхность). */
 function useActiveSurface(subject: FurnitureItem | null): { supportId: string | null; y: number; center: Vec2 } {
   const ghostSupport = useExternalStore(interactionStore, (s) => s.ghost?.supportId ?? null);
   const ghostY = useExternalStore(interactionStore, (s) => s.ghost?.elevation ?? 0);
   const ghostX = useExternalStore(interactionStore, (s) => s.ghost?.center[0] ?? 0);
   const ghostZ = useExternalStore(interactionStore, (s) => s.ghost?.center[1] ?? 0);
-  if (subject?.id === '__hint__') return { supportId: ghostSupport, y: ghostY, center: [ghostX, ghostZ] };
+  if (subject?.id === DRAFT_ID) return { supportId: ghostSupport, y: ghostY, center: [ghostX, ghostZ] };
   return { supportId: subject?.supportId ?? null, y: subject?.position[1] ?? 0, center: [subject?.position[0] ?? 0, subject?.position[2] ?? 0] };
 }
 
@@ -69,7 +54,7 @@ const HintPlane: React.FC<{ surface: SupportSurface; active: boolean }> = ({ sur
 );
 
 export const SurfaceHints: React.FC = () => {
-  const subject = useSubject();
+  const subject = useHintSubject();
   const items = useSelector(furnitureSelectors.selectFurnitureItems);
   const ceiling = useSelector(editorSelectors.selectDimensions).height;
   const measured = useExternalStore(surfacesStore, (s) => s.byPath);

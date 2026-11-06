@@ -20,10 +20,10 @@ const MIN_RAISE = 0.01;
 const xz = (item: FurnitureItem): Vec2 => [item.position[0], item.position[2]];
 const scaleOf = (item: FurnitureItem) => (item.scale > 0 ? item.scale : 1);
 
-/** Предмет без связи с опорой. */
+/** Предмет без связи с опорой (подушка теряет посадочное место и наклон). */
 export function withoutSupport(item: FurnitureItem): FurnitureItem {
-  const { supportId: _support, ...rest } = item;
-  return rest;
+  const { supportId: _support, socket: _socket, ...rest } = item;
+  return rest.rotation[0] === 0 ? rest : { ...rest, rotation: [0, rest.rotation[1], rest.rotation[2]] };
 }
 
 /** Предметы на поверхности опоры. */
@@ -93,7 +93,7 @@ export function withCarried(before: readonly FurnitureItem[], floor: readonly Fu
 export function repairSupportLinks(items: readonly FurnitureItem[]): FurnitureItem[] {
   const byId = new Map(items.map((i) => [i.id, i] as const));
   return items.map((item) => {
-    if (!item.supportId) return item;
+    if (!item.supportId) return item.socket ? withoutSupport(item) : item;
     const support = byId.get(item.supportId);
     if (!support) return { ...withoutSupport(item), position: [item.position[0], 0, item.position[2]] };
     return support.id === item.id || support.supportId ? withoutSupport(item) : item;

@@ -10,11 +10,14 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { NormalizedModel } from '@/features/furniture/ui/NormalizedModel';
+import { furnitureSizesCache } from '@/features/furniture/sizesCache';
 import { useExternalStore } from '@/shared/lib/externalStore';
 import { selectors as editorSelectors } from '../../selectors';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { interaction, interactionStore } from '../../model/interactionStore';
+import { DEFAULT_ITEM_SIZE } from '../../lib/placement';
 import { HELPER_DATA, floorRay, rayToFloor, toRay3, type ScenePointerEvent } from './pointer';
+import { TiltGroup } from './TiltGroup';
 
 const GHOST_LOOK = { ghost: true };
 const INVALID_LOOK = { ghost: true, invalid: true };
@@ -40,7 +43,9 @@ const PlacementSurface: React.FC<{ path: string }> = ({ path }) => {
       </mesh>
       {ghost && (
         <group position={[ghost.center[0], ghost.elevation, ghost.center[1]]} rotation={[0, ghost.angle, 0]} userData={HELPER_DATA}>
-          <NormalizedModel path={path} look={ghost.valid ? GHOST_LOOK : INVALID_LOOK} />
+          <TiltGroup tilt={ghost.tilt ?? 0} sizes={furnitureSizesCache.get(path) ?? DEFAULT_ITEM_SIZE}>
+            <NormalizedModel path={path} look={ghost.valid ? GHOST_LOOK : INVALID_LOOK} />
+          </TiltGroup>
         </group>
       )}
     </>

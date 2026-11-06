@@ -17,7 +17,7 @@ import { FloorSwitcher } from '@/features/editor-3d/ui/FloorSwitcher';
 import { SceneContent } from '@/features/editor-3d/ui/scene/SceneContent';
 import { CLICK_TOLERANCE_PX } from '@/features/editor-3d/ui/scene/pointer';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
-import { interaction, interactionStore, isPointerBusy, MODEL_DRAG_TYPE } from '@/features/editor-3d/model/interactionStore';
+import { ghostAim, interaction, interactionStore, isPointerBusy, MODEL_DRAG_TYPE } from '@/features/editor-3d/model/interactionStore';
 import { actions as editorActions } from '@/features/editor-3d/slice';
 import { sceneBridge } from '@/features/editor-3d/model/sceneBridge';
 import type { VrStore } from '@/features/vr/lib/createVrStore';
@@ -64,8 +64,7 @@ function useCatalogDrop() {
         setActive(false);
         const path = e.dataTransfer.getData(MODEL_DRAG_TYPE);
         const { ghost, placingName } = interactionStore.getState();
-        const aim = ghost ? { supportId: ghost.supportId, elevation: ghost.elevation } : {};
-        if (path && ghost) commands.furniture.place(path, placingName ?? '', ghost.center, ghost.angle, aim);
+        if (path && ghost) commands.furniture.place(path, placingName ?? '', ghost.center, ghost.angle, ghostAim(ghost));
         interaction.reset();
       },
     },
@@ -110,8 +109,7 @@ function usePlacementClick() {
       const { mode, placingPath, placingName, ghost } = interactionStore.getState();
       if (mode !== 'placing' || !placingPath || !ghost) return;
       e.stopPropagation();
-      const aim = { supportId: ghost.supportId, elevation: ghost.elevation };
-      const id = commands.furniture.place(placingPath, placingName ?? '', ghost.center, ghost.angle, aim);
+      const id = commands.furniture.place(placingPath, placingName ?? '', ghost.center, ghost.angle, ghostAim(ghost));
       if (id && !e.shiftKey) interaction.reset();
     },
   };

@@ -1,7 +1,7 @@
 /**
  * Свойства предмета мебели: положение, поворот, высота над полом, опора (на чём стоит
- * предмет или сколько предметов стоит на нём), масштаб, тонирование, закрепление,
- * дублирование и удаление.
+ * предмет, в каком месте дивана сидит подушка, сколько предметов стоит на нём), масштаб,
+ * тонирование, закрепление, дублирование и удаление.
  * @module widgets/editor-inspector/ui/FurnitureInspector
  */
 
@@ -11,6 +11,8 @@ import type { FurnitureItem } from '@/features/furniture/types';
 import { selectFurnitureCatalog } from '@/features/furniture/model/selectors';
 import { selectors as furnitureSelectors } from '@/features/furniture/selectors';
 import { catalogEntry, HEAVY_MODEL_BYTES } from '@/features/furniture/catalog';
+import { socketsOf } from '@/features/editor-3d/lib/cushionRole';
+import { MAX_TWIST } from '@/features/editor-3d/lib/cushionSeats';
 import { itemSizes } from '@/features/editor-3d/lib/placement';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { pluralize } from '@/shared/lib/plural';
@@ -19,25 +21,41 @@ import { InspectorHeader, Readout } from './InspectorHeader';
 import { cm, toDegrees, toRadians } from '../lib/format';
 import styles from './EditorInspector.module.scss';
 
-/** Связь с опорой: на чём стоит предмет (и кнопка «на пол») или сколько предметов стоит на нём. */
+const SEAT_LABELS = { back: 'у спинки', seat: 'на сиденье' } as const;
+
+/** Где сидит подушка: модель и место («Диван — у спинки»). */
+function seatLabel(item: FurnitureItem, support: FurnitureItem): string {
+  const kind = socketsOf(support).find((s) => s.id === item.socket)?.kind;
+  const name = support.name || 'диване';
+  return kind ? `${name} — ${SEAT_LABELS[kind]}` : name;
+}
+
+/** Связь с опорой: на чём стоит предмет или где сидит подушка (и кнопка «на пол»), сколько предметов на нём. */
 const SupportInfo: React.FC<{ item: FurnitureItem }> = ({ item }) => {
   const commands = useSceneCommands();
   const items = useSelector(furnitureSelectors.selectFurnitureItems);
   const support = item.supportId ? items.find((i) => i.id === item.supportId) : undefined;
-  const carried = items.filter((i) => i.supportId === item.id).length;
+  const carried = items.filter((i) => i.supportId === item.id);
   if (support) {
     return (
       <>
-        <Readout label="Стоит на" value={support.name || 'опоре'} />
+        <Readout label={item.socket ? 'Сидит на' : 'Стоит на'} value={item.socket ? seatLabel(item, support) : support.name || 'опоре'} />
         <div className={styles.actions}>
-          <Button size="sm" icon="download" disabled={item.locked} title="Снять с поверхности на пол рядом" onClick={() => commands.furniture.dropToFloor(item.id)}>
-            Поставить на пол
+          <Button size="sm" icon="download" disabled={item.locked} title="Снять на пол рядом" onClick={() => commands.furniture.dropToFloor(item.id)}>
+            {item.socket ? 'Снять на пол' : 'Поставить на пол'}
           </Button>
         </div>
       </>
     );
   }
-  return carried > 0 ? <Readout label="На поверхности" value={pluralize(carried, ['предмет', 'предмета', 'предметов'])} /> : null;
+  if (carried.length === 0) return null;
+  const cushions = carried.every((c) => c.socket);
+  return (
+    <Readout
+      label={cushions ? 'Подушки' : 'На поверхности'}
+      value={cushions ? String(carried.length) : pluralize(carried.length, ['предмет', 'предмета', 'предметов'])}
+    />
+  );
 };
 
 export const FurnitureInspector: React.FC<{ item: FurnitureItem }> = ({ item }) => {
@@ -72,6 +90,7 @@ export const FurnitureInspector: React.FC<{ item: FurnitureItem }> = ({ item }) 
           disabled={item.locked}
           onChange={(deg) => f.rotate(item.id, toRadians(deg))}
         />
+        {item.socket && <span className={styles.hint}>Подушка доворачивается в своём месте не больше чем на ±{Math.round(toDegrees(MAX_TWIST))}°.</span>}
         <div className={styles.actions}>
           <Button size="sm" icon="rotate" disabled={item.locked} title="По часовой стрелке (R)" onClick={() => f.rotateBy(item.id, -Math.PI / 2)}>
             90° ↻

@@ -335,6 +335,13 @@ describe('support links in the document', () => {
     expect(sceneDocumentSchema.safeParse(withFurniture([desk, lamp])).success).toBe(true);
   });
 
+  it('keeps the cushion socket and rejects malformed socket ids', () => {
+    const cushion = { ...lamp, supportId: 'desk', socket: 'back-1', rotation: [-0.26, 0, 0] };
+    const parsed = sceneDocumentSchema.safeParse(withFurniture([desk, cushion]));
+    expect(parsed.success && parsed.data.floors[0].furniture[1].socket).toBe('back-1');
+    expect(sceneDocumentSchema.safeParse(withFurniture([desk, { ...cushion, socket: 'Back 1!' }])).success).toBe(false);
+  });
+
   it('rejects malformed support ids', () => {
     expect(sceneDocumentSchema.safeParse(withFurniture([desk, { ...lamp, supportId: 'x'.repeat(65) }])).success).toBe(false);
   });

@@ -351,6 +351,53 @@
         "depth": 0.658
       },
       "triangles": 4101,
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [
+            -0.42,
+            0.38,
+            -0.171
+          ]
+        },
+        {
+          "id": "back-2",
+          "kind": "back",
+          "position": [
+            0,
+            0.38,
+            -0.171
+          ]
+        },
+        {
+          "id": "back-3",
+          "kind": "back",
+          "position": [
+            0.42,
+            0.38,
+            -0.171
+          ]
+        },
+        {
+          "id": "seat-1",
+          "kind": "seat",
+          "position": [
+            -0.31,
+            0.38,
+            0.14
+          ]
+        },
+        {
+          "id": "seat-2",
+          "kind": "seat",
+          "position": [
+            0.31,
+            0.38,
+            0.14
+          ]
+        }
+      ],
       "source": "https://polyhaven.com/a/Sofa_01",
       "license": "CC0",
       "author": "Kirill Sannikov"
@@ -368,6 +415,27 @@
         "depth": 0.987
       },
       "triangles": 8916,
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [
+            0,
+            0.53,
+            -0.082
+          ],
+          "tilt": 25
+        },
+        {
+          "id": "seat-1",
+          "kind": "seat",
+          "position": [
+            0,
+            0.54,
+            0.23
+          ]
+        }
+      ],
       "source": "https://polyhaven.com/a/modern_arm_chair_01",
       "license": "CC0",
       "author": "Vibrant Nordic"
@@ -657,6 +725,18 @@
         "depth": 1.19
       },
       "triangles": 6148,
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [
+            0,
+            0.39,
+            0.03
+          ],
+          "tilt": 30
+        }
+      ],
       "source": "https://polyhaven.com/a/mid_century_lounge_chair",
       "license": "CC0",
       "author": "Kuutti Siitonen"
@@ -813,9 +893,48 @@
         "depth": 0.627
       },
       "triangles": 6362,
+      "cushion": {
+        "upright": true
+      },
       "source": "https://polyhaven.com/a/throw_pillows_01",
       "license": "CC0",
       "author": "Serhii Khromov"
+    },
+    {
+      "id": "pillow_velvet_ochre",
+      "label": "Подушка бархатная",
+      "category": "decor",
+      "file": "/assets/models/pillow_velvet_ochre/pillow_velvet_ochre.gltf",
+      "thumbnail": "/assets/models/pillow_velvet_ochre/thumb.jpg",
+      "sizeBytes": 770074,
+      "dimensions": {
+        "width": 0.45,
+        "height": 0.45,
+        "depth": 0.14
+      },
+      "triangles": 3136,
+      "cushion": {},
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "pillow_linen_sand",
+      "label": "Подушка льняная",
+      "category": "decor",
+      "file": "/assets/models/pillow_linen_sand/pillow_linen_sand.gltf",
+      "thumbnail": "/assets/models/pillow_linen_sand/thumb.jpg",
+      "sizeBytes": 990920,
+      "dimensions": {
+        "width": 0.4,
+        "height": 0.4,
+        "depth": 0.13
+      },
+      "triangles": 3136,
+      "cushion": {},
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
     },
     {
       "id": "ceramic_vase_01",
@@ -1020,6 +1139,46 @@
         "depth": 1.023
       },
       "triangles": 4196,
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [
+            -0.446,
+            0.45,
+            -0.302
+          ],
+          "yaw": 11
+        },
+        {
+          "id": "back-2",
+          "kind": "back",
+          "position": [
+            0,
+            0.45,
+            -0.291
+          ]
+        },
+        {
+          "id": "back-3",
+          "kind": "back",
+          "position": [
+            0.443,
+            0.44,
+            -0.212
+          ],
+          "yaw": -22
+        },
+        {
+          "id": "seat-1",
+          "kind": "seat",
+          "position": [
+            -0.72,
+            0.45,
+            0.12
+          ]
+        }
+      ],
       "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/GlamVelvetSofa",
       "license": "CC-BY 4.0",
       "author": "Eric Chadwick, Wayfair LLC"
@@ -1037,6 +1196,27 @@
         "depth": 0.57
       },
       "triangles": 39808,
+      "sockets": [
+        {
+          "id": "back-1",
+          "kind": "back",
+          "position": [
+            0,
+            0.36,
+            -0.112
+          ],
+          "tilt": 12
+        },
+        {
+          "id": "seat-1",
+          "kind": "seat",
+          "position": [
+            0,
+            0.36,
+            0.07
+          ]
+        }
+      ],
       "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SheenChair",
       "license": "CC0",
       "author": "Eric Chadwick, Wayfair LLC"

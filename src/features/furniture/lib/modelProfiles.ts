@@ -10,13 +10,13 @@ import { parseManifest, type ModelEntry } from '@/features/assets/lib/manifest';
 import type { ModelSizes } from './modelLook';
 
 /** Сведения о модели каталога. */
-export type ModelProfile = Pick<ModelEntry, 'category' | 'normalize' | 'dimensions'>;
+export type ModelProfile = Pick<ModelEntry, 'category' | 'normalize' | 'dimensions' | 'sockets' | 'cushion'>;
 
 const BUNDLED = parseManifest(manifestJson).models;
 
 /** Профили по пути модели. */
 export const MODEL_PROFILES: ReadonlyMap<string, ModelProfile> = new Map(
-  BUNDLED.map((m) => [m.file, { category: m.category, normalize: m.normalize, dimensions: m.dimensions }]),
+  BUNDLED.map((m) => [m.file, { category: m.category, normalize: m.normalize, dimensions: m.dimensions, sockets: m.sockets, cushion: m.cushion }]),
 );
 
 /** Профиль модели каталога (undefined — пользовательская или неизвестная модель). */

@@ -16,9 +16,11 @@ import type { FurnitureItem } from '@/features/furniture/types';
 import { add2, snapAngle, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { interactionStore, ROTATE_STEP } from '../../model/interactionStore';
-import { itemSizes } from '../../lib/placement';
+import { itemSizes, uprightSizes } from '../../lib/placement';
 import { furnitureRole } from '../../lib/supportRole';
+import { itemTilt } from '../../lib/tilt';
 import { HELPER_DATA, NO_RAYCAST, floorHeight, floorRay, rayToFloor, toRay3 } from './pointer';
+import { TiltGroup } from './TiltGroup';
 import { useDragGesture } from './useDragGesture';
 
 const SELECTED_COLOR = '#c9a96e';
@@ -65,6 +67,8 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
   const commands = useSceneCommands();
   const [hovered, setHovered] = useState(false);
   const sizes = itemSizes(item);
+  const tilt = itemTilt(item.rotation);
+  const upright = uprightSizes(item);
   const isSupport = furnitureRole(item) === 'support';
   const look = useMemo(() => (item.color ? { tint: item.color } : undefined), [item.color]);
 
@@ -111,9 +115,11 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
   if (!interactive) {
     return (
       <group position={item.position} rotation={[0, item.rotation[1], 0]}>
-        <group scale={item.scale}>
-          <NormalizedModel path={item.modelPath} look={look} />
-        </group>
+        <TiltGroup tilt={tilt} sizes={upright}>
+          <group scale={item.scale}>
+            <NormalizedModel path={item.modelPath} look={look} />
+          </group>
+        </TiltGroup>
       </group>
     );
   }
@@ -136,9 +142,11 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
           if (interactionStore.getState().mode !== 'placing') e.stopPropagation();
         }}
       >
-        <group scale={item.scale}>
-          <NormalizedModel path={item.modelPath} look={look} onMeasured={onMeasured} measureSurfaces={isSupport} />
-        </group>
+        <TiltGroup tilt={tilt} sizes={upright}>
+          <group scale={item.scale}>
+            <NormalizedModel path={item.modelPath} look={look} onMeasured={onMeasured} measureSurfaces={isSupport} />
+          </group>
+        </TiltGroup>
       </group>
       {(selected || hovered) && (
         <mesh position={[0, sizes.height / 2, 0]} raycast={NO_RAYCAST} userData={HELPER_DATA}>

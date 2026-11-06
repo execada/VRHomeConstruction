@@ -86,6 +86,19 @@ describe('repairSupportLinks', () => {
     expect(orphan.position).toEqual([0.4, 0, 0.1]);
   });
 
+  it('a cushion that lost its sofa lies on the floor without its seat and tilt', () => {
+    const cushion = item('c', { supportId: 'gone', socket: 'back-1', position: [0, 0.38, 0], rotation: [-0.26, 0.5, 0] });
+    const [down] = repairSupportLinks([cushion]);
+    expect(down.supportId).toBeUndefined();
+    expect(down.socket).toBeUndefined();
+    expect(down.rotation).toEqual([0, 0.5, 0]);
+    expect(down.position).toEqual([0, 0, 0]);
+    // Место без опоры — тоже снимается
+    const [loose] = repairSupportLinks([item('d', { socket: 'seat-1', rotation: [-1.5, 0, 0] })]);
+    expect(loose.socket).toBeUndefined();
+    expect(loose.rotation[0]).toBe(0);
+  });
+
   it('drops self links and chains but keeps positions', () => {
     const self = item('a', { supportId: 'a', position: [0, 0.5, 0] });
     const onLamp = item('b', { supportId: 'lamp', position: [0, 1.65, 0] });

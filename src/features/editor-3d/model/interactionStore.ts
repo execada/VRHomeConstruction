@@ -20,8 +20,12 @@ export interface PlacementGhost {
   valid: boolean;
   /** Высота низа призрака: 0 — пол, иначе высота поверхности опоры */
   elevation: number;
-  /** Опора, на поверхности которой стоит призрак (null — пол) */
+  /** Опора, на поверхности которой стоит призрак (null — пол); у подушки — диван или кресло */
   supportId: string | null;
+  /** Посадочное место дивана или кресла, в которое сядет подушка */
+  socket?: string | null;
+  /** Наклон призрака назад (подушка у спинки или лёжа на сиденье), рад */
+  tilt?: number;
 }
 
 /** Черновик рисуемой внутренней стены. */
@@ -90,6 +94,11 @@ const initialState: InteractionState = {
 };
 
 export const interactionStore = createExternalStore<InteractionState>(initialState);
+
+/** Куда целится призрак: опора (или пол), высота её поверхности и посадочное место подушки. */
+export function ghostAim(ghost: PlacementGhost | null): { supportId?: string | null; elevation?: number; socket?: string | null } {
+  return ghost ? { supportId: ghost.supportId, elevation: ghost.elevation, socket: ghost.socket ?? null } : {};
+}
 
 /** Идёт размещение модели или лестницы, рисование стен: объекты сцены не перехватывают указатель. */
 export function isPointerBusy(state: InteractionState = interactionStore.getState()): boolean {

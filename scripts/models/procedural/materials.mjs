@@ -34,6 +34,7 @@ export const M = {
   walnut: material('walnut_veneer', { maps: textured('american_walnut_veneer', true), color: [0.66, 0.44, 0.29, 1], metalness: 1, roughness: 1, tile: 1 }),
   velvetTaupe: material('velvet_taupe', { maps: weave('velour_velvet'), color: [0.5, 0.43, 0.37, 1], roughness: 0.8, tile: 0.28 }),
   velvetSage: material('velvet_sage', { maps: weave('velour_velvet'), color: [0.4, 0.46, 0.39, 1], roughness: 0.8, tile: 0.28 }),
+  velvetOchre: material('velvet_ochre', { maps: weave('velour_velvet'), color: [0.74, 0.53, 0.2, 1], roughness: 0.8, tile: 0.28 }),
   linenWhite: material('linen_white', { maps: weave('rough_linen'), color: [0.96, 0.95, 0.92, 1], roughness: 0.92, tile: 0.27 }),
   linenSand: material('linen_sand', { maps: weave('rough_linen'), color: [0.8, 0.73, 0.62, 1], roughness: 0.92, tile: 0.27 }),
   woolRug: material('wool_herringbone', { maps: textured('poly_wool_herringbone'), color: [1, 0.94, 0.84, 1], roughness: 0.95, tile: 0.27 }),

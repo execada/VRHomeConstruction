@@ -14,7 +14,7 @@ import { CameraFeature, type CameraMode } from '@/features/camera';
 import { HistoryFeature } from '@/features/history';
 import { ProjectSessionFeature } from '@/features/project-session';
 import { actions as editorActions } from '../slice';
-import { interaction, interactionStore, ROTATE_STEP } from './interactionStore';
+import { ghostAim, interaction, interactionStore, ROTATE_STEP } from './interactionStore';
 import { useSceneCommands } from './useSceneCommands';
 
 const NUDGE = 0.05;
@@ -53,8 +53,7 @@ export function useEditorShortcuts(): void {
         const ghost = s.ghost;
         const angle = interactionStore.getState().placingAngle;
         // Повернуть призрак на той же поверхности (или на полу), где он стоит.
-        const aim = ghost ? { supportId: ghost.supportId, elevation: ghost.elevation } : {};
-        if (ghost) interaction.setGhost(commands.furniture.previewPlacement(s.placingPath, ghost.center, angle, { name: s.placingName ?? '', aim }));
+        if (ghost) interaction.setGhost(commands.furniture.previewPlacement(s.placingPath, ghost.center, angle, { name: s.placingName ?? '', aim: ghostAim(ghost) }));
         return;
       }
       commands.rotateSelection(delta);

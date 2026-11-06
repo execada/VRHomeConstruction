@@ -43,6 +43,8 @@ export interface SurfaceAim {
   supportId?: string | null;
   /** Высота поверхности, на которой стоит призрак */
   elevation?: number;
+  /** Посадочное место, выбранное призраком подушки */
+  socket?: string | null;
 }
 
 /** Выбранная поверхность и желаемый центр предмета на ней. */
@@ -155,7 +157,10 @@ export function createSupportPlacement(ctx: CommandContext) {
    * (ту же полку), а не поместившийся — на пол рядом.
    */
   function refit(before: FurnitureItem, after: FurnitureItem): { items: FurnitureItem[]; dropped: number } {
-    const children = itemsOn(items(), before.id).map((c) => carryWith(c, before, after));
+    // Подушки в посадочных местах досаживает своя логика (cushionPlacement).
+    const children = itemsOn(items(), before.id)
+      .filter((c) => !c.socket)
+      .map((c) => carryWith(c, before, after));
     const surfaces = supportSurfaces(after, furnitureSurfacesCache.get(after.modelPath), editor().dimensions.height);
     const base = items().filter((i) => i.supportId !== before.id).map((i) => (i.id === after.id ? after : i));
     return children.reduce(

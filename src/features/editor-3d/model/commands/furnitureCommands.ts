@@ -5,6 +5,7 @@
  *
  * Небольшие предметы (лампы, вазы, книги, декор) ставятся на поверхности опор — столов,
  * полок, тумб: точно по высоте поверхности, не свисая и не пересекаясь с соседями.
+ * Подушки садятся в посадочные места диванов и кресел (у спинки, на сиденье).
  * Опора переносит такие предметы с собой; при её удалении они снимаются на пол.
  * @module editor-3d/model/commands/furnitureCommands
  */
@@ -28,6 +29,8 @@ import { furnitureRole } from '../../lib/supportRole';
 import { interiorRect } from '../../lib/walls';
 import type { PlacementGhost } from '../interactionStore';
 import { createId, placementOptions, type CommandContext } from './context';
+import { cushionOf } from '../../lib/cushionRole';
+import { createCushionPlacement, type CushionTarget } from './cushionPlacement';
 import { fixtureObstacles } from './fixtures';
 import { createSupportPlacement, type SurfaceAim, type SurfaceTarget } from './supportPlacement';
 
@@ -59,11 +62,23 @@ const at = (item: FurnitureItem, footprint: Obb): FurnitureItem => ({
 
 const isSurfaceItem = (item: FurnitureItem) => furnitureRole(item) === 'surface';
 
+/** Призрак подушки в посадочном месте. */
+const cushionGhost = (goal: CushionTarget): PlacementGhost => ({
+  center: goal.pose.center,
+  angle: goal.pose.yaw,
+  valid: goal.free,
+  elevation: goal.pose.y,
+  supportId: goal.host.id,
+  socket: goal.socket.id,
+  tilt: goal.pose.tilt,
+});
+
 /** Создать команды мебели. */
 export function createFurnitureCommands(ctx: CommandContext) {
   const items = () => ctx.getState().furniture.items;
   const find = (id: string) => items().find((i) => i.id === id) ?? null;
   const support = createSupportPlacement(ctx);
+  const cushions = createCushionPlacement(ctx);
 
   /** Препятствия для предмета на полу: без него самого и без предметов на его поверхности; лестницы и вырезы в полу. */
   function floorObstacles(item: FurnitureItem) {
@@ -122,15 +137,27 @@ export function createFurnitureCommands(ctx: CommandContext) {
   function move(id: string, center: Vec2, aim: SurfaceAim = {}): boolean {
     const item = find(id);
     if (!item || item.locked) return false;
+    const seat = cushionOf(item) ? cushions.target(item, center, aim) : null;
+    if (seat) {
+      if (seat.free) update(cushions.seat(item, seat));
+      return seat.free;
+    }
     if (isSurfaceItem(item)) return moveSurfaceItem(item, center, aim);
-    const result = resolve(item, center, item.rotation[1]);
-    return result.valid && commit(item, at(item, result.footprint));
+    // Подушку стянули с дивана — она ложится на пол без наклона.
+    const base = item.supportId ? support.grounded(item) : item;
+    const result = resolve(base, center, base.rotation[1]);
+    return result.valid && commit(item, at(base, result.footprint));
   }
 
   /** Повернуть предмет на абсолютный угол. */
   function rotate(id: string, angle: number): boolean {
     const item = find(id);
     if (!item || item.locked) return false;
+    if (item.socket) {
+      const turned = cushions.twist(item, angle);
+      if (turned) update(turned);
+      return turned !== null;
+    }
     const goal = support.currentTarget(item);
     if (goal) return commitOnSurface(item, goal, angle);
     const result = resolve(item, [item.position[0], item.position[2]], angle);
@@ -187,8 +214,9 @@ export function createFurnitureCommands(ctx: CommandContext) {
     }
     const next = at(scaled, footprint);
     const fit = support.refit(item, next);
-    if (fit.items.length === 0) update(next);
-    else ctx.dispatch(furnitureActions.updateFurnitureItems({ id: item.id, items: [next, ...fit.items] }));
+    const children = [...fit.items, ...cushions.reseatAll(item, next)];
+    if (children.length === 0) update(next);
+    else ctx.dispatch(furnitureActions.updateFurnitureItems({ id: item.id, items: [next, ...children] }));
     if (fit.dropped > 0) ctx.notify(`Не поместились на поверхности и сняты на пол: ${fit.dropped}`);
     return true;
   }
@@ -197,6 +225,8 @@ export function createFurnitureCommands(ctx: CommandContext) {
     /** Призрак размещения модели под курсором (на полу или на поверхности опоры). */
     previewPlacement(path: string, center: Vec2, angle: number | null, options: { name?: string; aim?: SurfaceAim } = {}): PlacementGhost {
       const draft = draftItem(path, options.name ?? '');
+      const seat = cushionOf(draft) ? cushions.target(draft, center, options.aim ?? {}) : null;
+      if (seat) return cushionGhost(seat);
       const goal = isSurfaceItem(draft) ? support.target(draft, center, options.aim ?? {}) : null;
       if (goal) {
         const placed = support.onSurface(draft, goal, angle ?? goal.surface.area.angle);
@@ -218,6 +248,12 @@ export function createFurnitureCommands(ctx: CommandContext) {
      */
     place(path: string, name: string, center: Vec2, angle: number | null, aim: SurfaceAim = {}): string | null {
       const draft = draftItem(path, name);
+      const seat = cushionOf(draft) ? cushions.target(draft, center, aim) : null;
+      if (seat && !seat.free) {
+        ctx.notify('Все места для подушек здесь заняты');
+        return null;
+      }
+      if (seat) return add({ ...cushions.seat(draft, seat), id: createId('furn') });
       const onSurface = placedOnSurface(draft, center, angle, aim);
       if (onSurface === null) {
         ctx.notify('На этой поверхности нет свободного места');
@@ -251,6 +287,12 @@ export function createFurnitureCommands(ctx: CommandContext) {
       const item = find(id);
       if (!item) return false;
       const scaled = { ...item, scale: clamp(scale, MIN_SCALE, MAX_SCALE) };
+      if (item.socket) {
+        const resized = cushions.resize(item, scaled);
+        if (resized) update(resized);
+        else ctx.notify('Подушка такого размера не помещается на этом месте');
+        return resized !== null;
+      }
       const goal = support.currentTarget(item);
       return goal ? scaleOnSurface(scaled, goal) : scaleOnFloor(item, scaled);
     },
@@ -290,6 +332,8 @@ export function createFurnitureCommands(ctx: CommandContext) {
       const item = find(id);
       if (!item) return null;
       const copy: FurnitureItem = { ...item, id: createId('furn'), locked: false };
+      const seatedCopy = item.socket ? cushions.nextSeat(item, copy) : null;
+      if (seatedCopy) return add(seatedCopy);
       const goal = support.currentTarget(item);
       const onSurface = goal && support.spotOnSurface(copy, goal, copy.rotation[1]);
       if (onSurface) return add(support.standing(copy, onSurface));

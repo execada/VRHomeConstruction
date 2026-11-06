@@ -21,6 +21,7 @@ import {
   type Vec2,
 } from '@/shared/lib/math/geometry2d';
 import type { FurnitureItem } from '@/features/furniture/types';
+import { itemTilt, tiltedExtent } from './tilt';
 import { nearestWall, wallFrame } from './walls';
 import type { Partition, RoomDimensions, WallSide } from '../types';
 
@@ -70,14 +71,21 @@ export interface PlacementResult {
 const PUSH_ITERATIONS = 8;
 const PUSH_EPSILON = 1e-4;
 
-/** Масштабированные габариты предмета. */
-export function itemSizes(item: FurnitureItem): { halfWidth: number; halfDepth: number; height: number } {
+/** Масштабированные габариты модели предмета (без наклона). */
+export function uprightSizes(item: FurnitureItem): { halfWidth: number; halfDepth: number; height: number } {
   const s = item.scale > 0 ? item.scale : 1;
   return {
     halfWidth: (item.halfWidth ?? DEFAULT_ITEM_SIZE.halfWidth) * s,
     halfDepth: (item.halfDepth ?? DEFAULT_ITEM_SIZE.halfDepth) * s,
     height: (item.height ?? DEFAULT_ITEM_SIZE.height) * s,
   };
+}
+
+/** Масштабированные габариты места, которое занимает предмет (у наклонённой подушки — с наклоном). */
+export function itemSizes(item: FurnitureItem): { halfWidth: number; halfDepth: number; height: number } {
+  const upright = uprightSizes(item);
+  const tilt = itemTilt(item.rotation);
+  return tilt === 0 ? upright : { halfWidth: upright.halfWidth, ...tiltedExtent(upright, tilt) };
 }
 
 /** Напольное покрытие (ковёр и т.п.). */

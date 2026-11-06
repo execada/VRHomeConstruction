@@ -111,6 +111,36 @@ const meters = z.number().positive().max(10);
 /** Реальные габариты после нормализации, м (x — ширина, y — высота, z — глубина). */
 export const modelDimensionsSchema = z.object({ width: meters, height: meters, depth: meters });
 
+const socketCoordinate = z.number().min(-5).max(5);
+
+/**
+ * Посадочное место подушки на диване или кресле (нормализованные координаты модели при
+ * scale = 1: низ на y = 0, центр по X/Z, фасад к +Z). `back` — у спинки: `position` — точка,
+ * где низ задней кромки подушки касается спинки; `seat` — на сиденье: `position` — центр
+ * лежащей подушки. `yaw` — поворот вокруг вертикали от фасада модели, `tilt` — наклон назад
+ * (у спинки по умолчанию 15°, на сиденье — 90°: подушка лежит), градусы.
+ */
+export const cushionSocketSchema = z.object({
+  id: z.string().regex(/^[a-z][a-z0-9-]{0,23}$/),
+  kind: z.enum(['back', 'seat']),
+  position: z.tuple([socketCoordinate, z.number().min(0).max(3), socketCoordinate]),
+  yaw: z.number().min(-90).max(90).optional(),
+  tilt: z.number().min(0).max(90).optional(),
+});
+
+/** Посадочные места модели (id не повторяются). */
+export const cushionSocketsSchema = z
+  .array(cushionSocketSchema)
+  .min(1)
+  .max(12)
+  .refine((list) => new Set(list.map((s) => s.id)).size === list.length, 'id посадочных мест повторяются');
+
+/**
+ * Модель — подушка: садится на посадочные места диванов и кресел. `upright` — модель уже
+ * стоит с наклоном (набор подушек): ставится только к спинке и без дополнительного наклона.
+ */
+export const cushionSchema = z.object({ upright: z.boolean().optional() });
+
 export const modelEntrySchema = z.object({
   id: entryId,
   label: z.string().max(80),
@@ -122,6 +152,10 @@ export const modelEntrySchema = z.object({
   dimensions: modelDimensionsSchema.optional(),
   /** Число треугольников (бюджет для VR) */
   triangles: z.number().int().nonnegative().optional(),
+  /** Посадочные места для подушек (диваны, кресла) */
+  sockets: cushionSocketsSchema.optional(),
+  /** Модель — подушка */
+  cushion: cushionSchema.optional(),
   ...credit,
 });
 

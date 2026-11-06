@@ -77,7 +77,7 @@ const SMALL_PLANT_MAX = { height: 0.7, half: 0.35 } as const;
 const CYRILLIC = /[а-я]/;
 
 /** Слова текста: camelCase и разделители → пробелы, нижний регистр, «ё» → «е». */
-function tokenize(text: string): string[] {
+export function tokenize(text: string): string[] {
   return text
     .replace(/([a-zа-я])([A-ZА-Я])/g, '$1 $2')
     .toLowerCase()

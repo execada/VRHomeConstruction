@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { modelCategorySchema, normalizeRuleSchema, type ModelEntry } from './manifest';
+import { cushionSchema, cushionSocketsSchema, modelCategorySchema, normalizeRuleSchema, type ModelEntry } from './manifest';
 
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/);
 const LICENSE_URLS: Record<string, string> = {
@@ -23,6 +23,10 @@ const common = {
   label: z.string().min(1).max(80),
   category: modelCategorySchema,
   normalize: normalizeRuleSchema.optional(),
+  /** Посадочные места для подушек (диваны, кресла) — переносятся в манифест как есть */
+  sockets: cushionSocketsSchema.optional(),
+  /** Модель — подушка */
+  cushion: cushionSchema.optional(),
 };
 
 const creditSchema = z
@@ -146,6 +150,8 @@ export function buildModelEntry(source: ModelSource, measured: MeasuredModel): M
     dimensions: roundedDimensions(measured.size),
     triangles: measured.triangles,
     ...(source.normalize ? { normalize: source.normalize } : {}),
+    ...(source.sockets ? { sockets: source.sockets } : {}),
+    ...(source.cushion ? { cushion: source.cushion } : {}),
     ...credit,
   };
 }

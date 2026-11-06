@@ -148,6 +148,8 @@ export const furnitureSchema = z.object({
   color: hexColorSchema.nullable().optional(),
   /** Опора, на поверхности которой стоит предмет (необязательное поле: старые документы v2 валидны) */
   supportId: id.optional(),
+  /** Посадочное место дивана или кресла, в котором сидит подушка */
+  socket: z.string().regex(/^[a-z][a-z0-9-]{0,23}$/).optional(),
 });
 
 export const lightSchema = z.object({
