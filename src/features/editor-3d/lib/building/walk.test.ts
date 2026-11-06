@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stepPlayer, stepVertical, type VerticalState } from '@/features/camera/lib/firstPerson';
+import { MAX_WALK_FRAME, stepPlayer, stepVertical, walkFrame, type VerticalState, type WalkQuery } from '@/features/camera/lib/firstPerson';
 import { add2, scale2, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { analyzeWalls } from '../wallJoints';
 import { createEmptyFloor, toEditorPayload } from '../scene/build';
@@ -148,5 +148,56 @@ describe('вертикальный шаг', () => {
 
   it('без опоры остаётся на месте', () => {
     expect(stepVertical({ feet: 1, velocity: -2, grounded: false }, null, 0.016, PHYSICS)).toEqual({ feet: 1, velocity: 0, grounded: true });
+  });
+});
+
+describe('кадр ходьбы: не зависит от частоты кадров', () => {
+  const { world, frames } = house();
+  const query: WalkQuery = {
+    bounds: world.bounds,
+    obstacles: (feet) => obstaclesAt(world, feet, 1.6),
+    ground: (point, feet) => groundAt(world, point, feet),
+  };
+  const physics = { gravity: PHYSICS.gravity, maxStep: MAX_STEP };
+  const standing: VerticalState = { feet: 0, velocity: 0, grounded: true };
+
+  /** Идти seconds секунд со скоростью speed при частоте fps кадров в секунду. */
+  function walkFor(from: Vec2, dir: Vec2, speed: number, seconds: number, fps: number) {
+    let s = { position: from, vertical: standing };
+    for (let k = 0; k < Math.round(seconds * fps); k += 1) s = walkFrame(s, { direction: dir, speed, jump: 0 }, query, 1 / fps, physics);
+    return s;
+  }
+
+  it('за секунду проходят одно и то же расстояние при 60, 10 и 2 кадрах в секунду', () => {
+    for (const fps of [60, 10, 2]) {
+      const s = walkFor([-1, 2], [1, 0], 2.2, 1, fps);
+      expect(s.position[0]).toBeCloseTo(1.2, 6);
+      expect(s.position[1]).toBeCloseTo(2, 6);
+      expect(s.vertical).toEqual(standing);
+    }
+  });
+
+  it('бегом по лестнице поднимаются на второй этаж и при двух кадрах в секунду', () => {
+    const bottom: Vec2 = [stair.position[0], stair.position[1] + layout.length / 2 + 0.4];
+    const up = walkFor(bottom, [0, -1], 4.5, (layout.length + 1.2) / 4.5, 2);
+    expect(up.vertical.feet).toBeCloseTo(frames[1].base, 1);
+    expect(up.vertical.grounded).toBe(true);
+    expect(floorIndexAt(frames, up.vertical.feet)).toBe(1);
+  });
+
+  it('прыжок — один раз за кадр, даже длинный', () => {
+    const s = walkFrame({ position: [0, 2], vertical: standing }, { direction: [0, 0], speed: 0, jump: 4.2 }, query, 0.5, physics);
+    expect(s.vertical.grounded).toBe(false);
+    expect(s.vertical.feet).toBeGreaterThan(0);
+    // К концу полусекунды игрок уже падает: скорость прыжка не добавлялась на каждом подшаге
+    expect(s.vertical.velocity).toBeLessThan(0);
+  });
+
+  it('после паузы вкладки кадр обрезается, а нулевой кадр ничего не двигает', () => {
+    const paused = walkFrame({ position: [-1, 2], vertical: standing }, { direction: [1, 0], speed: 2.2, jump: 0 }, query, 30, physics);
+    expect(paused.position[0] + 1).toBeCloseTo(2.2 * MAX_WALK_FRAME, 6);
+    const still = walkFrame({ position: [-1, 2], vertical: standing }, { direction: [1, 0], speed: 2.2, jump: 0 }, query, 0, physics);
+    expect(still.position).toEqual([-1, 2]);
+    expect(still.vertical).toEqual(standing);
   });
 });

@@ -37,6 +37,8 @@ const floors = (page: Page) => page.getByRole('radiogroup', { name: 'Этажи'
 const camera = (page: Page) => page.getByRole('radiogroup', { name: 'Камера' });
 
 test('второй этаж: лестница, мебель наверху, перезагрузка, подъём от первого лица и вид с улицы', async ({ page }) => {
+  // Длинный сценарий с 3D: на CI без видеокарты кадры редкие — втрое больше времени
+  test.slow();
   await useLowGraphics(page);
   const id = await createBlankProject(page);
 
@@ -86,13 +88,15 @@ test('второй этаж: лестница, мебель наверху, пе
     expect(await readStore<unknown[]>(page, `building.stash.${upperId}.furniture`)).toHaveLength(1);
     await expect(floors(page).getByRole('radio')).toHaveText(['2 этаж', '1 этаж']);
 
-    // От первого лица: идём вперёд — по лестнице на второй этаж, он становится активным
+    // От первого лица: бегом вперёд (Shift+W) — по лестнице на второй этаж, он становится активным
     await camera(page).getByRole('radio', { name: 'От лица' }).click();
     await expect(page.getByText(/по лестнице — на другой этаж/)).toBeVisible();
     await page.waitForTimeout(1000);
+    await page.keyboard.down('ShiftLeft');
     await page.keyboard.down('KeyW');
-    await expect.poll(() => readStore<string>(page, 'building.activeId'), { timeout: 20_000 }).toBe(upperId);
+    await expect.poll(() => readStore<string>(page, 'building.activeId'), { timeout: 60_000 }).toBe(upperId);
     await page.keyboard.up('KeyW');
+    await page.keyboard.up('ShiftLeft');
 
     // «Улица»: облёт здания снаружи — все этажи без срезов
     await camera(page).getByRole('radio', { name: 'Улица' }).click();

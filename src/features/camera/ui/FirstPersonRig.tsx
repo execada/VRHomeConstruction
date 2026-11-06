@@ -20,7 +20,7 @@ import { groundAt, MAX_STEP, obstaclesAt } from '@/features/editor-3d/lib/buildi
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { clamp } from '@/shared/lib/math/geometry2d';
 import { selectors } from '../selectors';
-import { moveDirection, stepPlayer, stepVertical } from '../lib/firstPerson';
+import { MAX_WALK_FRAME, moveDirection, walkFrame, type WalkQuery } from '../lib/firstPerson';
 import { reportCameraPose, takeRestorePose } from '../model/cameraSession';
 import { useFirstPersonInput } from './useFirstPersonInput';
 import { CAMERA_FAR } from '../lib/views';
@@ -105,7 +105,7 @@ export const FirstPersonRig: React.FC<{ outside?: boolean }> = ({ outside = fals
 
   useFrame(({ camera, gl: renderer }, rawDelta) => {
     if (renderer.xr.isPresenting) return;
-    const delta = Math.min(rawDelta, 0.1);
+    const delta = Math.min(rawDelta, MAX_WALK_FRAME);
     const i = input.current;
     const m = motion.current;
     if (i.start) {
@@ -122,20 +122,24 @@ export const FirstPersonRig: React.FC<{ outside?: boolean }> = ({ outside = fals
     const dir = moveDirection({ forward, right }, i.yaw);
     const state = store.getState();
     const world = buildingSelectors.selectWalkWorld(state);
-
-    if (dir[0] !== 0 || dir[1] !== 0) {
-      const obstacles = collisions ? obstaclesAt(world, m.feet, m.eye) : [];
-      const next = stepPlayer([camera.position.x, camera.position.z], [dir[0] * speed * delta, dir[1] * speed * delta], world.bounds, obstacles);
-      camera.position.x = next[0];
-      camera.position.z = next[1];
-    }
-
     const jump = i.keys.has('Space') && m.grounded ? JUMP_VELOCITY : 0;
-    const ground = groundAt(world, [camera.position.x, camera.position.z], m.feet);
-    const vertical = stepVertical(m, ground, delta, { jump, gravity: GRAVITY, maxStep: MAX_STEP });
-    m.feet = vertical.feet;
-    m.velocity = vertical.velocity;
-    m.grounded = vertical.grounded;
+    const query: WalkQuery = {
+      bounds: world.bounds,
+      obstacles: (feet) => (collisions ? obstaclesAt(world, feet, m.eye) : []),
+      ground: (point, feet) => groundAt(world, point, feet),
+    };
+    const next = walkFrame(
+      { position: [camera.position.x, camera.position.z], vertical: m },
+      { direction: dir, speed, jump },
+      query,
+      rawDelta,
+      { gravity: GRAVITY, maxStep: MAX_STEP },
+    );
+    camera.position.x = next.position[0];
+    camera.position.z = next.position[1];
+    m.feet = next.vertical.feet;
+    m.velocity = next.vertical.velocity;
+    m.grounded = next.vertical.grounded;
     m.view = m.grounded ? m.view + (m.feet - m.view) * Math.min(1, delta * STEP_SMOOTH) : m.feet;
     m.eye += ((crouch ? CROUCH_EYE : STAND_EYE) - m.eye) * Math.min(1, delta * 12);
     camera.position.y = m.view + m.eye;

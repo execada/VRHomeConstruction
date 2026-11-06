@@ -55,6 +55,53 @@ export interface VerticalState {
   grounded: boolean;
 }
 
+/** Опоры и препятствия вокруг игрока (мир для хождения). */
+export interface WalkQuery {
+  /** Участок: дальше не уйти */
+  bounds: Rect;
+  /** Препятствия для тела на высоте ступней feet */
+  obstacles: (feet: number) => Obb[];
+  /** Опора под точкой для ступней на высоте feet (null — опоры нет) */
+  ground: (point: Vec2, feet: number) => number | null;
+}
+
+/**
+ * Самый длинный кадр, который досчитывается целиком, с: при редких кадрах (слабая видеокарта)
+ * ходьба идёт в реальном времени, а после паузы вкладки игрок не «телепортируется».
+ */
+export const MAX_WALK_FRAME = 0.5;
+/** Длина подшага: столкновения и ступени считаются одинаково при любой частоте кадров, с. */
+const STEP_DT = 1 / 30;
+
+/**
+ * Движение игрока за кадр: время кадра делится на короткие подшаги, поэтому скорость ходьбы,
+ * подъём по ступеням и прыжок не зависят от частоты кадров (и на медленной машине тоже).
+ * @param start - положение на плане и вертикальное состояние
+ * @param move - направление (единичное или нулевое), скорость, скорость прыжка (0 — без прыжка)
+ * @param query - опоры и препятствия
+ * @param delta - время кадра, с
+ * @param physics - ускорение падения и предельная ступенька
+ */
+export function walkFrame(
+  start: { position: Vec2; vertical: VerticalState },
+  move: { direction: Vec2; speed: number; jump: number },
+  query: WalkQuery,
+  delta: number,
+  physics: { gravity: number; maxStep: number },
+): { position: Vec2; vertical: VerticalState } {
+  const total = Math.min(Math.max(0, delta), MAX_WALK_FRAME);
+  const steps = Math.max(1, Math.ceil(total / STEP_DT - 1e-9));
+  const dt = total / steps;
+  const moving = move.direction[0] !== 0 || move.direction[1] !== 0;
+  let position = start.position;
+  let vertical = start.vertical;
+  for (let k = 0; k < steps; k += 1) {
+    if (moving) position = stepPlayer(position, scale2(move.direction, move.speed * dt), query.bounds, query.obstacles(vertical.feet));
+    vertical = stepVertical(vertical, query.ground(position, vertical.feet), dt, { jump: k === 0 ? move.jump : 0, ...physics });
+  }
+  return { position, vertical };
+}
+
 /**
  * Вертикальный шаг: на опоре ступни следуют за ней (ступень вверх или вниз не выше maxStep —
  * без падения), прыжок даёт скорость вверх, над пропастью — падение с ускорением.
