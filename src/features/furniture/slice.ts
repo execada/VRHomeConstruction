@@ -1,10 +1,12 @@
 /**
  * Redux Slice для управления мебелью.
  * Содержит редюсеры для добавления, обновления, удаления и выбора мебели.
+ * Здесь — мебель активного этажа; мебель остальных этажей хранится в слайсе здания.
  * @module furniture/slice
  */
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { actions as buildingActions } from '@/features/editor-3d/building/slice';
 import { FurnitureItem, FurnitureState } from './types';
 
 const initialState: FurnitureState = {
@@ -106,6 +108,21 @@ export const { actions, name, reducer } = createSlice({
     replaceFurniture(state, action: PayloadAction<FurnitureItem[]>) {
       state.items = action.payload;
     },
+  },
+
+  // Смена, добавление и удаление этажа: мебель нового активного этажа.
+  extraReducers: (builder) => {
+    const load = (state: FurnitureState, items: FurnitureItem[]) => {
+      state.items = items;
+      state.selectedFurniture = null;
+      state.showFurnitureModal = false;
+    };
+    builder
+      .addCase(buildingActions.floorActivated, (state, action) => load(state, action.payload.incoming.furniture))
+      .addCase(buildingActions.floorAdded, (state, action) => load(state, action.payload.incoming.furniture))
+      .addCase(buildingActions.floorRemoved, (state, action) => {
+        if (action.payload.next) load(state, action.payload.next.incoming.furniture);
+      });
   },
 });
 

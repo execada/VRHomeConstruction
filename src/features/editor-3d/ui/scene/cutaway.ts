@@ -12,7 +12,8 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Mesh, type Camera, type Material, type Object3D } from 'three';
+import { Mesh, type Material, type Object3D } from 'three';
+import { floorPoint } from './pointer';
 
 const noRaycast: Mesh['raycast'] = () => undefined;
 
@@ -38,15 +39,20 @@ export function applyCut(root: Object3D, cut: boolean): void {
   });
 }
 
+/** Положение камеры в координатах активного этажа. */
+export interface CameraLocal {
+  position: { x: number; y: number; z: number };
+}
+
 /**
- * Хук среза поверхности.
- * @param shouldCut - условие по положению камеры (null — срез выключен, например от первого лица)
+ * Хук среза поверхности активного этажа.
+ * @param shouldCut - условие по положению камеры в координатах этажа (null — срез выключен, например от первого лица)
  * @returns ref для группы поверхности
  */
-export function useCutaway<T extends Object3D>(shouldCut: ((camera: Camera) => boolean) | null) {
+export function useCutaway<T extends Object3D>(shouldCut: ((camera: CameraLocal) => boolean) | null) {
   const ref = useRef<T>(null);
   useFrame(({ camera }) => {
-    if (ref.current) applyCut(ref.current, shouldCut ? shouldCut(camera) : false);
+    if (ref.current) applyCut(ref.current, shouldCut ? shouldCut({ position: floorPoint(camera.position) }) : false);
   });
   return ref;
 }

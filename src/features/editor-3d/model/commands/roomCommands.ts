@@ -1,13 +1,15 @@
 /**
- * Команды комнаты: размеры (с перемещением стены), толщина и материал внешних стен,
- * отделка поверхностей, удаление/возврат внешних стен, свет.
+ * Команды комнаты (активного этажа): размеры (с перемещением стены), толщина и материал
+ * внешних стен, отделка поверхностей, удаление/возврат внешних стен, свет.
  * @module editor-3d/model/commands/roomCommands
  */
 
 import { clamp } from '@/shared/lib/math/geometry2d';
 import { actions as furnitureActions } from '@/features/furniture/slice';
+import { buildingSelectors } from '../../building/selectors';
+import { actions as buildingActions } from '../../building/slice';
 import { updateOuterWalls, type OuterWallTarget } from '../../lib/outerWalls';
-import { anchorForDraggedWall, resizeRoom, type ResizeAnchor } from '../../lib/roomResize';
+import { anchorForDraggedWall, resizeRoom, resizeShift, type ResizeAnchor } from '../../lib/roomResize';
 import { SCENE_LIMITS } from '../../lib/scene/schema';
 import { withCarried } from '../../lib/supportLinks';
 import { actions as editorActions } from '../../slice';
@@ -29,22 +31,32 @@ export function createRoomCommands(ctx: CommandContext) {
   const editor = () => ctx.getState().editor;
 
   /**
-   * Изменить размеры комнаты. Проёмы, перегородки и мебель пересчитываются,
+   * Изменить размеры комнаты. Проёмы, перегородки, лестницы и мебель пересчитываются,
    * чтобы остаться внутри и на своих местах относительно неподвижных стен;
-   * предметы на опорах (лампа на столе) едут вместе со своей опорой.
+   * предметы на опорах (лампа на столе) едут вместе со своей опорой. Этаж смещается
+   * в здании так, что неподвижные стены и содержимое остаются на месте и над этажом ниже.
    */
   function resize(next: RoomDimensions, anchor: ResizeAnchor = {}): void {
-    const { dimensions, openings, partitions, rooms } = editor();
+    const { dimensions, openings, partitions, rooms, stairs } = editor();
     const target = clampDimensions(next);
     if (target.width === dimensions.width && target.height === dimensions.height && target.depth === dimensions.depth) return;
-    const furniture = ctx.getState().furniture.items;
+    const state = ctx.getState();
+    const { furniture: furnitureState, building } = state;
+    const furniture = furnitureState.items;
     const floor = furniture.filter((i) => !i.supportId);
-    const result = resizeRoom({ dimensions, openings, partitions, rooms, furniture: floor }, target, anchor);
+    const cutouts = buildingSelectors.selectCutoutsFromBelow(state);
+    const result = resizeRoom({ dimensions, openings, partitions, rooms, stairs, cutouts, furniture: floor }, target, anchor, building.slabThickness);
     ctx.dispatch(editorActions.setDimensions(result.dimensions));
     ctx.dispatch(editorActions.setOpenings(result.openings));
     ctx.dispatch(editorActions.setPartitions(result.partitions));
     ctx.dispatch(editorActions.setRooms(result.rooms ?? rooms));
+    ctx.dispatch(editorActions.setStairs(result.stairs ?? stairs));
     ctx.dispatch(furnitureActions.replaceFurniture(withCarried(furniture, result.furniture)));
+    const shift = resizeShift(dimensions, target, anchor);
+    const meta = building.floors.find((f) => f.id === building.activeId);
+    if (meta && (shift[0] !== 0 || shift[1] !== 0)) {
+      ctx.dispatch(buildingActions.floorOffsetSet({ id: meta.id, offset: [meta.offset[0] - shift[0], meta.offset[1] - shift[1]] }));
+    }
     syncLayout(ctx);
   }
 

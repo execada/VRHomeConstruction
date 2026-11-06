@@ -1,6 +1,7 @@
 /**
  * Миграция документа сцены v1 → v3 (формат v2 при этом пропускается: поля v3
- * заполняются так же, как при миграции v2 → v3, см. migrateV2).
+ * заполняются так же, как при миграции v2 → v3, см. migrateV2). Дальше документ v3
+ * становится одним этажом документа v4 (см. migrateV3).
  *
  * Отличия v1:
  * - цвета и материалы поверхностей в `colors` / `materials` вместо `finishes`;
@@ -14,15 +15,14 @@ import { DEFAULT_ENVIRONMENT } from '@/features/environment/constants';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { clamp } from '@/shared/lib/math/geometry2d';
 import { isHexColor } from '@/shared/lib/color/colorTemperature';
-import { DEFAULT_FINISHES, DEFAULT_LIGHT, DEFAULT_OUTER_WALLS } from '../../constants';
+import { DEFAULT_FINISHES, DEFAULT_LIGHT, DEFAULT_OUTER_WALLS, DEFAULT_ROOM_DEPTH, DEFAULT_ROOM_HEIGHT, DEFAULT_ROOM_WIDTH } from '../../constants';
 import type { LightConfig, Opening, Partition, RoomDimensions, RoomFinishes, SurfaceFinish } from '../../types';
 import { clampOpening } from '../openings';
 import { clampPartition } from '../partitions';
 import { isWallSide, wallFrame } from '../walls';
-import { createEmptyScene } from './build';
 import { LEGACY_DOOR } from '../doors';
 import { legacyPartitionMaterial } from './migrateV2';
-import { furnitureSchema, modelPathSchema, SCENE_LIMITS, SCENE_SCHEMA_VERSION, type SceneDocument } from './schema';
+import { furnitureSchema, modelPathSchema, SCENE_LIMITS, type SceneDocumentV3 } from './schema';
 
 type Loose = Record<string, unknown>;
 
@@ -35,11 +35,10 @@ const tuple3 = (v: unknown): [number, number, number] =>
 /** Размеры комнаты v1 с ограничением допустимыми диапазонами. */
 export function migrateDimensions(raw: unknown): RoomDimensions {
   const d = isObject(raw) ? raw : {};
-  const base = createEmptyScene().dimensions;
   return {
-    width: clamp(num(d.width, base.width), SCENE_LIMITS.width[0], SCENE_LIMITS.width[1]),
-    height: clamp(num(d.height, base.height), SCENE_LIMITS.height[0], SCENE_LIMITS.height[1]),
-    depth: clamp(num(d.depth, base.depth), SCENE_LIMITS.depth[0], SCENE_LIMITS.depth[1]),
+    width: clamp(num(d.width, DEFAULT_ROOM_WIDTH), SCENE_LIMITS.width[0], SCENE_LIMITS.width[1]),
+    height: clamp(num(d.height, DEFAULT_ROOM_HEIGHT), SCENE_LIMITS.height[0], SCENE_LIMITS.height[1]),
+    depth: clamp(num(d.depth, DEFAULT_ROOM_DEPTH), SCENE_LIMITS.depth[0], SCENE_LIMITS.depth[1]),
   };
 }
 
@@ -150,13 +149,13 @@ export function migrateFurniture(raw: unknown): FurnitureItem[] {
 }
 
 /**
- * Перевести документ v1 в текущий формат.
+ * Перевести документ v1 в формат v3 (одна квартира).
  * @param raw - roomData v1 (объект без schemaVersion или со schemaVersion = 1)
  */
-export function migrateV1(raw: Loose): SceneDocument {
+export function migrateV1(raw: Loose): SceneDocumentV3 {
   const dimensions = migrateDimensions(raw.dimensions);
   return {
-    schemaVersion: SCENE_SCHEMA_VERSION,
+    schemaVersion: 3,
     dimensions,
     outerWalls: DEFAULT_OUTER_WALLS,
     finishes: migrateFinishes(raw.colors, raw.materials),

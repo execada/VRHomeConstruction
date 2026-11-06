@@ -1,15 +1,15 @@
 /**
  * Встроенные шаблоны комнат («Готовый макет»): реальные CC0-модели и PBR-текстуры.
- * Каждый шаблон — документ сцены v2; корректность (всё внутри комнаты, без наложений)
- * проверяется тестом builtins.test.ts.
+ * Каждый шаблон — документ сцены v4 (одна комната — один этаж, пентхаус — два);
+ * корректность (всё внутри комнаты, без наложений) проверяется тестом builtins.test.ts.
  * @module templates/lib/builtins
  */
 
 import { MODELS } from '@/features/furniture/lib/knownSizes';
 import { DEFAULT_ENVIRONMENT } from '@/features/environment/constants';
 import { DEFAULT_LIGHT } from '@/features/editor-3d/constants';
-import { createEmptyScene } from '@/features/editor-3d/lib/scene/build';
-import type { SceneDocument } from '@/features/editor-3d/lib/scene/schema';
+import { createEmptyFloor, sceneOf } from '@/features/editor-3d/lib/scene/build';
+import type { FloorDocument, SceneDocument } from '@/features/editor-3d/lib/scene/schema';
 import type { Partition, RoomDimensions } from '@/features/editor-3d/types';
 import { againstWall, allWalls, doorOn, finish, itemAt, windowOn } from './compose';
 import { penthouse } from './penthouse';
@@ -24,9 +24,9 @@ export interface BuiltinTemplate {
   build: () => SceneDocument;
 }
 
-/** Базовый документ с размерами и отделкой. */
-function base(dims: RoomDimensions, floorTexture: string, wallColor: string): SceneDocument {
-  const empty = createEmptyScene(dims);
+/** Базовый этаж с размерами и отделкой. */
+function base(dims: RoomDimensions, floorTexture: string, wallColor: string): FloorDocument {
+  const empty = createEmptyFloor(dims);
   return {
     ...empty,
     finishes: {
@@ -40,9 +40,8 @@ function base(dims: RoomDimensions, floorTexture: string, wallColor: string): Sc
 
 const living = (): SceneDocument => {
   const dims = { width: 5, height: 2.8, depth: 4.2 };
-  return {
+  const floor: FloorDocument = {
     ...base(dims, 'herringbone_parquet', '#efe8de'),
-    environment: { ...DEFAULT_ENVIRONMENT, sun: { ...DEFAULT_ENVIRONMENT.sun, timeOfDay: 15.5 } },
     openings: [windowOn('w1', 'front', -1.25, 1.5, 1.6, 0.7), windowOn('w2', 'front', 1.25, 1.5, 1.6, 0.7), doorOn('d1', 'back', 1.8)],
     furniture: [
       againstWall('sofa', MODELS.sofa, dims, 'left', 0, { name: 'Диван' }),
@@ -56,12 +55,13 @@ const living = (): SceneDocument => {
       itemAt('pendant', MODELS.ceilingLamp, [-1.1, 0], { name: 'Подвесной светильник', elevation: dims.height - 0.952 }),
     ],
   };
+  return sceneOf([floor], { ...DEFAULT_ENVIRONMENT, sun: { ...DEFAULT_ENVIRONMENT.sun, timeOfDay: 15.5 } });
 };
 
 const bedroom = (): SceneDocument => {
   const dims = { width: 4, height: 2.7, depth: 3.8 };
   const doc = base(dims, 'laminate_floor_02', '#e9e4dc');
-  return {
+  return sceneOf([{
     ...doc,
     finishes: { ...doc.finishes, walls: { ...doc.finishes.walls, back: finish(null, '#b9c2a6') } },
     light: { ...doc.light, temperature: 2700, intensity: 1.1 },
@@ -75,13 +75,13 @@ const bedroom = (): SceneDocument => {
       itemAt('plant', MODELS.plant, [1.55, 1.55], { name: 'Комнатное растение' }),
       itemAt('armchair', MODELS.armchair, [-1.3, 1.2], { name: 'Кресло', angle: Math.PI }),
     ],
-  };
+  }]);
 };
 
 const kitchen = (): SceneDocument => {
   const dims = { width: 4.5, height: 2.7, depth: 3.6 };
   const doc = base(dims, 'interior_tiles', '#f1ede6');
-  return {
+  return sceneOf([{
     ...doc,
     finishes: { ...doc.finishes, walls: { ...doc.finishes.walls, back: finish('whitewashed_brick') } },
     openings: [windowOn('w1', 'front', -0.8, 1.4, 1.3, 0.95), doorOn('d1', 'right', 0.9)],
@@ -97,12 +97,12 @@ const kitchen = (): SceneDocument => {
       itemAt('chair-4', MODELS.diningChair, [0.48, -0.14], { name: 'Стул мягкий' }),
       itemAt('succulent', MODELS.succulent, [0.2, 0.55], { name: 'Суккулент', elevation: 0.8 }),
     ],
-  };
+  }]);
 };
 
 const office = (): SceneDocument => {
   const dims = { width: 3.4, height: 2.7, depth: 3.2 };
-  return {
+  return sceneOf([{
     ...base(dims, 'plank_flooring_04', '#e6e1d9'),
     light: { ...DEFAULT_LIGHT, temperature: 4000, intensity: 1.5 },
     openings: [windowOn('w1', 'front', 0, 1.4, 1.4, 0.85), doorOn('d1', 'right', -0.8)],
@@ -114,7 +114,7 @@ const office = (): SceneDocument => {
       againstWall('cabinet', MODELS.drawerCabinet, dims, 'back', 0.6, { name: 'Комод со стеллажом' }),
       itemAt('plant', MODELS.plant, [-1.25, -1.2], { name: 'Комнатное растение' }),
     ],
-  };
+  }]);
 };
 
 const studioPartition = (height: number): Partition => ({
@@ -129,7 +129,7 @@ const studioPartition = (height: number): Partition => ({
 
 const studio = (): SceneDocument => {
   const dims = { width: 6.5, height: 2.8, depth: 4.6 };
-  return {
+  return sceneOf([{
     ...base(dims, 'wood_floor', '#ece6dc'),
     openings: [windowOn('w1', 'front', -2.3, 1.2, 1.5, 0.8), windowOn('w2', 'front', 1.0, 1.8, 1.5, 0.8), doorOn('d1', 'back', 0.3)],
     partitions: [studioPartition(dims.height)],
@@ -145,7 +145,7 @@ const studio = (): SceneDocument => {
       itemAt('chair-1', MODELS.woodenChair, [-1.7, 1.44], { name: 'Стул деревянный', angle: Math.PI }),
       itemAt('chair-2', MODELS.woodenChair, [-1.1, 1.44], { name: 'Стул деревянный', angle: Math.PI }),
     ],
-  };
+  }]);
 };
 
 /** Все встроенные шаблоны. */
@@ -157,9 +157,9 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
   { id: 'studio', name: 'Студия', description: 'Гостиная, кухня и спальня за перегородкой', area: 29.9, build: studio },
   {
     id: 'city-penthouse',
-    name: 'Апартаменты 150 м²',
-    description: 'Пентхаус с панорамным остеклением, балконом на всю ширину и видом на мегаполис на закате',
-    area: 150,
+    name: 'Двухуровневый пентхаус',
+    description: 'Внизу гостиная-кухня с лестницей и балкон, наверху спальни, кабинет и терраса; за окнами — мегаполис на закате',
+    area: 255,
     build: penthouse,
   },
 ];

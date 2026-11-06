@@ -1,10 +1,12 @@
 /**
  * Изменение размеров комнаты с сохранением расстановки.
  *
- * Комната всегда центрирована в начале координат, поэтому при перетаскивании одной стены
- * всё содержимое сдвигается так, чтобы противоположная стена осталась на месте.
- * После сдвига проёмы, перегородки и мебель приводятся к новым границам; концы внутренних
- * стен, примыкавшие к внешним стенам, остаются примкнутыми (стена удлиняется или укорачивается).
+ * Комната всегда центрирована в своих координатах, поэтому при перетаскивании одной стены
+ * всё содержимое сдвигается так, чтобы противоположная стена осталась на месте (сам этаж
+ * при этом смещается в здании на обратный сдвиг — см. команды комнаты).
+ * После сдвига проёмы, перегородки, лестницы и мебель приводятся к новым границам; концы
+ * внутренних стен, примыкавшие к внешним стенам, остаются примкнутыми (стена удлиняется
+ * или укорачивается).
  * @module editor-3d/lib/roomResize
  */
 
@@ -13,9 +15,13 @@ import type { FurnitureItem } from '@/features/furniture/types';
 import { normalizeWallOpenings } from './openings';
 import { clampPartition, partitionEndpoints, partitionFromEndpoints } from './partitions';
 import { JOINT_TOLERANCE } from './wallJoints';
-import { buildObstacles, findFreeSpot, furnitureSubject, resolvePlacement } from './placement';
+import { DEFAULT_SLAB_THICKNESS, floorRise } from './building/floors';
+import { intersectRects, translateRect } from './building/rects';
+import { buildObstacles, findFreeSpot, furnitureSubject, resolvePlacement, type PlacementObstacle } from './placement';
+import { clampStair, floorFixtures } from './stairs/stairPlacement';
+import { stairLayout } from './stairs/stairs';
 import { interiorRect, isWallSide, wallFrame, WALL_SIDES } from './walls';
-import type { Opening, Partition, RoomDimensions, RoomLabel, WallSide } from '../types';
+import type { Opening, Partition, RoomDimensions, RoomLabel, Stair, WallSide } from '../types';
 
 /** Содержимое комнаты, затрагиваемое изменением размеров. */
 export interface RoomContent {
@@ -25,6 +31,10 @@ export interface RoomContent {
   furniture: FurnitureItem[];
   /** Подписи помещений (сдвигаются вместе с содержимым) */
   rooms?: RoomLabel[];
+  /** Лестницы (сдвигаются вместе с содержимым и остаются в комнате) */
+  stairs?: Stair[];
+  /** Вырезы в полу над лестницами этажа ниже: в здании они на месте, мебель в них не встаёт */
+  cutouts?: Rect[];
 }
 
 /** Какие стены остаются на месте (по каждой оси). */
@@ -95,8 +105,13 @@ function resizeLabels(labels: RoomLabel[], next: RoomDimensions, shift: Vec2): R
   return labels.map((l) => ({ ...l, anchor: [clamp(l.anchor[0] + shift[0], r.minX, r.maxX), clamp(l.anchor[1] + shift[1], r.minZ, r.maxZ)] }));
 }
 
+/** Сдвинуть лестницы и вписать их в новые границы (ступени — по новой высоте этажа). */
+function resizeStairs(stairs: Stair[], next: RoomDimensions, shift: Vec2, rise: number): Stair[] {
+  return stairs.map((s) => clampStair({ ...s, position: [s.position[0] + shift[0], s.position[1] + shift[1]] }, stairLayout(s.kind, rise, s.width), next));
+}
+
 /** Сдвинуть мебель и заново разрешить столкновения в новых границах. */
-function resizeFurniture(items: FurnitureItem[], partitions: Partition[], next: RoomDimensions, shift: Vec2): FurnitureItem[] {
+function resizeFurniture(items: FurnitureItem[], partitions: Partition[], fixtures: PlacementObstacle[], next: RoomDimensions, shift: Vec2): FurnitureItem[] {
   const rect = interiorRect(next);
   const options = { gridStep: null, wallMagnet: 0 };
   return items.reduce<FurnitureItem[]>((placed, item) => {
@@ -105,7 +120,7 @@ function resizeFurniture(items: FurnitureItem[], partitions: Partition[], next: 
       position: [item.position[0] + shift[0], item.position[1], item.position[2] + shift[1]],
     };
     const subject = furnitureSubject(moved);
-    const obstacles = buildObstacles(partitions, placed);
+    const obstacles = [...buildObstacles(partitions, placed), ...fixtures];
     const direct = resolvePlacement(subject, rect, obstacles, options);
     const footprint = direct.valid ? direct.footprint : findFreeSpot(subject, rect, obstacles, options) ?? direct.footprint;
     return [...placed, { ...moved, position: [footprint.center[0], moved.position[1], footprint.center[1]] }];
@@ -117,15 +132,21 @@ function resizeFurniture(items: FurnitureItem[], partitions: Partition[], next: 
  * @param content - текущее содержимое комнаты
  * @param next - новые размеры
  * @param anchor - какие стены остаются на месте (по умолчанию комната растёт от центра)
+ * @param slab - толщина перекрытия (высота подъёма лестниц = высота этажа + перекрытие)
  */
-export function resizeRoom(content: RoomContent, next: RoomDimensions, anchor: ResizeAnchor = {}): RoomContent {
+export function resizeRoom(content: RoomContent, next: RoomDimensions, anchor: ResizeAnchor = {}, slab = DEFAULT_SLAB_THICKNESS): RoomContent {
   const shift = resizeShift(content.dimensions, next, anchor);
   const partitions = resizePartitions(content.partitions, content.dimensions, next, shift);
+  const rise = floorRise(next, slab);
+  const stairs = resizeStairs(content.stairs ?? [], next, shift, rise);
+  const interior = interiorRect(next);
+  const cutouts = (content.cutouts ?? []).map((r) => intersectRects(translateRect(r, shift), interior)).filter((r): r is Rect => r !== null);
   return {
     dimensions: next,
     openings: resizeOpenings(content.openings, next, shift),
     partitions,
-    furniture: resizeFurniture(content.furniture, partitions, next, shift),
+    stairs,
+    furniture: resizeFurniture(content.furniture, partitions, floorFixtures(stairs, rise, cutouts, next.height), next, shift),
     rooms: resizeLabels(content.rooms ?? [], next, shift),
   };
 }

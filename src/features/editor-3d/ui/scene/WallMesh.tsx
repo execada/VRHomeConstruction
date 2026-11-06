@@ -9,12 +9,13 @@ import { useSelector } from 'react-redux';
 import { Edges } from '@react-three/drei';
 import type { Group } from 'three';
 import { selectors as editorSelectors } from '../../selectors';
+import { isPointerBusy } from '../../model/interactionStore';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { isWallFacingAway, wallBox, wallFrame, type WallFrame } from '../../lib/walls';
 import type { Opening, OuterWalls, RoomDimensions, SurfaceFinish, WallSide } from '../../types';
 import { useCutaway } from './cutaway';
 import { OpeningMesh } from './OpeningMesh';
-import { HELPER_DATA, isClick, NO_RAYCAST, rayToWall, type SceneMouseEvent } from './pointer';
+import { HELPER_DATA, floorRay, isClick, NO_RAYCAST, rayToWall, type SceneMouseEvent } from './pointer';
 
 const WALL_SELECTION_DATA = { ...HELPER_DATA, hideOnCut: true };
 import { useOpeningDrag } from './useOpeningDrag';
@@ -36,6 +37,8 @@ interface WallMeshProps {
   selectedOpeningId: string | null;
   /** Включён ли срез стен (облёт, план, фикс-виды) */
   cutaway: boolean;
+  /** Стена активного этажа: выделяется, на ней создаются и перетаскиваются проёмы (по умолчанию — да) */
+  interactive?: boolean;
 }
 
 const SELECTED_COLOR = '#c9a96e';
@@ -52,7 +55,7 @@ const DraggableOpening: React.FC<{ side: WallSide; frame: WallFrame; opening: Op
 };
 
 export const WallMesh: React.FC<WallMeshProps> = memo(
-  ({ side, dims, outerWalls, removed, openings, finish, selected, selectedOpeningId, cutaway }) => {
+  ({ side, dims, outerWalls, removed, openings, finish, selected, selectedOpeningId, cutaway, interactive = true }) => {
     const commands = useSceneCommands();
     const activeTool = useSelector(editorSelectors.selectActiveTool);
     const frame = useMemo(() => wallFrame(side, dims), [side, dims]);
@@ -60,16 +63,16 @@ export const WallMesh: React.FC<WallMeshProps> = memo(
     const thickness = box.thickness;
     const look = useWallLook(finish, outerWalls[side].material);
     const shouldCut = useMemo(
-      () => (cutaway ? (camera: { position: { x: number; z: number } }) => isWallFacingAway(frame, [camera.position.x, camera.position.z]) : null),
-      [cutaway, frame],
+      () => (cutaway && interactive ? (camera: { position: { x: number; z: number } }) => isWallFacingAway(frame, [camera.position.x, camera.position.z]) : null),
+      [cutaway, interactive, frame],
     );
     const ref = useCutaway<Group>(shouldCut);
 
     const handleClick = (e: SceneMouseEvent) => {
-      if (!isClick(e) || activeTool === 'partition') return;
+      if (!isClick(e) || activeTool === 'partition' || isPointerBusy()) return;
       e.stopPropagation();
       if (activeTool === 'window' || activeTool === 'door') {
-        const hit = rayToWall(e.ray, frame);
+        const hit = rayToWall(floorRay(e.ray), frame);
         commands.openings.add(side, activeTool, hit?.u ?? 0);
         return;
       }
@@ -78,13 +81,17 @@ export const WallMesh: React.FC<WallMeshProps> = memo(
 
     return (
       <group ref={ref} position={[box.base[0], 0, box.base[1]]} rotation={[0, box.rotationY, 0]}>
-        <group onClick={handleClick}>
+        <group onClick={interactive ? handleClick : undefined}>
           <WallPieces uMin={box.uMin} uMax={box.uMax} height={dims.height} thickness={thickness} openings={openings} look={look} />
         </group>
-        {openings.map((o) => (
-          <DraggableOpening key={o.id} side={side} frame={frame} opening={o} thickness={thickness} selected={o.id === selectedOpeningId} />
-        ))}
-        {selected && (
+        {openings.map((o) =>
+          interactive ? (
+            <DraggableOpening key={o.id} side={side} frame={frame} opening={o} thickness={thickness} selected={o.id === selectedOpeningId} />
+          ) : (
+            <OpeningMesh key={o.id} opening={o} thickness={thickness} wallHeight={frame.height} selected={false} />
+          ),
+        )}
+        {selected && interactive && (
           <mesh position={[0, dims.height / 2, thickness / 2 + 0.003]} userData={WALL_SELECTION_DATA} raycast={NO_RAYCAST}>
             <planeGeometry args={[frame.length, dims.height]} />
             <meshBasicMaterial color={SELECTED_COLOR} transparent opacity={0.08} depthWrite={false} />

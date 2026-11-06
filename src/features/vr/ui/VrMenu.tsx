@@ -16,6 +16,7 @@ import { selectors as environmentSelectors } from '@/features/environment/select
 import { EnvironmentFeature } from '@/features/environment';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
+import { floorPoint } from '@/features/editor-3d/ui/scene/pointer';
 import { VrButton } from './VrButton';
 
 interface VrMenuProps {
@@ -29,11 +30,12 @@ const ROW = 0.045;
 
 type Page = 'main' | 'catalog';
 
-/** Точка на полу в 1.6 м перед пользователем. */
+/** Точка на полу в 1.6 м перед пользователем — в координатах активного этажа (на нём ставится предмет). */
 function pointAhead(camera: { getWorldPosition: (v: Vector3) => Vector3; getWorldDirection: (v: Vector3) => Vector3 }): [number, number] {
   const pos = camera.getWorldPosition(new Vector3());
   const dir = camera.getWorldDirection(new Vector3()).setY(0).normalize();
-  return [pos.x + dir.x * 1.6, pos.z + dir.z * 1.6];
+  const local = floorPoint({ x: pos.x + dir.x * 1.6, y: pos.y, z: pos.z + dir.z * 1.6 });
+  return [local.x, local.z];
 }
 
 const MainPage: React.FC<VrMenuProps & { openCatalog: () => void }> = ({ onSave, openCatalog }) => {

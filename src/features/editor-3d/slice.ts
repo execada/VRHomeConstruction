@@ -6,6 +6,7 @@
  */
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { actions as buildingActions } from './building/slice';
 import {
   EditorState,
   EditorScenePayload,
@@ -21,6 +22,7 @@ import {
   LightConfig,
   OuterWalls,
   RoomLabel,
+  Stair,
   WallSide,
 } from './types';
 
@@ -35,6 +37,22 @@ import {
   DEFAULT_FINISHES,
   DEFAULT_OUTER_WALLS,
 } from './constants';
+
+/** Загрузить содержимое этажа в состояние редактора (сцена, смена этажа). */
+function loadContent(state: EditorState, scene: EditorScenePayload) {
+  state.dimensions = scene.dimensions;
+  state.finishes = scene.finishes;
+  state.outerWalls = scene.outerWalls;
+  state.removedWalls = scene.removedWalls;
+  state.light = scene.light;
+  state.openings = scene.openings;
+  state.partitions = scene.partitions;
+  state.rooms = scene.rooms;
+  state.stairs = scene.stairs;
+  state.partitionColors = {};
+  state.selectedOpening = null;
+  state.selectedPartition = null;
+}
 
 /** Начальное состояние редактора */
 const initialState: EditorState = {
@@ -65,6 +83,8 @@ const initialState: EditorState = {
   partitions: [],
 
   rooms: [],
+
+  stairs: [],
 
   partitionColors: {},
 
@@ -474,30 +494,60 @@ export const slice = createSlice({
       state.partitions = action.payload;
     },
 
-    /** Загрузить сцену целиком (проект, шаблон, отмена/повтор) */
+    /** Добавить лестницу */
+    addStair(
+        state,
+        action: PayloadAction<Stair>
+    ) {
+      state.stairs = [...state.stairs, action.payload];
+    },
+
+    /** Обновить лестницу */
+    updateStair(
+        state,
+        action: PayloadAction<Stair>
+    ) {
+      state.stairs = state.stairs.map((s) => (s.id === action.payload.id ? action.payload : s));
+    },
+
+    /** Удалить лестницу */
+    removeStair(
+        state,
+        action: PayloadAction<string>
+    ) {
+      state.stairs = state.stairs.filter((s) => s.id !== action.payload);
+    },
+
+    /** Заменить все лестницы (пересчёт после изменения размеров комнаты) */
+    setStairs(
+        state,
+        action: PayloadAction<Stair[]>
+    ) {
+      state.stairs = action.payload;
+    },
+
+    /** Загрузить сцену целиком (проект, шаблон, отмена/повтор) — содержимое активного этажа */
     loadScene(
         state,
         action: PayloadAction<EditorScenePayload>
     ) {
-      const scene = action.payload;
-
-      state.dimensions = scene.dimensions;
-      state.finishes = scene.finishes;
-      state.outerWalls = scene.outerWalls;
-      state.removedWalls = scene.removedWalls;
-      state.light = scene.light;
-      state.openings = scene.openings;
-      state.partitions = scene.partitions;
-      state.rooms = scene.rooms;
-      state.partitionColors = {};
-      state.selectedOpening = null;
-      state.selectedPartition = null;
+      loadContent(state, action.payload);
     },
 
     /** Сброс редактора */
     resetEditor() {
       return initialState;
     },
+  },
+
+  // Смена, добавление и удаление этажа: содержимое нового активного этажа — в редактор.
+  extraReducers: (builder) => {
+    builder
+      .addCase(buildingActions.floorActivated, (state, action) => loadContent(state, action.payload.incoming))
+      .addCase(buildingActions.floorAdded, (state, action) => loadContent(state, action.payload.incoming))
+      .addCase(buildingActions.floorRemoved, (state, action) => {
+        if (action.payload.next) loadContent(state, action.payload.next.incoming);
+      });
   },
 });
 

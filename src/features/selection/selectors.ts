@@ -31,6 +31,11 @@ const selectSelectedPartitionLive = createSelector([selectSelection, editorSelec
   sel?.kind === 'partition' ? partitions.find((p) => p.id === sel.id) ?? null : null,
 );
 
+/** Выделенная лестница (актуальные данные) */
+const selectSelectedStair = createSelector([selectSelection, editorSelectors.selectStairs], (sel, stairs) =>
+  sel?.kind === 'stair' ? stairs.find((s) => s.id === sel.id) ?? null : null,
+);
+
 /** Выделенный проём (актуальные данные) и его стена/перегородка */
 const selectSelectedOpeningLive = createSelector(
   [selectSelection, editorSelectors.selectOpenings, editorSelectors.selectPartitions],
@@ -52,7 +57,7 @@ const selectSelectedRoom = createSelector([selectSelection, selectRooms], (sel, 
 /** id выделенного объекта (для подсветки в 2D/3D) */
 const selectSelectedId = createSelector(selectSelection, (sel) => {
   if (!sel) return null;
-  if (sel.kind === 'furniture' || sel.kind === 'partition' || sel.kind === 'opening') return sel.id;
+  if (sel.kind === 'furniture' || sel.kind === 'partition' || sel.kind === 'opening' || sel.kind === 'stair') return sel.id;
   if (sel.kind === 'wall') return sel.side;
   return sel.kind;
 });
@@ -62,6 +67,7 @@ export const selectors = {
   selectHoveredId,
   selectSelectedItem,
   selectSelectedPartitionLive,
+  selectSelectedStair,
   selectSelectedOpeningLive,
   selectSelectedRoom,
   selectSelectedId,

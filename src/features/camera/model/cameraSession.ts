@@ -6,13 +6,13 @@
 
 import { z } from 'zod';
 import { createExternalStore } from '@/shared/lib/externalStore';
-import type { CameraMode } from '../types';
+import { CAMERA_MODES, type CameraMode } from '../types';
 
 const vec3 = z.tuple([z.number().min(-500).max(500), z.number().min(-500).max(500), z.number().min(-500).max(500)]);
 
 /** Схема сохранённой позы камеры (часть roomData проекта). */
 export const cameraPoseSchema = z.object({
-  mode: z.enum(['orbit', 'fps', 'top', 'fixed']),
+  mode: z.enum(CAMERA_MODES),
   position: vec3,
   /** Точка, на которую смотрит камера облёта */
   target: vec3,

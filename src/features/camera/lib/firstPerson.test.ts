@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { moveDirection, PLAYER_RADIUS, stepPlayer } from './firstPerson';
-import { fixedViewPose, orbitLimits, topViewZoom } from './views';
+import { fixedViewPose, orbitLimits, streetView, topViewZoom } from './views';
 
 const room = { minX: -2, maxX: 2, minZ: -2, maxZ: 2 };
 
@@ -61,6 +61,24 @@ describe('camera views', () => {
 
   it('keeps the orbit camera above the floor', () => {
     expect(orbitLimits(dims).maxPolarAngle).toBeLessThan(Math.PI / 2);
+  });
+
+  it('places fixed views around the active floor of a building', () => {
+    const pose = fixedViewPose('front', dims, { base: 3.3, offset: [1, -2] });
+    expect(pose.target).toEqual([1, dims.height * 0.35 + 3.3, -2]);
+    expect(pose.position[2]).toBeGreaterThan(-2 + 2.5);
+  });
+
+  it('frames the whole building from the street and keeps the camera outside', () => {
+    const bounds = { minX: -8, maxX: 8, minZ: -5, maxZ: 5 };
+    const view = streetView(bounds, 7);
+    const [tx, ty, tz] = view.pose.target;
+    expect([tx, tz]).toEqual([0, 0]);
+    expect(ty).toBeCloseTo(7 * 0.45);
+    const [px, py, pz] = view.pose.position;
+    expect(Math.hypot(px - tx, py - ty, pz - tz)).toBeGreaterThan(view.minDistance);
+    expect(view.minDistance).toBeGreaterThan(Math.hypot(16, 10) / 2);
+    expect(view.maxPolarAngle).toBeLessThan(Math.PI / 2);
   });
 
   it('fits the room into the top view', () => {

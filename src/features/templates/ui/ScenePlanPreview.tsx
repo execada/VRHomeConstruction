@@ -1,11 +1,12 @@
 /**
- * Мини-план документа сцены (SVG): контур комнаты, проёмы, перегородки, мебель.
- * Всегда соответствует реальному содержимому шаблона.
+ * Мини-план документа сцены (SVG): контур комнаты, проёмы, перегородки, лестницы, мебель
+ * первого этажа. Всегда соответствует реальному содержимому шаблона.
  * @module templates/ui/ScenePlanPreview
  */
 
 import React, { memo } from 'react';
 import { furnitureFootprint, isFlatItem, partitionFootprint } from '@/features/editor-3d/lib/placement';
+import { stairFootprint, stairLayout } from '@/features/editor-3d/lib/stairs/stairs';
 import { isWallSide, outerBounds, wallFrame } from '@/features/editor-3d/lib/walls';
 import type { SceneDocument } from '@/features/editor-3d/lib/scene/schema';
 import type { FurnitureItem } from '@/features/furniture/types';
@@ -13,9 +14,11 @@ import { add2, obbCorners, scale2 } from '@/shared/lib/math/geometry2d';
 
 const points = (corners: ReadonlyArray<readonly [number, number]>) => corners.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join(' ');
 
-export const ScenePlanPreview: React.FC<{ doc: SceneDocument; className?: string }> = memo(({ doc, className }) => {
+export const ScenePlanPreview: React.FC<{ doc: SceneDocument; className?: string }> = memo(({ doc: scene, className }) => {
+  const doc = scene.floors[0];
   const { width, depth } = doc.dimensions;
   const outer = outerBounds(doc.dimensions, doc.outerWalls);
+  const rise = doc.dimensions.height + scene.slabThickness;
   const pad = 0.4;
   return (
     <svg
@@ -37,6 +40,9 @@ export const ScenePlanPreview: React.FC<{ doc: SceneDocument; className?: string
         })}
       {doc.partitions.map((p) => (
         <polygon key={p.id} points={points(obbCorners(partitionFootprint(p)))} fill="var(--text-2)" />
+      ))}
+      {doc.stairs.map((s) => (
+        <polygon key={s.id} points={points(obbCorners(stairFootprint(s, stairLayout(s.kind, rise, s.width))))} fill="rgb(201 169 110 / 70%)" />
       ))}
       {(doc.furniture as FurnitureItem[]).map((f) => (
         <polygon

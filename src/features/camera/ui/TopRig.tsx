@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux';
 import { useThree } from '@react-three/fiber';
 import { MapControls, OrthographicCamera } from '@react-three/drei';
 import type { OrthographicCamera as OrthographicCameraImpl } from 'three';
+import { buildingSelectors } from '@/features/editor-3d/building/selectors';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { selectors } from '../selectors';
 import { topViewZoom } from '../lib/views';
@@ -21,28 +22,29 @@ type MapControlsImpl = React.ComponentRef<typeof MapControls>;
 
 export const TopRig: React.FC = () => {
   const dims = useSelector(editorSelectors.selectDimensions);
+  const frame = useSelector(buildingSelectors.selectActiveFrame);
   const viewRequest = useSelector(selectors.selectViewRequest);
   const size = useThree((s) => s.size);
   const cameraRef = useRef<OrthographicCameraImpl>(null);
   const controls = useRef<MapControlsImpl>(null);
   useControlsLock(controls);
 
-  // Вписать комнату при открытии плана, изменении размеров и по запросу «Сбросить вид».
+  // Вписать активный этаж при открытии плана, смене этажа, изменении размеров и по запросу «Сбросить вид».
   useEffect(() => {
     const camera = cameraRef.current;
     if (!camera) return;
     camera.zoom = topViewZoom(dims, size);
-    camera.position.set(0, HEIGHT, 0);
+    camera.position.set(frame.offset[0], frame.base + HEIGHT, frame.offset[1]);
     camera.updateProjectionMatrix();
-    controls.current?.target.set(0, 0, 0);
+    controls.current?.target.set(frame.offset[0], frame.base, frame.offset[1]);
     controls.current?.update();
     // Размер окна намеренно не в зависимостях: пользовательский масштаб не сбрасывается при ресайзе.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dims, viewRequest]);
+  }, [dims, frame, viewRequest]);
 
   return (
     <>
-      <OrthographicCamera ref={cameraRef} makeDefault position={[0, HEIGHT, 0]} up={[0, 0, -1]} near={0.1} far={HEIGHT * 3} />
+      <OrthographicCamera ref={cameraRef} makeDefault position={[0, HEIGHT, 0]} up={[0, 0, -1]} near={0.1} far={HEIGHT * 3 + 40} />
       <MapControls ref={controls} makeDefault enableRotate={false} screenSpacePanning enableDamping dampingFactor={0.15} />
     </>
   );

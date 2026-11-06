@@ -13,10 +13,11 @@ import { PRESET_LABELS, RESOLUTION_SCALE_RANGE, SHADOW_MAP_SIZES } from '@/featu
 import { Button, Section, Segmented, Slider, Toggle } from '@/shared/ui/controls';
 import styles from './EditorPanel.module.scss';
 
-const MODES: Array<{ value: CameraMode; label: string; icon: 'orbit' | 'walk' | 'plan' }> = [
+const MODES: Array<{ value: CameraMode; label: string; icon: 'orbit' | 'walk' | 'plan' | 'building' }> = [
   { value: 'orbit', label: 'Облёт', icon: 'orbit' },
   { value: 'fps', label: 'От лица', icon: 'walk' },
   { value: 'top', label: 'План', icon: 'plan' },
+  { value: 'street', label: 'Улица', icon: 'building' },
 ];
 
 const CameraSection: React.FC = () => {

@@ -7,7 +7,7 @@
 import { createSelector } from '@reduxjs/toolkit';
 import { name, EditorState } from './slice';
 import { DEFAULT_FINISHES, DEFAULT_LIGHT, DEFAULT_OUTER_WALLS } from './constants';
-import type { RoomLabel, WallSide } from './types';
+import type { RoomLabel, Stair, WallSide } from './types';
 
 type State = {
   [name]: EditorState;
@@ -54,6 +54,9 @@ const selectFinishes = createSelector(root, (state) => state?.finishes ?? DEFAUL
 const selectOuterWalls = createSelector(root, (state) => state?.outerWalls ?? DEFAULT_OUTER_WALLS);
 const NO_WALLS: WallSide[] = [];
 const NO_ROOMS: RoomLabel[] = [];
+const NO_STAIRS: Stair[] = [];
+/** Лестницы активного этажа */
+const selectStairs = createSelector(root, (state) => state?.stairs ?? NO_STAIRS);
 /** Названия и виды помещений */
 const selectRoomLabels = createSelector(root, (state) => state?.rooms ?? NO_ROOMS);
 /** Удалённые внешние стены */
@@ -85,5 +88,6 @@ export const selectors = {
   selectOuterWalls,
   selectRemovedWalls,
   selectRoomLabels,
+  selectStairs,
   selectLightConfig,
 };

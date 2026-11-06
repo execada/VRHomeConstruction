@@ -14,7 +14,11 @@ describe('template entries', () => {
     const living = builtins.find((e) => e.id === 'living');
     expect(living?.kind).toBe('builtin');
     expect(living?.meta).toBe('21 м²');
-    if (living?.kind === 'builtin') expect(living.doc.furniture.length).toBeGreaterThan(0);
+    if (living?.kind === 'builtin') expect(living.doc.floors[0].furniture.length).toBeGreaterThan(0);
+  });
+
+  it('у многоэтажного шаблона в подписи — число этажей', () => {
+    expect(builtins.find((e) => e.id === 'city-penthouse')?.meta).toBe('255 м² · 2 этажа');
   });
 
   it('пользовательские шаблоны без описания и превью', () => {

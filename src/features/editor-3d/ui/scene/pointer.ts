@@ -2,11 +2,16 @@
  * Помощники для событий указателя в сцене: пересечение луча с полом и плоскостью стены,
  * луч для выбора поверхности опоры, захват указателя на время перетаскивания,
  * отличие клика от поворота камеры.
+ *
+ * Редактируется активный этаж: его содержимое описано в координатах этажа (пол — y = 0,
+ * центр — начало координат), а события приходят в мировых. Перед расчётами луч
+ * переводится в координаты этажа (floorRay), высота точки — floorHeight.
  * @module editor-3d/ui/scene/pointer
  */
 
 import type { ThreeEvent } from '@react-three/fiber';
 import { Plane, Vector3, type Ray } from 'three';
+import { createExternalStore } from '@/shared/lib/externalStore';
 import type { Vec2 } from '@/shared/lib/math/geometry2d';
 import type { Ray3 } from '../../lib/surfaces';
 import { worldToWall, type WallFrame } from '../../lib/walls';
@@ -24,6 +29,35 @@ export const HELPER_DATA = Object.freeze({ editorHelper: true });
 export const CLICK_TOLERANCE_PX = 5;
 
 const UP = new Vector3(0, 1, 0);
+
+/** Положение активного этажа в мире: высота пола и смещение центра. */
+export interface FloorPlacement {
+  base: number;
+  offset: Vec2;
+}
+
+/** Положение активного этажа (его задаёт группа активного этажа в сцене). */
+export const floorPlacementStore = createExternalStore<FloorPlacement>({ base: 0, offset: [0, 0] });
+
+/** Луч в координатах активного этажа. */
+export function floorRay(ray: Ray): Ray {
+  const { base, offset } = floorPlacementStore.getState();
+  if (base === 0 && offset[0] === 0 && offset[1] === 0) return ray;
+  const local = ray.clone();
+  local.origin.set(local.origin.x - offset[0], local.origin.y - base, local.origin.z - offset[1]);
+  return local;
+}
+
+/** Высота мировой точки над полом активного этажа. */
+export function floorHeight(worldY: number): number {
+  return worldY - floorPlacementStore.getState().base;
+}
+
+/** Точка мира в координатах активного этажа. */
+export function floorPoint(point: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
+  const { base, offset } = floorPlacementStore.getState();
+  return { x: point.x - offset[0], y: point.y - base, z: point.z - offset[1] };
+}
 
 /** Точка пересечения луча с горизонтальной плоскостью y = height. */
 export function rayToFloor(ray: Ray, height = 0): Vec2 | null {

@@ -23,6 +23,7 @@ const TOOLS: Array<{ tool: Tool; icon: IconName; label: string }> = [
   { tool: 'window', icon: 'window', label: 'Окно: кликните по стене' },
   { tool: 'door', icon: 'door', label: 'Дверь: кликните по стене' },
   { tool: 'partition', icon: 'partition', label: 'Стена: кликните начало и конец на полу' },
+  { tool: 'stair', icon: 'stairs', label: 'Лестница на этаж выше: кликните по полу' },
 ];
 
 /** Панель инструментов внизу сцены. */
@@ -74,10 +75,22 @@ export const ViewportHint: React.FC = () => {
         Стена: кликните начало и конец · концы липнут к стенам, углы — к 45° · <Kbd>G</Kbd> сетка · правая кнопка или <Kbd>Esc</Kbd> — закончить
       </>
     );
+  } else if (tool === 'stair') {
+    content = (
+      <>
+        Лестница на этаж выше: кликните по полу · <Kbd>R</Kbd> поворот на 90° · <Kbd>Shift</Kbd>+клик — ещё одна · <Kbd>Esc</Kbd> — закончить
+      </>
+    );
+  } else if (camera === 'street') {
+    content = (
+      <>
+        Здание с улицы: тяните — облёт, колесо — ближе и дальше · <Kbd>2</Kbd> — обойти здание от первого лица
+      </>
+    );
   } else if (camera === 'fps') {
     content = (
       <>
-        <Kbd>ЛКМ</Kbd> осмотреться · <Kbd>W</Kbd><Kbd>A</Kbd><Kbd>S</Kbd><Kbd>D</Kbd> идти · <Kbd>Shift</Kbd> бег · <Kbd>Space</Kbd> прыжок · <Kbd>C</Kbd> присесть
+        <Kbd>ЛКМ</Kbd> осмотреться · <Kbd>W</Kbd><Kbd>A</Kbd><Kbd>S</Kbd><Kbd>D</Kbd> идти, по лестнице — на другой этаж · <Kbd>Shift</Kbd> бег · <Kbd>Space</Kbd> прыжок · <Kbd>C</Kbd> присесть
       </>
     );
   }

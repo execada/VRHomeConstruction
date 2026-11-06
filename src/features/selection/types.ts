@@ -9,6 +9,7 @@ import type { WallSide } from '@/features/editor-3d/types';
 export type SceneSelection =
   | { kind: 'furniture'; id: string }
   | { kind: 'partition'; id: string }
+  | { kind: 'stair'; id: string }
   /** hostId — сторона внешней стены или id перегородки */
   | { kind: 'opening'; hostId: string; id: string }
   | { kind: 'wall'; side: WallSide }

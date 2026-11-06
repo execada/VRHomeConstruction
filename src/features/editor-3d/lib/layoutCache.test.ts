@@ -1,24 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { uniformOuterWalls } from '../constants';
-import { cachedRooms, cachedWalkObstacles, cachedWallLayout } from './layoutCache';
-import type { WalkScene } from './walkObstacles';
+import type { Partition } from '../types';
+import { cachedRooms, cachedWallLayout } from './layoutCache';
 
 const dims = { width: 4, height: 3, depth: 4 };
 
 describe('layout cache', () => {
   it('reuses results while the inputs are the same objects', () => {
-    const partitions: WalkScene['partitions'] = [];
+    const partitions: Partition[] = [];
     expect(cachedWallLayout(dims, partitions)).toBe(cachedWallLayout(dims, partitions));
     expect(cachedRooms(dims, partitions)).toBe(cachedRooms(dims, partitions));
     expect(cachedRooms(dims, [])).not.toBe(cachedRooms({ ...dims }, []));
   });
 
-  it('recomputes walk obstacles only when walls or openings change', () => {
-    const scene: WalkScene = { dimensions: dims, outerWalls: uniformOuterWalls(0.2), removedWalls: [], openings: {}, partitions: [] };
-    const first = cachedWalkObstacles(scene);
-    expect(cachedWalkObstacles({ ...scene })).toBe(first);
-    const opened = cachedWalkObstacles({ ...scene, removedWalls: ['front'] });
-    expect(opened).not.toBe(first);
-    expect(opened.length).toBeLessThan(first.length);
+  it('keeps a result per floor: floors do not evict each other', () => {
+    const lower: Partition[] = [];
+    const upper: Partition[] = [];
+    const upperDims = { width: 6, height: 3, depth: 5 };
+    const first = cachedRooms(dims, lower);
+    const second = cachedRooms(upperDims, upper);
+    expect(cachedRooms(dims, lower)).toBe(first);
+    expect(cachedRooms(upperDims, upper)).toBe(second);
+    expect(second[0].area).toBeCloseTo(30);
   });
 });

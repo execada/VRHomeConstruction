@@ -9,7 +9,7 @@
  * @module project-session/saga
  */
 
-import { call, debounce, delay, put, select, takeLatest } from 'typed-redux-saga';
+import { call, debounce, delay, put, select, takeEvery, takeLatest } from 'typed-redux-saga';
 import { projectsApi } from '@/app/api';
 import { ApiRequestError } from '@/app/api/client';
 import type { ProjectDetails } from '@/app/api/schemas';
@@ -23,6 +23,7 @@ import { SCENE_EDIT_ACTION_TYPES } from '@/features/editor-3d/sceneActionTypes';
 import { selectSceneDocument } from '@/features/editor-3d/sceneSelectors';
 import { sceneBridge } from '@/features/editor-3d/model/sceneBridge';
 import { interaction } from '@/features/editor-3d/model/interactionStore';
+import { actions as buildingActions } from '@/features/editor-3d/building/slice';
 import { actions as editorActions } from '@/features/editor-3d/slice';
 import { actions as furnitureActions } from '@/features/furniture/slice';
 import { actions as environmentActions } from '@/features/environment/slice';
@@ -103,6 +104,16 @@ function* openSaga(action: ReturnType<typeof actions.openRequested>) {
     console.error('Не удалось открыть проект', error);
     yield* put(actions.openFailed(openErrorMessage(error)));
   }
+}
+
+/**
+ * Отметить несохранённые правки сразу (локальная копия пишется с задержкой): статус
+ * в шапке честный с первой правки, а закрытие вкладки до записи копии её не теряет.
+ */
+function* markDirtySaga() {
+  const status = yield* select(selectors.selectSessionStatus);
+  const saveState = yield* select(selectors.selectSaveState);
+  if (status === 'ready' && saveState === 'saved') yield* put(actions.setSaveState('dirty'));
 }
 
 /** Записать локальную копию текущей сцены (без сервера). */
@@ -198,6 +209,7 @@ export function* initSaga() {
     interaction.reset();
     setRestorePose(null);
     yield* put(editorActions.resetEditor());
+    yield* put(buildingActions.reset());
     yield* put(furnitureActions.resetFurniture());
     yield* put(environmentActions.resetEnvironment());
     yield* put(HistoryFeature.actions.clearHistory());
@@ -206,6 +218,7 @@ export function* initSaga() {
   }
 
   yield* takeLatest(actions.openRequested.type, openSaga);
+  yield* takeEvery(AUTOSAVE_TRIGGERS, markDirtySaga);
   yield* debounce(BACKUP_DELAY_MS, AUTOSAVE_TRIGGERS, backupSaga);
   yield* debounce(AUTOSAVE_DELAY_MS, AUTOSAVE_TRIGGERS, () => save(false));
   yield* takeLatest(actions.saveNowRequested.type, () => save(true));

@@ -1,24 +1,26 @@
 /**
  * Камера от первого лица: зажатая левая кнопка мыши — осмотреться, WASD — идти,
  * Shift — бег, Space — прыжок, Ctrl/C — присесть, клик по двери — открыть/закрыть.
- * Со столкновениями нельзя пройти сквозь стены, закрытые двери, окна и мебель (скольжение
- * вдоль них); через пустые проёмы и открытые двери можно переходить из комнаты в комнату
- * и выйти на участок. Без столкновений — свободный полёт по участку вокруг комнаты.
+ * Со столкновениями нельзя пройти сквозь стены, закрытые двери, окна, мебель и ограждения
+ * (скольжение вдоль них); через пустые проёмы и открытые двери можно переходить из комнаты
+ * в комнату и выйти на участок или террасу. По лестнице поднимаются и спускаются: высота глаз
+ * следует ступеням, а на другом этаже он становится активным (его свет, двери, правки).
+ * Без столкновений — свободное хождение сквозь стены по участку вокруг здания.
  * @module camera/ui/FirstPersonRig
  */
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useStore, useSelector } from 'react-redux';
 import { useFrame, useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import type { RootState } from '@/app/store';
-import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
-import { cachedWalkObstacles } from '@/features/editor-3d/lib/layoutCache';
-import { furnitureFootprint, isFlatItem } from '@/features/editor-3d/lib/placement';
-import { lotRect } from '@/features/editor-3d/lib/walls';
+import { buildingSelectors } from '@/features/editor-3d/building/selectors';
+import { floorIndexAt } from '@/features/editor-3d/lib/building/floors';
+import { groundAt, MAX_STEP, obstaclesAt } from '@/features/editor-3d/lib/building/walk';
+import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { clamp } from '@/shared/lib/math/geometry2d';
 import { selectors } from '../selectors';
-import { moveDirection, stepPlayer } from '../lib/firstPerson';
+import { moveDirection, stepPlayer, stepVertical } from '../lib/firstPerson';
 import { reportCameraPose, takeRestorePose } from '../model/cameraSession';
 import { useFirstPersonInput } from './useFirstPersonInput';
 import { CAMERA_FAR } from '../lib/views';
@@ -30,28 +32,76 @@ const STAND_EYE = 1.6;
 const CROUCH_EYE = 0.95;
 const JUMP_VELOCITY = 4.2;
 const GRAVITY = 14;
+/** Скорость, с которой взгляд догоняет ступени (1/с): шаг по лестнице плавный, но заметный. */
+const STEP_SMOOTH = 14;
 const PITCH_LIMIT = Math.PI / 2.1;
 const REPORT_INTERVAL = 0.5;
+/** Сколько секунд человек должен пробыть на другом этаже, чтобы тот стал активным. */
+const FLOOR_SWITCH_DELAY = 0.3;
+/** Отступ от фасада, с которого начинают обход здания с улицы, м. */
+const STREET_START = 3;
 
-export const FirstPersonRig: React.FC = () => {
+/** Вертикальное состояние и сглаживание взгляда. */
+interface Motion {
+  eye: number;
+  feet: number;
+  view: number;
+  velocity: number;
+  grounded: boolean;
+  sinceReport: number;
+  /** Этаж под ногами, отличный от активного, и сколько времени человек на нём */
+  pending: { index: number; time: number } | null;
+}
+
+export const FirstPersonRig: React.FC<{ outside?: boolean }> = ({ outside = false }) => {
   const store = useStore<RootState>();
-  const dims = useSelector(editorSelectors.selectDimensions);
+  const commands = useSceneCommands();
   const collisions = useSelector(selectors.selectCollisions);
   const gl = useThree((s) => s.gl);
   const input = useFirstPersonInput(gl.domElement);
-  const motion = useRef({ eye: STAND_EYE, jump: 0, velocity: 0, sinceReport: 0 });
-  const bounds = useMemo(() => lotRect(dims), [dims]);
+  const motion = useRef<Motion>({ eye: STAND_EYE, feet: 0, view: 0, velocity: 0, grounded: true, sinceReport: 0, pending: null });
 
   useEffect(() => {
+    const state = store.getState();
+    const frame = buildingSelectors.selectActiveFrame(state);
     const restore = takeRestorePose('fps');
+    const m = motion.current;
     if (restore) {
       input.current.pitch = clamp(restore.rotation[0], -PITCH_LIMIT, PITCH_LIMIT);
       input.current.yaw = restore.rotation[1];
+      input.current.start = [restore.position[0], restore.position[2]];
+      m.feet = Math.max(0, restore.position[1] - STAND_EYE);
+    } else if (outside) {
+      // С улицы — перед фасадом здания, лицом к нему.
+      const bounds = buildingSelectors.selectBuildingBounds(state);
+      input.current.start = [(bounds.minX + bounds.maxX) / 2, bounds.maxZ + STREET_START];
+      input.current.yaw = 0;
+      m.feet = 0;
+    } else {
+      const dims = state.editor.dimensions;
+      input.current.start = [frame.offset[0], frame.offset[1] + dims.depth / 4];
+      m.feet = frame.base;
     }
-    input.current.start = restore ? [restore.position[0], restore.position[2]] : [0, dims.depth / 4];
-    // Только при монтировании: восстановление позиции из сохранённой сессии.
+    m.view = m.feet;
+    // Только при монтировании: стартовая точка (сохранённая, с улицы или на активном этаже).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Сделать активным этаж под ногами, если человек задержался на нём. */
+  const followFloor = (state: RootState, delta: number) => {
+    const m = motion.current;
+    const frames = buildingSelectors.selectFloorFrames(state);
+    const index = floorIndexAt(frames, m.feet);
+    if (index === buildingSelectors.selectActiveIndex(state) || !m.grounded) {
+      m.pending = null;
+      return;
+    }
+    m.pending = m.pending?.index === index ? { index, time: m.pending.time + delta } : { index, time: 0 };
+    if (m.pending.time >= FLOOR_SWITCH_DELAY) {
+      m.pending = null;
+      commands.floors.activate(frames[index].id);
+    }
+  };
 
   useFrame(({ camera, gl: renderer }, rawDelta) => {
     if (renderer.xr.isPresenting) return;
@@ -59,7 +109,7 @@ export const FirstPersonRig: React.FC = () => {
     const i = input.current;
     const m = motion.current;
     if (i.start) {
-      camera.position.set(i.start[0], m.eye, i.start[1]);
+      camera.position.set(i.start[0], m.feet + m.eye, i.start[1]);
       i.start = null;
     }
     camera.rotation.set(i.pitch, i.yaw, 0, 'YXZ');
@@ -70,35 +120,33 @@ export const FirstPersonRig: React.FC = () => {
     const forward = (i.keys.has('KeyW') ? 1 : 0) - (i.keys.has('KeyS') ? 1 : 0);
     const right = (i.keys.has('KeyD') ? 1 : 0) - (i.keys.has('KeyA') ? 1 : 0);
     const dir = moveDirection({ forward, right }, i.yaw);
+    const state = store.getState();
+    const world = buildingSelectors.selectWalkWorld(state);
 
     if (dir[0] !== 0 || dir[1] !== 0) {
-      const state = store.getState();
-      const obstacles = collisions
-        ? [
-            ...cachedWalkObstacles(state.editor),
-            ...state.furniture.items.filter((f) => !isFlatItem(f) && f.position[1] < m.eye).map(furnitureFootprint),
-          ]
-        : [];
-      const next = stepPlayer([camera.position.x, camera.position.z], [dir[0] * speed * delta, dir[1] * speed * delta], bounds, obstacles);
+      const obstacles = collisions ? obstaclesAt(world, m.feet, m.eye) : [];
+      const next = stepPlayer([camera.position.x, camera.position.z], [dir[0] * speed * delta, dir[1] * speed * delta], world.bounds, obstacles);
       camera.position.x = next[0];
       camera.position.z = next[1];
     }
 
+    const jump = i.keys.has('Space') && m.grounded ? JUMP_VELOCITY : 0;
+    const ground = groundAt(world, [camera.position.x, camera.position.z], m.feet);
+    const vertical = stepVertical(m, ground, delta, { jump, gravity: GRAVITY, maxStep: MAX_STEP });
+    m.feet = vertical.feet;
+    m.velocity = vertical.velocity;
+    m.grounded = vertical.grounded;
+    m.view = m.grounded ? m.view + (m.feet - m.view) * Math.min(1, delta * STEP_SMOOTH) : m.feet;
     m.eye += ((crouch ? CROUCH_EYE : STAND_EYE) - m.eye) * Math.min(1, delta * 12);
-    if (i.keys.has('Space') && m.jump <= 0 && m.velocity <= 0) m.velocity = JUMP_VELOCITY;
-    if (m.jump > 0 || m.velocity > 0) {
-      m.velocity -= GRAVITY * delta;
-      m.jump = Math.max(0, m.jump + m.velocity * delta);
-      if (m.jump === 0) m.velocity = 0;
-    }
-    camera.position.y = m.eye + m.jump;
+    camera.position.y = m.view + m.eye;
+    followFloor(state, delta);
 
     m.sinceReport += delta;
     if (m.sinceReport > REPORT_INTERVAL) {
       m.sinceReport = 0;
       reportCameraPose({
         mode: 'fps',
-        position: [camera.position.x, camera.position.y, camera.position.z],
+        position: [camera.position.x, m.feet + STAND_EYE, camera.position.z],
         target: [0, 0, 0],
         rotation: [i.pitch, i.yaw, 0],
       });

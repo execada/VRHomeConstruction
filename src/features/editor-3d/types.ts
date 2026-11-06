@@ -8,6 +8,7 @@
  * @module editor-3d/types
  */
 
+import type { FurnitureItem } from '@/features/furniture/types';
 import type { DoorSpec } from './lib/doors';
 import type { WallMaterialId } from './lib/wallMaterials';
 
@@ -55,7 +56,7 @@ export type ViewMode = '2d' | '3d' | 'vr';
 /**
  * Инструмент, выбранный пользователем в редакторе.
  */
-export type Tool = 'select' | 'window' | 'door' | 'furniture' | 'partition';
+export type Tool = 'select' | 'window' | 'door' | 'furniture' | 'partition' | 'stair';
 
 /**
  * Цвета элементов комнаты.
@@ -153,6 +154,25 @@ export interface RoomLabel {
   kind?: RoomKind;
 }
 
+/** Вариант лестницы: прямой марш или марш с промежуточной площадкой посередине. */
+export type StairKind = 'straight' | 'landing';
+
+/**
+ * Лестница на этаж выше: прямой марш (по желанию — с площадкой). Стоит на этаже, где
+ * начинается; ступени и длина марша считаются от высоты подъёма (высота этажа + перекрытие),
+ * вырез в перекрытии над лестницей строится автоматически.
+ */
+export interface Stair {
+  id: string;
+  kind: StairKind;
+  /** Центр марша на полу [x, z] в координатах этажа */
+  position: [number, number];
+  /** Поворот вокруг вертикали, кратный 90°: при 0 подъём идёт к −Z (к задней стене) */
+  rotation: number;
+  /** Ширина марша, м */
+  width: number;
+}
+
 /** Как задаётся цвет света комнаты. */
 export type LightColorMode = 'temperature' | 'color';
 
@@ -204,6 +224,8 @@ export interface EditorState {
   partitions: Partition[];
   /** Названия и виды помещений */
   rooms: RoomLabel[];
+  /** Лестницы на этаж выше */
+  stairs: Stair[];
   /** Цвета перегородок (ключ – id перегородки) */
   partitionColors: { [partitionId: string]: string };
   /** Идентификатор стены, выбранной для просмотра в 2D */
@@ -237,4 +259,30 @@ export interface EditorScenePayload {
   openings: { [wallId: string]: Opening[] };
   partitions: Partition[];
   rooms: RoomLabel[];
+  stairs: Stair[];
+}
+
+/** Этаж здания: название и смещение центра от начала координат (содержимое — отдельно). */
+export interface FloorMeta {
+  id: string;
+  name: string;
+  /** Смещение центра этажа [x, z], м: у этажей разного размера контуры могут не совпадать */
+  offset: [number, number];
+}
+
+/** Содержимое этажа: стены, проёмы, помещения, лестницы, свет и мебель. */
+export type FloorContent = EditorScenePayload & { furniture: FurnitureItem[] };
+
+/**
+ * Здание (Redux slice `building`): этажи снизу вверх, активный этаж и содержимое остальных.
+ * Содержимое активного этажа «живёт» в слайсах `editor` и `furniture` — все команды,
+ * 2D-план и инспектор работают с ним как с обычной комнатой.
+ */
+export interface BuildingState {
+  floors: FloorMeta[];
+  activeId: string;
+  /** Содержимое неактивных этажей по id */
+  stash: { [floorId: string]: FloorContent };
+  /** Толщина перекрытия между этажами (и крыши), м */
+  slabThickness: number;
 }

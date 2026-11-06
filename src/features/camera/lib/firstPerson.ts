@@ -1,6 +1,7 @@
 /**
  * Перемещение от первого лица: шаг игрока со столкновениями (стены, перегородки, мебель)
- * и скольжением вдоль препятствий. Без столкновений — свободный полёт.
+ * и скольжением вдоль препятствий, подъём и спуск по ступеням, прыжок и падение.
+ * Без столкновений — свободный полёт.
  * @module camera/lib/firstPerson
  */
 
@@ -45,4 +46,34 @@ export function stepPlayer(position: Vec2, delta: Vec2, bounds: Rect | null, obs
     if (bounds) body = clampObbToRect(body, bounds);
   }
   return body.center;
+}
+
+/** Вертикальное состояние игрока: высота ступней, скорость и стоит ли он на опоре. */
+export interface VerticalState {
+  feet: number;
+  velocity: number;
+  grounded: boolean;
+}
+
+/**
+ * Вертикальный шаг: на опоре ступни следуют за ней (ступень вверх или вниз не выше maxStep —
+ * без падения), прыжок даёт скорость вверх, над пропастью — падение с ускорением.
+ * @param state - текущее состояние
+ * @param ground - высота опоры под игроком (null — опоры нет, остаёмся на месте)
+ * @param dt - шаг времени, с
+ * @param physics - прыжок (скорость, 0 — без прыжка), ускорение падения, предельная ступенька
+ */
+export function stepVertical(
+  state: VerticalState,
+  ground: number | null,
+  dt: number,
+  physics: { jump: number; gravity: number; maxStep: number },
+): VerticalState {
+  if (ground === null) return { ...state, velocity: 0, grounded: true };
+  if (state.grounded && Math.abs(ground - state.feet) <= physics.maxStep) {
+    return physics.jump > 0 ? { feet: ground, velocity: physics.jump, grounded: false } : { feet: ground, velocity: 0, grounded: true };
+  }
+  const velocity = (state.grounded ? 0 : state.velocity) - physics.gravity * dt;
+  const feet = state.feet + velocity * dt;
+  return feet <= ground ? { feet: ground, velocity: 0, grounded: true } : { feet, velocity, grounded: false };
 }

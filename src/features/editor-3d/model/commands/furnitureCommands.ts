@@ -28,6 +28,7 @@ import { furnitureRole } from '../../lib/supportRole';
 import { interiorRect } from '../../lib/walls';
 import type { PlacementGhost } from '../interactionStore';
 import { createId, placementOptions, type CommandContext } from './context';
+import { fixtureObstacles } from './fixtures';
 import { createSupportPlacement, type SurfaceAim, type SurfaceTarget } from './supportPlacement';
 
 const MIN_SCALE = 0.2;
@@ -64,10 +65,10 @@ export function createFurnitureCommands(ctx: CommandContext) {
   const find = (id: string) => items().find((i) => i.id === id) ?? null;
   const support = createSupportPlacement(ctx);
 
-  /** Препятствия для предмета на полу: без него самого и без предметов на его поверхности. */
+  /** Препятствия для предмета на полу: без него самого и без предметов на его поверхности; лестницы и вырезы в полу. */
   function floorObstacles(item: FurnitureItem) {
-    const { editor } = ctx.getState();
-    return buildObstacles(editor.partitions, items().filter((i) => i.supportId !== item.id), item.id);
+    const state = ctx.getState();
+    return [...buildObstacles(state.editor.partitions, items().filter((i) => i.supportId !== item.id), item.id), ...fixtureObstacles(state)];
   }
 
   /** Разрешить положение предмета с учётом текущей сцены. */
@@ -322,13 +323,15 @@ export function createFurnitureCommands(ctx: CommandContext) {
      * внутри стен, выталкиваются в ближайшее свободное место; предметы на опорах едут с ними.
      */
     settle(): void {
-      const { editor } = ctx.getState();
+      const state = ctx.getState();
+      const { editor } = state;
       const rect = interiorRect(editor.dimensions);
       const options = placementOptions();
       const current = items();
+      const fixtures = fixtureObstacles(state);
       const floor = current.filter((i) => !i.supportId).reduce<FurnitureItem[]>((placed, item) => {
         const subject = furnitureSubject(item);
-        const obstacles = buildObstacles(editor.partitions, placed, item.id);
+        const obstacles = [...buildObstacles(editor.partitions, placed, item.id), ...fixtures];
         const result = resolvePlacement(subject, rect, obstacles, { ...options, gridStep: null, wallMagnet: 0 });
         const footprint = result.valid ? result.footprint : findFreeSpot(subject, rect, obstacles, options) ?? result.footprint;
         return [...placed, at(item, footprint)];

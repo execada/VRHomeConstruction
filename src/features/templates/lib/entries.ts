@@ -5,6 +5,7 @@
 
 import type { Layout } from '@/features/create-layout/types';
 import type { SceneDocument } from '@/features/editor-3d/lib/scene/schema';
+import { pluralize } from '@/shared/lib/plural';
 import { matchesQuery } from '@/shared/lib/search';
 import type { BuiltinTemplate } from './builtins';
 
@@ -15,16 +16,18 @@ export type TemplateEntry =
 
 const areaFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
 
+/** Подпись площади и числа этажей. */
+function builtinMeta(area: number, floors: number): string {
+  const size = `${areaFormat.format(area)} м²`;
+  return floors > 1 ? `${size} · ${pluralize(floors, ['этаж', 'этажа', 'этажей'])}` : size;
+}
+
 /** Встроенные шаблоны → записи галереи (документ строится сразу — нужен для превью). */
 export function toBuiltinEntries(templates: BuiltinTemplate[]): TemplateEntry[] {
-  return templates.map((t) => ({
-    kind: 'builtin',
-    id: t.id,
-    name: t.name,
-    description: t.description,
-    meta: `${areaFormat.format(t.area)} м²`,
-    doc: t.build(),
-  }));
+  return templates.map((t) => {
+    const doc = t.build();
+    return { kind: 'builtin', id: t.id, name: t.name, description: t.description, meta: builtinMeta(t.area, doc.floors.length), doc };
+  });
 }
 
 /** Пользовательские шаблоны → записи галереи. */

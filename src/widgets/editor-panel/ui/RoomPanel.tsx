@@ -1,6 +1,7 @@
 /**
- * Комната: размеры, толщина стен, внешние стены (выбор, удаление/возврат, проёмы),
- * внутренние стены (рисование, выбор, удаление), помещения с площадями и инструменты проёмов.
+ * Комната (активный этаж): этаж (смещение, перекрытие, лестницы), размеры, толщина стен,
+ * внешние стены (выбор, удаление/возврат, проёмы), внутренние стены (рисование, выбор,
+ * удаление), помещения с площадями и инструменты проёмов.
  * @module widgets/editor-panel/ui/RoomPanel
  */
 
@@ -8,6 +9,10 @@ import React from 'react';
 import cn from 'classnames';
 import { useDispatch, useSelector } from 'react-redux';
 import { WALL_THICKNESS_LIMITS } from '@/features/editor-3d/constants';
+import { buildingSelectors } from '@/features/editor-3d/building/selectors';
+import { SLAB_THICKNESS_LIMITS } from '@/features/editor-3d/lib/building/floors';
+import { STAIR_KIND_LABELS } from '@/features/editor-3d/lib/stairs/stairs';
+import { interaction } from '@/features/editor-3d/model/interactionStore';
 import { selectRooms } from '@/features/editor-3d/layoutSelectors';
 import { uniformThickness } from '@/features/editor-3d/lib/outerWalls';
 import { partitionMaterial } from '@/features/editor-3d/lib/partitions';
@@ -92,6 +97,65 @@ const RoomsList: React.FC = () => {
   );
 };
 
+/** Активный этаж: смещение в здании, перекрытие и лестницы на этаж выше. */
+const FloorSection: React.FC = () => {
+  const dispatch = useDispatch();
+  const commands = useSceneCommands();
+  const floors = useSelector(buildingSelectors.selectFloorMetas);
+  const index = useSelector(buildingSelectors.selectActiveIndex);
+  const slab = useSelector(buildingSelectors.selectSlabThickness);
+  const stairs = useSelector(editorSelectors.selectStairs);
+  const selection = useSelector(selectionSelectors.selectSelection);
+  const tool = useSelector(editorSelectors.selectActiveTool);
+  const floor = floors[index];
+  if (!floor) return null;
+  const startStair = () => {
+    interaction.chooseStair('straight');
+    dispatch(editorActions.setActiveTool(tool === 'stair' ? 'select' : 'stair'));
+  };
+  return (
+    <Section
+      title={`Этаж: ${floor.name}`}
+      action={
+        <Button size="sm" icon="stairs" variant={tool === 'stair' ? 'primary' : 'secondary'} onClick={startStair}>
+          {tool === 'stair' ? 'Готово' : 'Лестница'}
+        </Button>
+      }
+    >
+      {floors.length > 1 && (
+        <FieldRow>
+          <NumberField label="Сдвиг X" unit="м" precision={2} value={floor.offset[0]} onChange={(x) => commands.floors.setOffset(floor.id, [x, floor.offset[1]])} />
+          <NumberField label="Сдвиг Z" unit="м" precision={2} value={floor.offset[1]} onChange={(z) => commands.floors.setOffset(floor.id, [floor.offset[0], z])} />
+        </FieldRow>
+      )}
+      <NumberField
+        label="Толщина перекрытия"
+        unit="см"
+        scale={100}
+        precision={0}
+        min={SLAB_THICKNESS_LIMITS[0]}
+        max={SLAB_THICKNESS_LIMITS[1]}
+        value={slab}
+        onChange={(t) => commands.floors.setSlabThickness(t)}
+      />
+      {stairs.length > 0 ? (
+        <div className={styles.list}>
+          {stairs.map((s, i) => (
+            <div key={s.id} className={cn(styles.listRow, selection?.kind === 'stair' && selection.id === s.id && styles.listRowSelected)}>
+              <button type="button" className={styles.listName} onClick={() => commands.select({ kind: 'stair', id: s.id })}>
+                {STAIR_KIND_LABELS[s.kind]} {stairs.length > 1 ? i + 1 : ''} <span className={styles.muted}>· {Math.round(s.width * 100)} см</span>
+              </button>
+              <IconButton icon="trash" size="sm" label="Удалить лестницу" onClick={() => commands.stairs.remove(s.id)} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <span className={styles.muted}>Лестница на этаж выше ставится инструментом «Лестница» или из каталога.</span>
+      )}
+    </Section>
+  );
+};
+
 export const RoomPanel: React.FC = () => {
   const dispatch = useDispatch();
   const commands = useSceneCommands();
@@ -103,13 +167,14 @@ export const RoomPanel: React.FC = () => {
   return (
     <>
       <h2 className={styles.panelTitle}>Комната</h2>
+      <FloorSection />
       <Section title="Размеры">
         <FieldRow>
           <NumberField label="Ширина" unit="м" min={SCENE_LIMITS.width[0]} max={SCENE_LIMITS.width[1]} value={dims.width} onChange={(width) => commands.room.resize({ ...dims, width })} />
           <NumberField label="Глубина" unit="м" min={SCENE_LIMITS.depth[0]} max={SCENE_LIMITS.depth[1]} value={dims.depth} onChange={(depth) => commands.room.resize({ ...dims, depth })} />
         </FieldRow>
         <FieldRow>
-          <NumberField label="Высота стен" unit="м" min={SCENE_LIMITS.height[0]} max={SCENE_LIMITS.height[1]} value={dims.height} onChange={(height) => commands.room.resize({ ...dims, height })} />
+          <NumberField label="Высота этажа" unit="м" min={SCENE_LIMITS.height[0]} max={SCENE_LIMITS.height[1]} value={dims.height} onChange={(height) => commands.room.resize({ ...dims, height })} />
           <NumberField
             label={thickness === null ? 'Толщина стен (разная)' : 'Толщина стен'}
             unit="см"

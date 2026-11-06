@@ -1,7 +1,12 @@
 /**
- * Схема документа сцены v3 (Zod). Используется при загрузке проекта с сервера,
+ * Схема документа сцены v4 (Zod). Используется при загрузке проекта с сервера,
  * импорте файла, восстановлении локальной копии и перед сохранением.
- * Ограничения согласованы с бэкендом (размеры комнаты, длины массивов и строк).
+ * Ограничения согласованы с бэкендом (размеры этажа, длины массивов и строк).
+ *
+ * v4 по сравнению с v3: здание из этажей (`floors`, снизу вверх) — у каждого этажа свои
+ * размеры и смещение, внешние и внутренние стены, проёмы и двери, помещения, лестницы
+ * (`stairs`), свет и мебель; толщина перекрытия между этажами (`slabThickness`).
+ * Окружение (солнце, небо) — общее. Документ v3 — это один этаж (схема `sceneDocumentV3Schema`).
  *
  * v3 по сравнению с v2: у каждой внешней стены своя толщина и материал (`outerWalls`
  * вместо общего `wallThickness`), у внутренних стен (перегородок) — материал; названия
@@ -12,10 +17,14 @@
 
 import { z } from 'zod';
 import { DOOR_STYLE_IDS } from '../doors';
+import { FLOOR_NAME_LENGTH, MAX_FLOORS, SLAB_THICKNESS_LIMITS } from '../building/floors';
+import { STAIR_WIDTH_LIMITS } from '../stairs/stairs';
 import { WALL_MATERIAL_IDS } from '../wallMaterials';
 
 /** Текущая версия формата документа сцены. */
-export const SCENE_SCHEMA_VERSION = 3;
+export const SCENE_SCHEMA_VERSION = 4;
+/** Версия документа «одна квартира» (до этажей). */
+const SINGLE_FLOOR_VERSION = 3;
 
 /** Лимиты документа (совпадают с проверками бэкенда). */
 export const SCENE_LIMITS = {
@@ -30,6 +39,10 @@ export const SCENE_LIMITS = {
   partitionOpenings: 20,
   rooms: 100,
   roomNameLength: 60,
+  floors: MAX_FLOORS,
+  stairs: 8,
+  floorNameLength: FLOOR_NAME_LENGTH,
+  slabThickness: SLAB_THICKNESS_LIMITS,
   idLength: 64,
   nameLength: 120,
   pathLength: 512,
@@ -163,19 +176,57 @@ export const skySchema = z.object({
   exposure: z.number().min(0).max(4),
 });
 
-export const sceneDocumentSchema = z.object({
-  schemaVersion: z.literal(SCENE_SCHEMA_VERSION),
+export const stairSchema = z.object({
+  id,
+  kind: z.enum(['straight', 'landing']),
+  position: z.tuple([coordinate, coordinate]),
+  /** Кратен 90° (приводится при загрузке) */
+  rotation: z.number().min(-2 * Math.PI - 0.01).max(2 * Math.PI + 0.01),
+  width: z.number().min(STAIR_WIDTH_LIMITS[0]).max(STAIR_WIDTH_LIMITS[1]),
+});
+
+const environmentSchema = z.object({ sun: sunSchema, sky: skySchema });
+
+/** Содержимое одного этажа (оно же — квартира документа v3). */
+const storeyShape = {
   dimensions: dimensionsSchema,
   outerWalls: outerWallsSchema,
   finishes: finishesSchema,
   removedWalls: z.array(wallSide).max(4),
   light: lightSchema,
-  environment: z.object({ sun: sunSchema, sky: skySchema }),
   openings: z.array(openingSchema).max(SCENE_LIMITS.openings),
   partitions: z.array(partitionSchema).max(SCENE_LIMITS.partitions),
   rooms: z.array(roomLabelSchema).max(SCENE_LIMITS.rooms).default([]),
   furniture: z.array(furnitureSchema).max(SCENE_LIMITS.furniture),
+};
+
+/** Документ v3: одна квартира (старые проекты мигрируют в один этаж). */
+export const sceneDocumentV3Schema = z.object({
+  schemaVersion: z.literal(SINGLE_FLOOR_VERSION),
+  ...storeyShape,
+  environment: environmentSchema,
 });
 
-/** Документ сцены v3 — то, что сохраняется в `roomData` проекта. */
+export const floorSchema = z.object({
+  id,
+  name: z.string().trim().min(1).max(SCENE_LIMITS.floorNameLength),
+  offset: z.tuple([coordinate, coordinate]),
+  ...storeyShape,
+  stairs: z.array(stairSchema).max(SCENE_LIMITS.stairs).default([]),
+});
+
+export const sceneDocumentSchema = z
+  .object({
+    schemaVersion: z.literal(SCENE_SCHEMA_VERSION),
+    environment: environmentSchema,
+    slabThickness: z.number().min(SCENE_LIMITS.slabThickness[0]).max(SCENE_LIMITS.slabThickness[1]),
+    floors: z.array(floorSchema).min(1).max(SCENE_LIMITS.floors),
+  })
+  .refine((doc) => new Set(doc.floors.map((f) => f.id)).size === doc.floors.length, 'Повторяющиеся id этажей');
+
+/** Документ сцены v4 — то, что сохраняется в `roomData` проекта. */
 export type SceneDocument = z.infer<typeof sceneDocumentSchema>;
+/** Этаж документа сцены. */
+export type FloorDocument = z.infer<typeof floorSchema>;
+/** Документ сцены v3 (одна квартира). */
+export type SceneDocumentV3 = z.infer<typeof sceneDocumentV3Schema>;

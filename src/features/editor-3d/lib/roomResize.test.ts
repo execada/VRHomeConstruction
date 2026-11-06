@@ -94,3 +94,17 @@ describe('resizeRoom', () => {
     expect(door.position[1] - door.height / 2).toBeCloseTo(0);
   });
 });
+
+describe('resizeRoom: проём лестницы снизу', () => {
+  it('мебель, оказавшаяся над вырезом, выталкивается из него', () => {
+    const dims = { width: 6, height: 3, depth: 6 };
+    const sofa = { id: 's', name: 'Диван', modelPath: 'primitive:sofa', position: [1, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], scale: 1, halfWidth: 0.9, halfDepth: 0.43, height: 0.85 };
+    const cutout = { minX: 0, maxX: 2, minZ: -1, maxZ: 1 };
+    const result = resizeRoom({ dimensions: dims, openings: {}, partitions: [], furniture: [sofa], cutouts: [cutout] }, dims);
+    const [moved] = result.furniture;
+    const half = 0.9;
+    const overlapsX = moved.position[0] + half > cutout.minX && moved.position[0] - half < cutout.maxX;
+    const overlapsZ = moved.position[2] + 0.43 > cutout.minZ && moved.position[2] - 0.43 < cutout.maxZ;
+    expect(overlapsX && overlapsZ).toBe(false);
+  });
+});

@@ -67,7 +67,7 @@ describe('useProjectActions', () => {
     await act(() => actions().createBlank());
     const input = api.projects.createProject.mock.calls[0][0] as { name: string; roomData: { schemaVersion: number } };
     expect(input.name).toBe('Проект 1');
-    expect(input.roomData.schemaVersion).toBe(3);
+    expect(input.roomData.schemaVersion).toBe(4);
     expect(store.getState().createProject.projects.map((p) => p.id)).toEqual(['p1']);
     expect(router.state.location.pathname).toBe('/project/p1');
   });

@@ -18,7 +18,7 @@ import type { InteriorWallShape } from '../../lib/wallJoints';
 import { partitionFrame, type WallFrame } from '../../lib/walls';
 import type { Opening, Partition, SurfaceFinish } from '../../types';
 import { OpeningMesh } from './OpeningMesh';
-import { HELPER_DATA, NO_RAYCAST, isClick, rayToFloor, rayToWall, type SceneMouseEvent } from './pointer';
+import { HELPER_DATA, NO_RAYCAST, floorHeight, floorRay, isClick, rayToFloor, rayToWall, type SceneMouseEvent } from './pointer';
 import { useDragGesture } from './useDragGesture';
 import { InteriorWallPieces } from './InteriorWallPieces';
 import { useWalkingCheck } from './useWalkingCheck';
@@ -33,6 +33,8 @@ interface PartitionMeshProps {
   fallbackFinish: SurfaceFinish;
   selected: boolean;
   selectedOpeningId: string | null;
+  /** Стена активного этажа: перетаскивается и выделяется (по умолчанию — да) */
+  interactive?: boolean;
 }
 
 const SELECTED_COLOR = '#c9a96e';
@@ -47,7 +49,7 @@ const PartitionOpening: React.FC<{ partition: Partition; frame: WallFrame; openi
   return <OpeningMesh opening={opening} thickness={partition.size[2]} wallHeight={partition.size[1]} selected={selected} {...handlers} />;
 };
 
-export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, shape, fallbackFinish, selected, selectedOpeningId }) => {
+export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, shape, fallbackFinish, selected, selectedOpeningId, interactive = true }) => {
   const commands = useSceneCommands();
   const activeTool = useSelector(editorSelectors.selectActiveTool);
   const look = useWallLook(partition.finish ?? fallbackFinish, partitionMaterial(partition));
@@ -60,18 +62,18 @@ export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, sh
     onStart: (e) => {
       if (activeTool === 'partition') return null;
       if (activeTool === 'window' || activeTool === 'door') {
-        const hit = rayToWall(e.ray, frame);
+        const hit = rayToWall(floorRay(e.ray), frame);
         commands.openings.add(partition.id, activeTool, hit?.u ?? 0);
         return null;
       }
       if (isWalking()) return null;
       commands.select({ kind: 'partition', id: partition.id });
-      const planeY = e.point.y;
-      const hit = rayToFloor(e.ray, planeY);
+      const planeY = floorHeight(e.point.y);
+      const hit = rayToFloor(floorRay(e.ray), planeY);
       return hit ? { offset: sub2([partition.position[0], partition.position[2]], hit), planeY } : null;
     },
     onMove: (e, ctx) => {
-      const hit = rayToFloor(e.ray, ctx.planeY);
+      const hit = rayToFloor(floorRay(e.ray), ctx.planeY);
       if (hit) commands.partitions.move(partition.id, add2(hit, ctx.offset));
     },
     onEnd: () => commands.partitions.endGesture(),
@@ -85,13 +87,17 @@ export const PartitionMesh: React.FC<PartitionMeshProps> = memo(({ partition, sh
 
   return (
     <group position={[partition.position[0], 0, partition.position[2]]} rotation={[0, partition.rotation[1], 0]}>
-      <group {...drag} onClick={handleClick}>
+      <group {...(interactive ? drag : {})} onClick={interactive ? handleClick : undefined}>
         <InteriorWallPieces spans={shape?.spans ?? []} length={length} height={height} openings={partition.openings} look={look} />
       </group>
-      {partition.openings.map((o) => (
-        <PartitionOpening key={o.id} partition={partition} frame={frame} opening={o} selected={o.id === selectedOpeningId} />
-      ))}
-      {selected && (
+      {partition.openings.map((o) =>
+        interactive ? (
+          <PartitionOpening key={o.id} partition={partition} frame={frame} opening={o} selected={o.id === selectedOpeningId} />
+        ) : (
+          <OpeningMesh key={o.id} opening={o} thickness={thickness} wallHeight={height} selected={false} />
+        ),
+      )}
+      {selected && interactive && (
         <mesh position={[0, height / 2, 0]} raycast={NO_RAYCAST} userData={HELPER_DATA}>
           <boxGeometry args={[length + 0.02, height + 0.02, thickness + 0.02]} />
           <meshBasicMaterial visible={false} />

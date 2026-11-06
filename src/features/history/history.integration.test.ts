@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import createSagaMiddleware from 'redux-saga';
 import { all, fork } from 'redux-saga/effects';
+import { reducer as buildingReducer } from '@/features/editor-3d/building/slice';
 import { reducer as editorReducer, actions as editorActions } from '@/features/editor-3d/slice';
 import { reducer as furnitureReducer, actions as furnitureActions } from '@/features/furniture/slice';
 import { EnvironmentFeature } from '@/features/environment';
@@ -11,6 +12,7 @@ import { createEmptyScene } from '@/features/editor-3d/lib/scene/build';
 import { uniformOuterWalls } from '@/features/editor-3d/constants';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { interaction } from '@/features/editor-3d/model/interactionStore';
+import { createSceneCommands } from '@/features/editor-3d/model/commands';
 import { HistoryFeature } from './index';
 import { SAME_TARGET_WINDOW_MS } from './lib/coalesce';
 
@@ -28,6 +30,7 @@ function setup() {
   const store = configureStore({
     reducer: {
       editor: editorReducer,
+      building: buildingReducer,
       furniture: furnitureReducer,
       ...EnvironmentFeature.reducer,
       ...HistoryFeature.reducer,
@@ -145,5 +148,40 @@ describe('history saga', () => {
     store.dispatch(SelectionFeature.actions.select({ kind: 'furniture', id: 'chair' }));
     store.dispatch(HistoryFeature.actions.undoRequested());
     expect(store.getState().selection.current).toBeNull();
+  });
+
+  it('undoes adding a floor and returns to the floor below; switching floors is not an edit', () => {
+    const store = setup();
+    const commands = createSceneCommands({ getState: store.getState, dispatch: store.dispatch, notify: () => undefined });
+    store.dispatch(furnitureActions.addFurniture(chair(0)));
+    vi.advanceTimersByTime(1000);
+    const upper = commands.floors.add()!;
+    expect(store.getState().history.past).toHaveLength(2);
+    vi.advanceTimersByTime(1000);
+    commands.floors.activate('floor-1');
+    commands.floors.activate(upper);
+    expect(store.getState().history.past).toHaveLength(2);
+    store.dispatch(HistoryFeature.actions.undoRequested());
+    expect(store.getState().building.floors.map((f) => f.id)).toEqual(['floor-1']);
+    expect(store.getState().building.activeId).toBe('floor-1');
+    expect(store.getState().furniture.items.map((f) => f.id)).toEqual(['chair']);
+    store.dispatch(HistoryFeature.actions.redoRequested());
+    expect(store.getState().building.floors).toHaveLength(2);
+  });
+
+  it('undoes an edit made on another floor and shows that floor', () => {
+    const store = setup();
+    const commands = createSceneCommands({ getState: store.getState, dispatch: store.dispatch, notify: () => undefined });
+    const upper = commands.floors.add()!;
+    vi.advanceTimersByTime(1000);
+    store.dispatch(furnitureActions.addFurniture(chair(1)));
+    vi.advanceTimersByTime(1000);
+    commands.floors.activate('floor-1');
+    store.dispatch(HistoryFeature.actions.undoRequested());
+    expect(store.getState().building.activeId).toBe(upper);
+    expect(store.getState().furniture.items).toEqual([]);
+    store.dispatch(HistoryFeature.actions.redoRequested());
+    expect(store.getState().building.activeId).toBe(upper);
+    expect(store.getState().furniture.items.map((f) => f.id)).toEqual(['chair']);
   });
 });

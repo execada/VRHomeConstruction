@@ -31,6 +31,7 @@ import {
 } from '../../lib/surfaces';
 import { interiorRect } from '../../lib/walls';
 import { placementOptions, type CommandContext } from './context';
+import { fixtureObstacles } from './fixtures';
 
 /** Куда целится пользователь при перетаскивании или размещении предмета. */
 export interface SurfaceAim {
@@ -117,7 +118,8 @@ export function createSupportPlacement(ctx: CommandContext) {
     const { dimensions, partitions } = editor();
     const down = grounded(item);
     const others = world.filter((i) => i.id !== item.id);
-    const spot = findFreeSpot(furnitureSubject(down), interiorRect(dimensions), buildObstacles(partitions, others), FLOOR_OPTIONS);
+    const obstacles = [...buildObstacles(partitions, others), ...fixtureObstacles(ctx.getState())];
+    const spot = findFreeSpot(furnitureSubject(down), interiorRect(dimensions), obstacles, FLOOR_OPTIONS);
     return spot ? { ...down, position: [spot.center[0], 0, spot.center[1]] } : down;
   }
 
@@ -140,7 +142,7 @@ export function createSupportPlacement(ctx: CommandContext) {
     const moved = children.map((c) => carryWith(c, before, after));
     const group = new Set([before.id, ...children.map((c) => c.id)]);
     const { dimensions, partitions } = editor();
-    const obstacles = buildObstacles(partitions, items().filter((i) => !group.has(i.id)));
+    const obstacles = [...buildObstacles(partitions, items().filter((i) => !group.has(i.id))), ...fixtureObstacles(ctx.getState())];
     const rect = interiorRect(dimensions);
     const free = (c: FurnitureItem) =>
       c.position[1] + itemSizes(c).height <= dimensions.height + 1e-6 &&

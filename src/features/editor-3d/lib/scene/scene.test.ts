@@ -1,11 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_ENVIRONMENT } from '@/features/environment/constants';
+import type { FurnitureItem } from '@/features/furniture/types';
 import { openingSill } from '../openings';
-import { buildSceneDocument, createEmptyScene, flattenOpenings, groupOpenings, toEditorPayload } from './build';
+import { buildSceneDocument, createEmptyScene, flattenOpenings, floorDocument, groupOpenings, toEditorPayload } from './build';
 import { migrateFurniture, migrateLight, migrateV1 } from './migrate';
 import { legacyPartitionMaterial, migrateV2 } from './migrateV2';
-import { parseSceneDocument } from './parse';
-import { modelPathSchema, sceneDocumentSchema } from './schema';
+import { migrateV3 } from './migrateV3';
+import { parseSceneDocument, type SceneParseResult } from './parse';
+import { modelPathSchema, sceneDocumentSchema, sceneDocumentV3Schema, type FloorDocument, type SceneDocument } from './schema';
+
+/** Первый этаж разобранного документа (тест падает, если разбор не удался). */
+function firstFloor(result: SceneParseResult): FloorDocument {
+  if (!result.ok) throw new Error(result.error);
+  return result.doc.floors[0];
+}
+
+/** Документ v3 (одна квартира) из этажа пустой сцены. */
+function v3Document(): Record<string, unknown> {
+  const { id: _id, name: _name, offset: _offset, stairs: _stairs, ...storey } = createEmptyScene({ width: 5, height: 2.8, depth: 4 }).floors[0];
+  return { schemaVersion: 3, ...storey, environment: DEFAULT_ENVIRONMENT };
+}
 
 const v1 = {
   dimensions: { width: 4, height: 3, depth: 5 },
@@ -36,8 +50,8 @@ const v1 = {
 describe('migrateV1', () => {
   const doc = migrateV1(v1);
 
-  it('produces a document that passes the strict v2 schema', () => {
-    expect(sceneDocumentSchema.safeParse(doc).success).toBe(true);
+  it('produces a document that passes the strict v3 schema', () => {
+    expect(sceneDocumentV3Schema.safeParse(doc).success).toBe(true);
   });
 
   it('converts colors and materials into finishes', () => {
@@ -91,7 +105,7 @@ describe('migrateV1', () => {
 
 /** Документ v2 (как его сохраняла предыдущая версия приложения). */
 function v2Document(): Record<string, unknown> {
-  const { outerWalls: _walls, ...rest } = createEmptyScene({ width: 5, height: 2.8, depth: 4 });
+  const { outerWalls: _walls, ...rest } = v3Document();
   return {
     ...rest,
     schemaVersion: 2,
@@ -126,13 +140,13 @@ describe('migrateV2', () => {
     expect((clamped.outerWalls as { left: { thickness: number } }).left.thickness).toBeCloseTo(0.6);
   });
 
-  it('is applied when parsing a v2 project and yields a valid v3 document', () => {
+  it('is applied when parsing a v2 project and yields a valid v4 document', () => {
     const result = parseSceneDocument(v2Document());
     expect(result.ok && result.migrated).toBe(true);
     if (!result.ok) return;
     expect(sceneDocumentSchema.safeParse(result.doc).success).toBe(true);
-    expect(result.doc.outerWalls.right.thickness).toBeCloseTo(0.3);
-    expect(result.doc.partitions[1].material).toBe('aerated');
+    expect(firstFloor(result).outerWalls.right.thickness).toBeCloseTo(0.3);
+    expect(firstFloor(result).partitions[1].material).toBe('aerated');
   });
 
   it('installs the old flat door leaf into v2 doorways (outer and interior walls)', () => {
@@ -141,12 +155,10 @@ describe('migrateV2', () => {
       openings: [{ id: 'd', wallId: 'back', type: 'door', position: [0, 1.05], width: 0.9, height: 2.1 }],
       partitions: [{ id: 'p', position: [0, 1.4, 0], rotation: [0, 0, 0], size: [2, 2.8, 0.1], openings: [{ id: 'pd', wallId: 'p', type: 'door', position: [0, 1.05], width: 0.8, height: 2.1 }] }],
     };
-    const result = parseSceneDocument(doc);
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.doc.openings[0].door).toMatchObject({ style: 'flush', open: false });
-    expect(result.doc.partitions[0].openings[0].door).toMatchObject({ style: 'flush' });
-    expect(parseSceneDocument(v1).ok && (parseSceneDocument(v1) as { doc: { openings: Array<{ type: string; door?: unknown }> } }).doc.openings.find((o) => o.type === 'door')?.door).toBeTruthy();
+    const floor = firstFloor(parseSceneDocument(doc));
+    expect(floor.openings[0].door).toMatchObject({ style: 'flush', open: false });
+    expect(floor.partitions[0].openings[0].door).toMatchObject({ style: 'flush' });
+    expect(firstFloor(parseSceneDocument(v1)).openings.find((o) => o.type === 'door')?.door).toBeTruthy();
   });
 
   it('salvages a v2 project with broken items after migration', () => {
@@ -172,14 +184,14 @@ describe('parseSceneDocument', () => {
     expect(result.ok && result.migrated).toBe(true);
   });
 
-  it('accepts valid v2 documents as is', () => {
+  it('accepts valid v4 documents as is', () => {
     const doc = createEmptyScene();
     const result = parseSceneDocument(doc);
     expect(result).toEqual({ ok: true, doc, migrated: false, dropped: 0 });
   });
 
-  it('salvages v2 documents with broken items', () => {
-    const doc = createEmptyScene();
+  it('salvages v3 documents with broken items and turns them into one floor', () => {
+    const doc = v3Document();
     const broken = {
       ...doc,
       light: { intensity: 'bright' },
@@ -190,29 +202,120 @@ describe('parseSceneDocument', () => {
       ],
     };
     const result = parseSceneDocument(broken);
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.dropped).toBe(1);
-    expect(result.doc.furniture.map((f) => f.id)).toEqual(['ok']);
-    expect(result.doc.light).toEqual(doc.light);
-    expect(result.doc.removedWalls).toEqual(['front']);
-    expect(sceneDocumentSchema.safeParse(result.doc).success).toBe(true);
+    expect(result.ok && result.dropped).toBe(1);
+    const floor = firstFloor(result);
+    expect(floor.furniture.map((f) => f.id)).toEqual(['ok']);
+    expect(floor.light).toEqual(doc.light);
+    expect(floor.removedWalls).toEqual(['front']);
+    expect(result.ok && sceneDocumentSchema.safeParse(result.doc).success).toBe(true);
   });
 
   it('salvages outer walls side by side', () => {
     const doc = createEmptyScene();
-    const broken = { ...doc, outerWalls: { ...doc.outerWalls, left: { thickness: 0.3, material: 'aerated' }, back: { thickness: -1, material: 'brick' } } };
-    const result = parseSceneDocument(broken);
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.doc.outerWalls.left).toEqual({ thickness: 0.3, material: 'aerated' });
-    expect(result.doc.outerWalls.back).toEqual(doc.outerWalls.back);
+    const floor = doc.floors[0];
+    const broken = { ...doc, floors: [{ ...floor, outerWalls: { ...floor.outerWalls, left: { thickness: 0.3, material: 'aerated' }, back: { thickness: -1, material: 'brick' } } }] };
+    const salvaged = firstFloor(parseSceneDocument(broken));
+    expect(salvaged.outerWalls.left).toEqual({ thickness: 0.3, material: 'aerated' });
+    expect(salvaged.outerWalls.back).toEqual(floor.outerWalls.back);
   });
 
   it('migrates v1 projects straight to the current format', () => {
     const result = parseSceneDocument(v1);
-    expect(result.ok && result.doc.schemaVersion).toBe(3);
-    expect(result.ok && result.doc.partitions[0].material).toBe('drywall');
+    expect(result.ok && result.doc.schemaVersion).toBe(4);
+    expect(firstFloor(result).partitions[0].material).toBe('drywall');
+  });
+});
+
+describe('migrateV3: квартира становится первым этажом', () => {
+  const furnished = (): Record<string, unknown> => ({
+    ...v3Document(),
+    openings: [{ id: 'w', wallId: 'front', type: 'window', position: [0, 1.5], width: 1.2, height: 1.4 }],
+    partitions: [{ id: 'p', position: [0, 1.4, 0], rotation: [0, 0, 0], size: [2, 2.8, 0.1], openings: [], material: 'drywall' }],
+    rooms: [{ id: 'r', name: 'Кухня', anchor: [1, 1] }],
+    furniture: [{ id: 'f', name: 'Стул', modelPath: 'primitive:stool', position: [1, 0, 1], rotation: [0, 0.5, 0], scale: 1 }],
+  });
+
+  it('keeps every part of the apartment without losses', () => {
+    const raw = furnished();
+    const result = parseSceneDocument(raw);
+    expect(result.ok && result.migrated).toBe(true);
+    expect(result.ok && result.dropped).toBe(0);
+    if (!result.ok) return;
+    expect(result.doc.floors).toHaveLength(1);
+    const floor = result.doc.floors[0];
+    const { schemaVersion: _v, environment, ...storey } = raw;
+    expect(floor).toMatchObject({ id: 'floor-1', name: '1 этаж', offset: [0, 0], stairs: [], ...storey });
+    expect(result.doc.environment).toEqual(environment);
+    expect(result.doc.slabThickness).toBeCloseTo(0.3);
+  });
+
+  it('gives a valid v4 document straight from a validated v3 one', () => {
+    const v3 = sceneDocumentV3Schema.parse(furnished());
+    const doc = migrateV3(v3);
+    expect(sceneDocumentSchema.safeParse(doc).success).toBe(true);
+    expect(doc.floors[0].furniture).toEqual(v3.furniture);
+  });
+});
+
+describe('документ v4: этажи и лестницы', () => {
+  const twoFloors = (): SceneDocument => {
+    const doc = createEmptyScene({ width: 8, height: 3, depth: 6 });
+    const stair = { id: 's1', kind: 'straight' as const, position: [-3, 0] as [number, number], rotation: 0, width: 1 };
+    return { ...doc, floors: [{ ...doc.floors[0], stairs: [stair] }, { ...doc.floors[0], id: 'floor-2', name: '2 этаж', offset: [0, -1] }] };
+  };
+
+  it('accepts several floors with stairs', () => {
+    const result = parseSceneDocument(twoFloors());
+    expect(result.ok && result.dropped).toBe(0);
+    expect(result.ok && result.doc.floors.map((f) => f.id)).toEqual(['floor-1', 'floor-2']);
+    expect(firstFloor(result).stairs).toHaveLength(1);
+  });
+
+  it('snaps stair rotations to quarter turns and clamps width on load', () => {
+    const doc = twoFloors();
+    const skewed = { ...doc, floors: [{ ...doc.floors[0], stairs: [{ ...doc.floors[0].stairs[0], rotation: 1.4, width: 2 }] }, doc.floors[1]] };
+    const stair = firstFloor(parseSceneDocument(skewed)).stairs[0];
+    expect(stair.rotation).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('drops only the broken parts of a floor and keeps the other floors', () => {
+    const doc = twoFloors();
+    const broken = {
+      ...doc,
+      floors: [{ ...doc.floors[0], stairs: [{ id: 'bad', kind: 'spiral' }] }, { ...doc.floors[1], furniture: [{ id: 'x' }] }],
+    };
+    const result = parseSceneDocument(broken);
+    expect(result.ok && result.dropped).toBe(2);
+    expect(result.ok && result.doc.floors.map((f) => f.name)).toEqual(['1 этаж', '2 этаж']);
+    expect(result.ok && sceneDocumentSchema.safeParse(result.doc).success).toBe(true);
+  });
+
+  it('renames duplicate floor ids and fills missing names', () => {
+    const doc = twoFloors();
+    const raw = { ...doc, floors: [doc.floors[0], { ...doc.floors[1], id: 'floor-1', name: '' }] };
+    const result = parseSceneDocument(raw);
+    if (!result.ok) throw new Error(result.error);
+    expect(new Set(result.doc.floors.map((f) => f.id)).size).toBe(2);
+    expect(result.doc.floors[1].name).toBe('2 этаж');
+  });
+
+  it('caps the number of floors and repairs a broken slab thickness', () => {
+    const doc = createEmptyScene();
+    const floors = Array.from({ length: 7 }, (_, i) => ({ ...doc.floors[0], id: `f${i}` }));
+    const result = parseSceneDocument({ ...doc, slabThickness: 5, floors });
+    if (!result.ok) throw new Error(result.error);
+    expect(result.doc.floors).toHaveLength(5);
+    expect(result.doc.slabThickness).toBeCloseTo(0.3);
+  });
+
+  it('creates an empty floor when no floor survives', () => {
+    const result = parseSceneDocument({ ...createEmptyScene(), floors: 'nope' });
+    expect(result.ok && result.doc.floors).toHaveLength(1);
+  });
+
+  it('rejects duplicate floor ids in the strict schema', () => {
+    const doc = twoFloors();
+    expect(sceneDocumentSchema.safeParse({ ...doc, floors: [doc.floors[0], { ...doc.floors[1], id: 'floor-1' }] }).success).toBe(false);
   });
 });
 
@@ -220,36 +323,38 @@ describe('support links in the document', () => {
   const desk = { id: 'desk', name: 'Письменный стол', modelPath: 'primitive:desk', position: [0, 0, 0], rotation: [0, 0, 0], scale: 1, height: 0.75 };
   const lamp = { id: 'lamp', name: 'Настольная лампа', modelPath: 'primitive:desk', position: [0.3, 0.75, 0], rotation: [0, 0, 0], scale: 1 };
 
-  it('keeps supportId as an optional field of v2 (old documents stay valid)', () => {
-    const withLink = { ...createEmptyScene(), furniture: [desk, { ...lamp, supportId: 'desk' }] };
-    const parsed = sceneDocumentSchema.safeParse(withLink);
-    expect(parsed.success && parsed.data.furniture[1].supportId).toBe('desk');
-    expect(sceneDocumentSchema.safeParse({ ...createEmptyScene(), furniture: [desk, lamp] }).success).toBe(true);
+  /** Пустая сцена с мебелью первого этажа. */
+  const withFurniture = (furniture: unknown[], extra: Record<string, unknown> = {}) => {
+    const doc = createEmptyScene();
+    return { ...doc, floors: [{ ...doc.floors[0], furniture, ...extra }] };
+  };
+
+  it('keeps supportId as an optional field (old documents stay valid)', () => {
+    const parsed = sceneDocumentSchema.safeParse(withFurniture([desk, { ...lamp, supportId: 'desk' }]));
+    expect(parsed.success && parsed.data.floors[0].furniture[1].supportId).toBe('desk');
+    expect(sceneDocumentSchema.safeParse(withFurniture([desk, lamp])).success).toBe(true);
   });
 
   it('rejects malformed support ids', () => {
-    const bad = { ...createEmptyScene(), furniture: [desk, { ...lamp, supportId: 'x'.repeat(65) }] };
-    expect(sceneDocumentSchema.safeParse(bad).success).toBe(false);
+    expect(sceneDocumentSchema.safeParse(withFurniture([desk, { ...lamp, supportId: 'x'.repeat(65) }])).success).toBe(false);
   });
 
   it('repairs broken links and restores links of items already standing on supports when loading', () => {
     const orphan = { ...lamp, id: 'orphan', position: [1, 0.75, 1], supportId: 'gone' };
-    const result = parseSceneDocument({ ...createEmptyScene(), furniture: [desk, lamp, orphan] });
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.doc.furniture[1].supportId).toBe('desk');
-    expect(result.doc.furniture[2].supportId).toBeUndefined();
-    expect(result.doc.furniture[2].position).toEqual([1, 0, 1]);
+    const floor = firstFloor(parseSceneDocument(withFurniture([desk, lamp, orphan])));
+    expect(floor.furniture[1].supportId).toBe('desk');
+    expect(floor.furniture[2].supportId).toBeUndefined();
+    expect(floor.furniture[2].position).toEqual([1, 0, 1]);
   });
 
   it('normalizes links in salvaged and migrated documents too', () => {
-    const salvaged = parseSceneDocument({ ...createEmptyScene(), light: null, furniture: [desk, lamp] });
-    expect(salvaged.ok && salvaged.doc.furniture[1].supportId).toBe('desk');
+    const salvaged = firstFloor(parseSceneDocument(withFurniture([desk, lamp], { light: null })));
+    expect(salvaged.furniture[1].supportId).toBe('desk');
     // В v1 y — середина модели: стол 0.75 м с центром на 0.375, лампа 0.9 м с центром на 1.2.
     const v1Desk = { ...desk, position: [0, 0.375, 0] };
     const v1Lamp = { ...lamp, height: 0.9, position: [0.3, 1.2, 0] };
-    const migrated = parseSceneDocument({ dimensions: { width: 4, height: 3, depth: 4 }, furniture: [v1Desk, v1Lamp] });
-    expect(migrated.ok && migrated.doc.furniture[1].supportId).toBe('desk');
+    const migrated = firstFloor(parseSceneDocument({ dimensions: { width: 4, height: 3, depth: 4 }, furniture: [v1Desk, v1Lamp] }));
+    expect(migrated.furniture[1].supportId).toBe('desk');
   });
 });
 
@@ -278,12 +383,26 @@ describe('build helpers', () => {
     expect(flattenOpenings(grouped)).toHaveLength(doc.openings.length);
   });
 
-  it('round-trips through the editor payload', () => {
-    const doc = migrateV1(v1);
-    const payload = toEditorPayload(doc);
-    const rebuilt = buildSceneDocument(payload, doc.furniture, DEFAULT_ENVIRONMENT);
-    expect(rebuilt.openings).toHaveLength(doc.openings.length);
-    expect(rebuilt.dimensions).toEqual(doc.dimensions);
+  it('round-trips through the editor payload and the building state', () => {
+    const doc = migrateV3(migrateV1(v1));
+    const [floor] = doc.floors;
+    const payload = toEditorPayload(floor);
+    const building = { floors: [{ id: floor.id, name: floor.name, offset: floor.offset }], activeId: floor.id, stash: {}, slabThickness: 0.3 };
+    const rebuilt = buildSceneDocument(payload, floor.furniture as FurnitureItem[], DEFAULT_ENVIRONMENT, building);
+    expect(rebuilt.floors[0].openings).toHaveLength(floor.openings.length);
+    expect(rebuilt.floors[0].dimensions).toEqual(floor.dimensions);
     expect(sceneDocumentSchema.safeParse(rebuilt).success).toBe(true);
+  });
+
+  it('builds inactive floors from the building stash', () => {
+    const doc = createEmptyScene();
+    const [floor] = doc.floors;
+    const upper = { ...floor, id: 'floor-2', name: '2 этаж' };
+    const stash = { 'floor-2': { ...toEditorPayload(upper), furniture: [] } };
+    const building = { floors: [{ id: 'floor-1', name: '1 этаж', offset: [0, 0] as [number, number] }, { id: 'floor-2', name: '2 этаж', offset: [0, 0] as [number, number] }], activeId: 'floor-1', stash, slabThickness: 0.25 };
+    const rebuilt = buildSceneDocument(toEditorPayload(floor), [], DEFAULT_ENVIRONMENT, building);
+    expect(rebuilt.floors.map((f) => f.id)).toEqual(['floor-1', 'floor-2']);
+    expect(rebuilt.slabThickness).toBe(0.25);
+    expect(floorDocument(building.floors[1], stash['floor-2'])).toEqual(rebuilt.floors[1]);
   });
 });

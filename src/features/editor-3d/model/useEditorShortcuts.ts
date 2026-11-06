@@ -2,15 +2,15 @@
  * Горячие клавиши редактора. Не срабатывают при вводе текста в полях.
  * Esc — отмена размещения/инструмента/выделения; Del — удалить; Ctrl+D — копия;
  * Ctrl+Z / Ctrl+Shift+Z (Ctrl+Y) — отмена/повтор; Ctrl+S — сохранить;
- * R / Shift+R — поворот на 90° (Alt — на 15°); стрелки — сдвиг на 5 см (Shift — 1 см);
- * G — сетка; L — закрепить; 1/2/3 — облёт / от первого лица / план.
+ * R / Shift+R — поворот на 90° (Alt — на 15°; лестница — всегда на 90°); стрелки — сдвиг на 5 см
+ * (Shift — 1 см); G — сетка; L — закрепить; 1/2/3/4 — облёт / от первого лица / план / улица.
  * @module editor-3d/model/useEditorShortcuts
  */
 
 import { useEffect } from 'react';
 import { useDispatch, useStore } from 'react-redux';
 import type { RootState } from '@/app/store';
-import { CameraFeature } from '@/features/camera';
+import { CameraFeature, type CameraMode } from '@/features/camera';
 import { HistoryFeature } from '@/features/history';
 import { ProjectSessionFeature } from '@/features/project-session';
 import { actions as editorActions } from '../slice';
@@ -24,6 +24,8 @@ function isTyping(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   return Boolean(el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable));
 }
+
+const CAMERA_KEYS: Record<string, CameraMode> = { '1': 'orbit', '2': 'fps', '3': 'top', '4': 'street' };
 
 const ARROWS: Record<string, [number, number]> = {
   ArrowLeft: [-1, 0],
@@ -40,6 +42,12 @@ export function useEditorShortcuts(): void {
   useEffect(() => {
     const rotate = (delta: number) => {
       const s = interactionStore.getState();
+      if (s.placingStair) {
+        interaction.rotateStair(Math.sign(delta) * (Math.PI / 2));
+        const ghost = interactionStore.getState().stairGhost;
+        if (ghost) interaction.setStairGhost(commands.stairs.preview(s.stairKind, ghost.stair.position, interactionStore.getState().stairAngle));
+        return;
+      }
       if (s.mode === 'placing' && s.placingPath) {
         interaction.rotatePlacing(delta);
         const ghost = s.ghost;
@@ -95,8 +103,8 @@ export function useEditorShortcuts(): void {
         const [dx, dz] = ARROWS[e.key];
         const step = e.shiftKey ? NUDGE_FINE : NUDGE;
         commands.nudgeSelection(dx * step, dz * step);
-      } else if (e.key === '1' || e.key === '2' || e.key === '3') {
-        dispatch(CameraFeature.actions.setMode(e.key === '1' ? 'orbit' : e.key === '2' ? 'fps' : 'top'));
+      } else if (CAMERA_KEYS[e.key]) {
+        dispatch(CameraFeature.actions.setMode(CAMERA_KEYS[e.key]));
       }
     };
 

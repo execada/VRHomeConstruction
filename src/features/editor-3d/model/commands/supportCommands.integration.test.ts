@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import { obbCorners, obbOverlap, pointInObb } from '@/shared/lib/math/geometry2d';
+import { reducer as buildingReducer } from '@/features/editor-3d/building/slice';
 import { reducer as editorReducer } from '@/features/editor-3d/slice';
 import { actions as furnitureActions, reducer as furnitureReducer } from '@/features/furniture/slice';
 import { KNOWN_MODEL_SIZES, MODELS } from '@/features/furniture/lib/knownSizes';
@@ -26,14 +27,15 @@ const SHELF_LEVELS = [1.72, 1.32, 0.92, 0.52, 0.12].map((y, i) => ({
 function setup(furniture: FurnitureItem[] = []) {
   const actions: string[] = [];
   const store = configureStore({
-    reducer: { editor: editorReducer, furniture: furnitureReducer, ...SelectionFeature.reducer },
+    reducer: { editor: editorReducer, building: buildingReducer, furniture: furnitureReducer, ...SelectionFeature.reducer },
     middleware: (gdm) =>
       gdm({ thunk: false }).concat(() => (next) => (action) => {
         actions.push((action as { type: string }).type);
         return next(action);
       }),
   });
-  sceneLoadActions({ ...createEmptyScene({ width: 4, height: 2.7, depth: 4 }), furniture }).forEach((a) => store.dispatch(a));
+  const scene = createEmptyScene({ width: 4, height: 2.7, depth: 4 });
+  sceneLoadActions({ ...scene, floors: [{ ...scene.floors[0], furniture }] }).forEach((a) => store.dispatch(a));
   const notify = vi.fn();
   const commands = createSceneCommands({ getState: store.getState, dispatch: store.dispatch, notify });
   const get = (id: string) => store.getState().furniture.items.find((i) => i.id === id)!;

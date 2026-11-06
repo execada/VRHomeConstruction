@@ -1,6 +1,6 @@
 /**
- * Высотка под квартирой для городских панорам: терраса на крыше (ровно участок, по которому
- * можно ходить от первого лица) с плиткой и стеклянным ограждением, стеклянный фасад башни
+ * Высотка под зданием для городских панорам: терраса на крыше (ровно участок вокруг всех этажей,
+ * по которому можно ходить от первого лица) с плиткой и стеклянным ограждением, стеклянный фасад башни
  * с отражением города и вечерними огнями, а внизу — город (см. CitySite). Он закрывает низ
  * снимка (крышу, с которой его снимали), и вид из окна смотрит на кварталы под башней.
  * @module editor-3d/ui/scene/site/TowerSite
@@ -9,11 +9,10 @@
 import React, { Suspense, memo, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Color, MeshStandardMaterial, type Texture } from 'three';
-import { selectors as editorSelectors } from '../../../selectors';
+import { buildingSelectors } from '../../../building/selectors';
 import { FACADE_MODULE_METERS } from '../../../lib/facade';
 import { SITE_SURFACES, terraceBox } from '../../../lib/site';
 import { tiledPlane } from '../../../lib/siteGeometry';
-import { lotRect } from '../../../lib/walls';
 import { NO_RAYCAST } from '../pointer';
 import { CitySite } from './CitySite';
 import { useFacadeMaps, type FacadeMaps } from './useFacadeMaps';
@@ -154,8 +153,8 @@ interface TowerSiteProps {
 }
 
 export const TowerSite: React.FC<TowerSiteProps> = memo(({ elevation, envMap, rotation, daylight }) => {
-  const dims = useSelector(editorSelectors.selectDimensions);
-  const box = useMemo(() => terraceBox(lotRect(dims)), [dims]);
+  const lot = useSelector(buildingSelectors.selectBuildingLot);
+  const box = useMemo(() => terraceBox(lot), [lot]);
   const maps = useFacadeMaps();
   return (
     <group>

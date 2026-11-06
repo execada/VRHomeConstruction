@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Raycaster, Vector2, type Camera, type Object3D, type Scene, type WebGLRenderer } from 'three';
 import { sceneBridgeStore } from '../../model/sceneBridge';
-import { rayToFloor, toRay3 } from './pointer';
+import { floorRay, rayToFloor, toRay3 } from './pointer';
 
 const JPEG_QUALITY = 0.72;
 
@@ -46,8 +46,8 @@ export const SceneBridge: React.FC = () => {
       return true;
     };
     sceneBridgeStore.setState({
-      screenToFloor: (clientX, clientY) => (aim(clientX, clientY) ? rayToFloor(raycaster.ray) : null),
-      screenToRay: (clientX, clientY) => (aim(clientX, clientY) ? toRay3(raycaster.ray) : null),
+      screenToFloor: (clientX, clientY) => (aim(clientX, clientY) ? rayToFloor(floorRay(raycaster.ray)) : null),
+      screenToRay: (clientX, clientY) => (aim(clientX, clientY) ? toRay3(floorRay(raycaster.ray)) : null),
       capture: (maxWidth) => {
         const { gl, scene, camera } = get();
         renderWithoutHelpers(gl, scene, camera);

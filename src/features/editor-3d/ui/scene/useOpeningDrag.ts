@@ -16,7 +16,7 @@ import { isPointerBusy } from '../../model/interactionStore';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import type { WallFrame } from '../../lib/walls';
 import type { Opening } from '../../types';
-import { isClick, rayToWall, type SceneMouseEvent } from './pointer';
+import { floorRay, isClick, rayToWall, type SceneMouseEvent } from './pointer';
 import { useDragGesture, type DragHandlers } from './useDragGesture';
 import { useWalkingCheck } from './useWalkingCheck';
 
@@ -53,11 +53,11 @@ export function useOpeningDrag(hostId: string, frame: WallFrame, opening: Openin
       const sel = store.getState().selection.current;
       const wasSelected = sel?.kind === 'opening' && sel.id === opening.id;
       commands.select({ kind: 'opening', hostId, id: opening.id });
-      const hit = rayToWall(e.ray, frame);
+      const hit = rayToWall(floorRay(e.ray), frame);
       return hit ? { du: opening.position[0] - hit.u, dv: opening.position[1] - hit.v, start: hit, moved: false, wasSelected } : null;
     },
     onMove: (e, ctx) => {
-      const hit = rayToWall(e.ray, frame);
+      const hit = rayToWall(floorRay(e.ray), frame);
       if (!hit) return;
       if (!ctx.moved && Math.hypot(hit.u - ctx.start.u, hit.v - ctx.start.v) < TAP_DISTANCE) return;
       ctx.moved = true;

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { stairLayout } from '@/features/editor-3d/lib/stairs/stairs';
 import { wallFrame } from '@/features/editor-3d/lib/walls';
 import type { FurnitureItem } from '@/features/furniture/types';
-import { fitViewBox, footprintPoints, itemsNearWall, planDrawOrder, polygonPoints, slideAlongWall, zoomViewBox } from './plan';
+import { fitViewBox, footprintPoints, itemsNearWall, planDrawOrder, polygonPoints, rectPoints, slideAlongWall, stairPlanLines, zoomViewBox } from './plan';
 
 const dims = { width: 4, height: 2.7, depth: 4 };
 
@@ -81,5 +82,36 @@ describe('planDrawOrder', () => {
     const book = { ...item('book', 0, 0, 0.52), height: 0.2, supportId: 'bookcase' };
     const desk = item('desk', 1, 0);
     expect(planDrawOrder([book, bookcase, desk, rug]).map((i) => i.id)).toEqual(['rug', 'desk', 'bookcase', 'book']);
+  });
+});
+
+describe('лестница на плане', () => {
+  const layout = stairLayout('straight', 3.3);
+  const stair = { id: 's', kind: 'straight' as const, position: [1, 0] as [number, number], rotation: 0, width: 1 };
+
+  it('линия на каждой границе ступеней поперёк марша, стрелка — от низа к верху', () => {
+    const plan = stairPlanLines(stair, layout);
+    expect(plan.treads).toHaveLength(layout.risers - 2);
+    plan.treads.forEach(([a, b]) => {
+      expect(Math.abs(b[0] - a[0])).toBeCloseTo(1);
+      expect(a[1]).toBeCloseTo(b[1]);
+    });
+    const [from, to] = plan.arrow;
+    expect(from[1]).toBeGreaterThan(to[1]);
+    expect(from[0]).toBeCloseTo(1);
+  });
+
+  it('у площадки — линии по её краям на расстоянии её глубины', () => {
+    const withLanding = stairLayout('landing', 3.3);
+    const plan = stairPlanLines({ ...stair, kind: 'landing' }, withLanding);
+    expect(plan.treads).toHaveLength(withLanding.risers - 2);
+    const zs = plan.treads.map(([a]) => a[1]).sort((x, y) => x - y);
+    const gaps = zs.slice(1).map((z, i) => z - zs[i]);
+    const { from, to } = withLanding.landing!;
+    expect(Math.max(...gaps)).toBeCloseTo(to - from);
+  });
+
+  it('прямоугольник — многоугольник из четырёх точек', () => {
+    expect(rectPoints({ minX: 0, maxX: 1, minZ: 0, maxZ: 2 }).split(' ')).toHaveLength(4);
   });
 });

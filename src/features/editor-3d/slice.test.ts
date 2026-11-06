@@ -130,7 +130,7 @@ describe('editor slice: перегородки', () => {
 
 describe('editor slice: загрузка сцены', () => {
   it('loadScene заменяет сцену и снимает выделение', () => {
-    const doc = createEmptyScene({ width: 6, height: 3, depth: 5 });
+    const [doc] = createEmptyScene({ width: 6, height: 3, depth: 5 }).floors;
     let state = reducer(initial(), actions.setSelectedPartition(partition('p1')));
     state = reducer(
       state,
@@ -143,9 +143,11 @@ describe('editor slice: загрузка сцены', () => {
         openings: {},
         partitions: [],
         rooms: [{ id: 'r', name: 'Кухня', anchor: [0, 0] }],
+        stairs: [{ id: 's', kind: 'straight', position: [0, 0], rotation: 0, width: 1 }],
       }),
     );
     expect(state.rooms[0].name).toBe('Кухня');
+    expect(state.stairs.map((s) => s.id)).toEqual(['s']);
     expect(state.dimensions.width).toBe(6);
     expect(state.selectedPartition).toBeNull();
     expect(state.selectedOpening).toBeNull();

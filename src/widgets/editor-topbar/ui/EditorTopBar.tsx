@@ -1,6 +1,6 @@
 /**
  * Верхняя панель редактора: назад, название, статус сохранения, отмена/повтор,
- * 2D/3D, режим камеры, вход в VR и меню проекта.
+ * 2D/3D, режим камеры (облёт, от лица, план, улица), вход в VR и меню проекта.
  * @module widgets/editor-topbar/ui/EditorTopBar
  */
 
@@ -24,10 +24,11 @@ import styles from './EditorTopBar.module.scss';
 
 const VR_FROM_2D_DELAY_MS = 200;
 
-const CAMERA_OPTIONS: Array<{ value: CameraMode; label: string; icon: 'orbit' | 'walk' | 'plan' }> = [
+const CAMERA_OPTIONS: Array<{ value: CameraMode; label: string; icon: 'orbit' | 'walk' | 'plan' | 'building' }> = [
   { value: 'orbit', label: 'Облёт', icon: 'orbit' },
   { value: 'fps', label: 'От лица', icon: 'walk' },
   { value: 'top', label: 'План', icon: 'plan' },
+  { value: 'street', label: 'Улица', icon: 'building' },
 ];
 
 export const EditorTopBar: React.FC<{ xrStore: VrStore }> = ({ xrStore }) => {

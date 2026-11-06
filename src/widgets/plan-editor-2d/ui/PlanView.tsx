@@ -1,5 +1,6 @@
 /**
- * План сверху: пол (с текстурой), сетка, стены, проёмы, перегородки, мебель, размеры.
+ * План сверху активного этажа: пол (с текстурой), подложка этажа ниже, стены, проёмы,
+ * перегородки, лестницы и проём над лестницей снизу, мебель, размеры.
  * Колесо — масштаб, перетаскивание фона — панорама, клик по полу — отделка пола.
  * @module widgets/plan-editor-2d/ui/PlanView
  */
@@ -16,6 +17,9 @@ import { useSvgViewport } from '../model/useSvgInteraction';
 import { PlanFurniture } from './PlanFurniture';
 import { PlanHatches } from './PlanHatches';
 import { PlanRooms } from './PlanRooms';
+import { PlanStairPlace } from './PlanStairPlace';
+import { PlanStairs } from './PlanStairs';
+import { PlanUnderlay } from './PlanUnderlay';
 import { PlanWallDraw } from './PlanWallDraw';
 import { PlanPartitions } from './PlanPartitions';
 import { PlanWalls } from './PlanWalls';
@@ -69,7 +73,7 @@ const Dimensions: React.FC<{ width: number; depth: number; back: number; left: n
 export const PlanView: React.FC = () => {
   const dims = useSelector(editorSelectors.selectDimensions);
   const outerWalls = useSelector(editorSelectors.selectOuterWalls);
-  const drawing = useSelector(editorSelectors.selectActiveTool) === 'partition';
+  const tool = useSelector(editorSelectors.selectActiveTool);
   const svg = useRef<SVGSVGElement>(null);
   const thickest = Math.max(...Object.values(outerWalls).map((w) => w.thickness));
   const fitNow = () =>
@@ -94,11 +98,14 @@ export const PlanView: React.FC = () => {
       <PlanHatches />
       <FloorFill width={dims.width} depth={dims.depth} />
       <PlanRooms />
+      <PlanUnderlay />
       <PlanWalls svg={svg} shiftView={viewport.shift} />
       <PlanPartitions svg={svg} />
+      <PlanStairs svg={svg} />
       <PlanFurniture svg={svg} />
       <Dimensions width={dims.width} depth={dims.depth} back={outerWalls.back.thickness} left={outerWalls.left.thickness} />
-      {drawing && <PlanWallDraw svg={svg} />}
+      {tool === 'partition' && <PlanWallDraw svg={svg} />}
+      {tool === 'stair' && <PlanStairPlace svg={svg} />}
     </svg>
   );
 };

@@ -17,6 +17,7 @@ import { ThemeFeature } from '@/features/theme';
 import { NotificationsFeature } from '@/features/notifications';
 import { AssetsFeature } from '@/features/assets';
 import { ProjectSessionFeature } from '@/features/project-session';
+import { reducer as buildingReducer } from '@/features/editor-3d/building/slice';
 import { reducer as editorReducer } from '@/features/editor-3d/slice';
 import { reducer as furnitureReducer } from '@/features/furniture/slice';
 import { rootSaga } from './saga';
@@ -44,6 +45,7 @@ export const createReduxStore = () => {
       ...AssetsFeature.reducer,
       ...ProjectSessionFeature.reducer,
       editor: editorReducer,
+      building: buildingReducer,
       furniture: furnitureReducer,
     },
     middleware: (getDefaultMiddleware) =>

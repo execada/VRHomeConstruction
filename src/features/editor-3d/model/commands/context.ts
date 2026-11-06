@@ -10,11 +10,12 @@ import type { FurnitureState } from '@/features/furniture/types';
 import type { SelectionState } from '@/features/selection/types';
 import { interactionStore, GRID_STEP, WALL_MAGNET } from '../interactionStore';
 import type { PlacementOptions } from '../../lib/placement';
-import type { EditorState } from '../../types';
+import type { BuildingState, EditorState } from '../../types';
 
 /** Части корневого состояния, с которыми работают команды. */
 export interface SceneRootState {
   editor: EditorState;
+  building: BuildingState;
   furniture: FurnitureState;
   selection: SelectionState;
 }

@@ -10,23 +10,28 @@
 import { put, select, takeEvery } from 'typed-redux-saga';
 import type { Action } from '@reduxjs/toolkit';
 import { actions as furnitureActions } from '@/features/furniture/slice';
+import { buildingSelectors } from '@/features/editor-3d/building/selectors';
 import { selectSceneDocument } from '@/features/editor-3d/sceneSelectors';
 import { sceneLoadActions, withMeasuredSizes } from '@/features/editor-3d/sceneActions';
 import { SCENE_EDIT_ACTION_TYPES, SCENE_LOAD_ACTION_TYPES } from '@/features/editor-3d/sceneActionTypes';
 import type { SceneDocument } from '@/features/editor-3d/lib/scene/schema';
-import type { FurnitureItem } from '@/features/furniture/types';
 import { interactionStore } from '@/features/editor-3d/model/interactionStore';
 import { changeKey, shouldCoalesce, type ChangeMark } from './lib/coalesce';
+import { floorToShow } from './lib/floorFocus';
 import { selectors } from './selectors';
 import { actions } from './slice';
 
 /** Изменения, которые не являются правкой пользователя (измерение габаритов модели). */
 const SILENT = [furnitureActions.updateFurnitureSizes.type];
 
-/** Применить снимок ко всем слайсам. */
+/**
+ * Применить снимок ко всем слайсам. Активным остаётся тот же этаж, а если шаг меняет
+ * только другой этаж — активным становится он (правка видна там, где отменяется).
+ */
 function* applyDocument(doc: SceneDocument, current: SceneDocument) {
-  const furniture = withMeasuredSizes(doc.furniture as FurnitureItem[], current.furniture as FurnitureItem[]);
-  for (const action of sceneLoadActions({ ...doc, furniture })) {
+  const activeId = yield* select(buildingSelectors.selectActiveFloorId);
+  const activeIndex = yield* select(buildingSelectors.selectActiveIndex);
+  for (const action of sceneLoadActions(withMeasuredSizes(doc, current), floorToShow(doc, current, activeId), activeIndex)) {
     yield* put(action);
   }
 }

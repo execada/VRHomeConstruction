@@ -18,7 +18,7 @@ import { useSceneCommands } from '../../model/useSceneCommands';
 import { interactionStore, ROTATE_STEP } from '../../model/interactionStore';
 import { itemSizes } from '../../lib/placement';
 import { furnitureRole } from '../../lib/supportRole';
-import { HELPER_DATA, NO_RAYCAST, rayToFloor, toRay3 } from './pointer';
+import { HELPER_DATA, NO_RAYCAST, floorHeight, floorRay, rayToFloor, toRay3 } from './pointer';
 import { useDragGesture } from './useDragGesture';
 
 const SELECTED_COLOR = '#c9a96e';
@@ -27,6 +27,8 @@ const LOCKED_COLOR = '#8a9a6b';
 interface FurnitureNodeProps {
   item: FurnitureItem;
   selected: boolean;
+  /** Предмет активного этажа: перетаскивается, подсвечивается и измеряется (по умолчанию — да) */
+  interactive?: boolean;
 }
 
 /** Угол направления на полу в соглашении поворотов three.js. */
@@ -40,11 +42,11 @@ const RotateRing: React.FC<{ item: FurnitureItem; radius: number }> = ({ item, r
     id: item.id,
     mode: 'rotating',
     onStart: (e) => {
-      const hit = rayToFloor(e.ray, item.position[1]);
+      const hit = rayToFloor(floorRay(e.ray), item.position[1]);
       return hit && !item.locked ? { start: headingOf(sub2(hit, center)), base: item.rotation[1] } : null;
     },
     onMove: (e, ctx) => {
-      const hit = rayToFloor(e.ray, item.position[1]);
+      const hit = rayToFloor(floorRay(e.ray), item.position[1]);
       if (!hit) return;
       const raw = ctx.base + headingOf(sub2(hit, center)) - ctx.start;
       commands.furniture.rotate(item.id, e.shiftKey ? raw : snapAngle(raw, ROTATE_STEP));
@@ -58,7 +60,7 @@ const RotateRing: React.FC<{ item: FurnitureItem; radius: number }> = ({ item, r
   );
 };
 
-export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selected }) => {
+export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selected, interactive = true }) => {
   const dispatch = useDispatch();
   const commands = useSceneCommands();
   const [hovered, setHovered] = useState(false);
@@ -93,16 +95,28 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
     onStart: (e) => {
       commands.select({ kind: 'furniture', id: item.id });
       if (item.locked) return null;
-      const hit = rayToFloor(e.ray, e.point.y);
-      return hit ? { offset: sub2([item.position[0], item.position[2]], hit), lift: e.point.y - item.position[1] } : null;
+      const grabY = floorHeight(e.point.y);
+      const hit = rayToFloor(floorRay(e.ray), grabY);
+      return hit ? { offset: sub2([item.position[0], item.position[2]], hit), lift: grabY - item.position[1] } : null;
     },
     onMove: (e, ctx) => {
-      const hit = rayToFloor(e.ray, item.position[1] + ctx.lift);
-      if (hit) commands.furniture.move(item.id, add2(hit, ctx.offset), { ray: toRay3(e.ray), offset: ctx.offset });
+      const ray = floorRay(e.ray);
+      const hit = rayToFloor(ray, item.position[1] + ctx.lift);
+      if (hit) commands.furniture.move(item.id, add2(hit, ctx.offset), { ray: toRay3(ray), offset: ctx.offset });
     },
   });
 
   const ringRadius = Math.max(sizes.halfWidth, sizes.halfDepth) + 0.18;
+
+  if (!interactive) {
+    return (
+      <group position={item.position} rotation={[0, item.rotation[1], 0]}>
+        <group scale={item.scale}>
+          <NormalizedModel path={item.modelPath} look={look} />
+        </group>
+      </group>
+    );
+  }
 
   return (
     <group position={item.position} rotation={[0, item.rotation[1], 0]}>

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import { obbOverlap } from '@/shared/lib/math/geometry2d';
+import { reducer as buildingReducer } from '@/features/editor-3d/building/slice';
 import { reducer as editorReducer } from '@/features/editor-3d/slice';
 import { reducer as furnitureReducer } from '@/features/furniture/slice';
 import { furnitureSizesCache } from '@/features/furniture/sizesCache';
@@ -14,7 +15,7 @@ import { createSceneCommands } from './index';
 
 function setup() {
   const store = configureStore({
-    reducer: { editor: editorReducer, furniture: furnitureReducer, ...SelectionFeature.reducer },
+    reducer: { editor: editorReducer, building: buildingReducer, furniture: furnitureReducer, ...SelectionFeature.reducer },
     middleware: (gdm) => gdm({ thunk: false }),
   });
   sceneLoadActions(createEmptyScene({ width: 4, height: 2.7, depth: 4 })).forEach((a) => store.dispatch(a));

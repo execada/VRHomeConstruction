@@ -5,10 +5,12 @@
  * @module widgets/plan-editor-2d/lib/plan
  */
 
-import { dot2, obbCorners, sub2, type Obb, type Rect, type Vec2 } from '@/shared/lib/math/geometry2d';
+import { add2, dot2, obbCorners, rotateLocal, scale2, sub2, type Obb, type Rect, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { furnitureFootprint, itemSizes } from '@/features/editor-3d/lib/placement';
+import { stairAscent, stairTreads, type StairLayout } from '@/features/editor-3d/lib/stairs/stairs';
 import { stackLevel } from '@/features/editor-3d/lib/supportLinks';
 import type { WallFrame } from '@/features/editor-3d/lib/walls';
+import type { Stair } from '@/features/editor-3d/types';
 import type { FurnitureItem } from '@/features/furniture/types';
 
 /** Рамка viewBox SVG. */
@@ -94,4 +96,37 @@ export function itemsNearWall(items: FurnitureItem[], frame: WallFrame, maxDepth
 /** Центр предмета после сдвига вдоль стены на du. */
 export function slideAlongWall(item: FurnitureItem, frame: WallFrame, du: number): Vec2 {
   return [item.position[0] + frame.tangent[0] * du, item.position[2] + frame.tangent[1] * du];
+}
+
+/** Лестница на плане: линии ступеней поперёк марша и стрелка подъёма (от низа к верху). */
+export interface StairPlan {
+  treads: Array<[Vec2, Vec2]>;
+  arrow: [Vec2, Vec2];
+}
+
+/**
+ * Линии ступеней и стрелка подъёма лестницы на плане.
+ * @param stair - лестница
+ * @param layout - раскладка ступеней
+ */
+export function stairPlanLines(stair: Stair, layout: StairLayout): StairPlan {
+  const ascent = stairAscent(stair);
+  const across = rotateLocal([1, 0], stair.rotation);
+  const at = (t: number, s: number): Vec2 => add2(add2(stair.position, scale2(ascent, t - layout.length / 2)), scale2(across, s));
+  const half = stair.width / 2;
+  const edges = stairTreads(layout).flatMap((t) => (t.landing ? [t.from, t.to] : [t.from])).filter((t) => t > 1e-6);
+  return {
+    treads: [...new Set(edges.map((t) => t.toFixed(4)))].map(Number).map((t) => [at(t, -half), at(t, half)]),
+    arrow: [at(0.15, 0), at(layout.length - 0.15, 0)],
+  };
+}
+
+/** Прямоугольник в многоугольник плана. */
+export function rectPoints(rect: Rect): string {
+  return polygonPoints([
+    [rect.minX, rect.minZ],
+    [rect.maxX, rect.minZ],
+    [rect.maxX, rect.maxZ],
+    [rect.minX, rect.maxZ],
+  ]);
 }

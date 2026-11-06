@@ -6,7 +6,9 @@
 
 import { createExternalStore } from '@/shared/lib/externalStore';
 import type { Vec2 } from '@/shared/lib/math/geometry2d';
+import type { StairPlacement } from '../lib/stairs/stairPlacement';
 import type { SnapKind } from '../lib/wallSnap';
+import type { StairKind } from '../types';
 
 /** Что сейчас делает пользователь. */
 export type InteractionMode = 'idle' | 'dragging' | 'rotating' | 'placing';
@@ -51,6 +53,14 @@ export interface InteractionState {
   drawingWalls: boolean;
   /** Черновик рисуемой стены */
   wallDraft: WallDraft | null;
+  /** Какую лестницу ставит инструмент «Лестница» */
+  stairKind: StairKind;
+  /** Поворот, заданный клавишей R (null — вдоль ближайшей стены) */
+  stairAngle: number | null;
+  /** Призрак лестницы под курсором */
+  stairGhost: StairPlacement | null;
+  /** Инструмент «Лестница» активен: перетаскивание объектов отключено */
+  placingStair: boolean;
 }
 
 /** Шаг сетки, м. */
@@ -73,13 +83,17 @@ const initialState: InteractionState = {
   gestureId: 0,
   drawingWalls: false,
   wallDraft: null,
+  stairKind: 'straight',
+  stairAngle: null,
+  stairGhost: null,
+  placingStair: false,
 };
 
 export const interactionStore = createExternalStore<InteractionState>(initialState);
 
-/** Идёт размещение модели из каталога или рисование стен: объекты сцены не перехватывают указатель. */
+/** Идёт размещение модели или лестницы, рисование стен: объекты сцены не перехватывают указатель. */
 export function isPointerBusy(state: InteractionState = interactionStore.getState()): boolean {
-  return state.mode === 'placing' || state.drawingWalls;
+  return state.mode === 'placing' || state.drawingWalls || state.placingStair;
 }
 
 /** Операции над состоянием взаимодействия. */
@@ -115,5 +129,21 @@ export const interaction = {
   /** Обновить черновик рисуемой стены */
   setWallDraft(wallDraft: WallDraft | null) {
     interactionStore.setState({ wallDraft });
+  },
+  /** Выбрать лестницу для инструмента «Лестница» (поворот — снова вдоль стены) */
+  chooseStair(stairKind: StairKind) {
+    interactionStore.setState({ stairKind, stairAngle: null, stairGhost: null });
+  },
+  /** Включить/выключить инструмент «Лестница» (выключение убирает призрак) */
+  setPlacingStair(placingStair: boolean) {
+    interactionStore.setState(placingStair ? { placingStair } : { placingStair, stairGhost: null, stairAngle: null });
+  },
+  /** Призрак лестницы под курсором */
+  setStairGhost(stairGhost: StairPlacement | null) {
+    interactionStore.setState({ stairGhost });
+  },
+  /** Повернуть призрак лестницы */
+  rotateStair(delta: number) {
+    interactionStore.setState((s) => ({ stairAngle: (s.stairAngle ?? s.stairGhost?.stair.rotation ?? 0) + delta }));
   },
 };

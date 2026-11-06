@@ -74,7 +74,7 @@ export function fogRange(kind: SiteKind): { near: number; far: number } {
 
 /**
  * Терраса на крыше высотки — ровно участок, по которому можно ходить вокруг квартиры.
- * @param lot - прямоугольник участка (см. lotRect)
+ * @param lot - прямоугольник участка (см. buildingLot)
  */
 export function terraceBox(lot: Rect): { width: number; depth: number; center: [number, number] } {
   return {

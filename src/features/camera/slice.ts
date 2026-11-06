@@ -1,5 +1,5 @@
 /**
- * Redux Slice камеры: режим (облёт, от первого лица, план, фикс-вид),
+ * Redux Slice камеры: режим (облёт, от первого лица, план, фикс-вид, улица),
  * выбранный фиксированный вид и столкновения.
  * Начальное состояние восстанавливается из localStorage.
  * @module camera/slice
@@ -8,13 +8,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { z } from 'zod';
 import { readStored } from '@/shared/lib/storage';
-import { CameraMode, CameraState, FixedView } from './types';
+import { CAMERA_MODES, CameraMode, CameraState, FixedView } from './types';
 
 /** Ключ хранения настроек камеры. */
 export const CAMERA_STORAGE_KEY = 'camera';
 
 const storedSchema = z.object({
-  mode: z.enum(['orbit', 'fps', 'top', 'fixed']),
+  mode: z.enum(CAMERA_MODES),
   fixedView: z.enum(['iso', 'front', 'back', 'left', 'right']),
   collisions: z.boolean(),
 });

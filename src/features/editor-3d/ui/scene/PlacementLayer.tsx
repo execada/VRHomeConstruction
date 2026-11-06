@@ -14,7 +14,7 @@ import { useExternalStore } from '@/shared/lib/externalStore';
 import { selectors as editorSelectors } from '../../selectors';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { interaction, interactionStore } from '../../model/interactionStore';
-import { HELPER_DATA, rayToFloor, toRay3, type ScenePointerEvent } from './pointer';
+import { HELPER_DATA, floorRay, rayToFloor, toRay3, type ScenePointerEvent } from './pointer';
 
 const GHOST_LOOK = { ghost: true };
 const INVALID_LOOK = { ghost: true, invalid: true };
@@ -25,9 +25,10 @@ const PlacementSurface: React.FC<{ path: string }> = ({ path }) => {
   const ghost = useExternalStore(interactionStore, (s) => s.ghost);
 
   const update = (e: ScenePointerEvent) => {
-    const hit = rayToFloor(e.ray);
+    const ray = floorRay(e.ray);
+    const hit = rayToFloor(ray);
     const { placingAngle, placingName } = interactionStore.getState();
-    const options = { name: placingName ?? '', aim: { ray: toRay3(e.ray) } };
+    const options = { name: placingName ?? '', aim: { ray: toRay3(ray) } };
     if (hit) interaction.setGhost(commands.furniture.previewPlacement(path, hit, placingAngle, options));
   };
 

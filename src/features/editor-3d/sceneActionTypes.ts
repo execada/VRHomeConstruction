@@ -1,11 +1,13 @@
 /**
  * Типы действий, меняющих документ сцены (история изменений и автосохранение)
- * и загружающих сцену целиком.
+ * и загружающих сцену целиком. Смена активного этажа документ не меняет и в историю
+ * не попадает.
  * @module editor-3d/sceneActionTypes
  */
 
 import { actions as environmentActions } from '@/features/environment/slice';
 import { actions as furnitureActions } from '@/features/furniture/slice';
+import { actions as buildingActions } from './building/slice';
 import { actions as editorActions } from './slice';
 
 /** Правки сцены пользователем. */
@@ -29,6 +31,15 @@ export const SCENE_EDIT_ACTION_TYPES: string[] = [
   editorActions.setOpenings,
   editorActions.setPartitions,
   editorActions.setRooms,
+  editorActions.addStair,
+  editorActions.updateStair,
+  editorActions.removeStair,
+  editorActions.setStairs,
+  buildingActions.floorAdded,
+  buildingActions.floorRemoved,
+  buildingActions.floorRenamed,
+  buildingActions.floorOffsetSet,
+  buildingActions.slabThicknessSet,
   furnitureActions.addFurniture,
   furnitureActions.updateFurniture,
   furnitureActions.updateFurnitureItems,
@@ -41,6 +52,8 @@ export const SCENE_EDIT_ACTION_TYPES: string[] = [
 
 /** Загрузка или сброс сцены целиком. */
 export const SCENE_LOAD_ACTION_TYPES: string[] = [
+  buildingActions.loaded,
+  buildingActions.reset,
   editorActions.loadScene,
   editorActions.loadRoomData,
   editorActions.resetEditor,

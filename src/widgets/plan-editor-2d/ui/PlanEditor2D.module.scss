@@ -290,3 +290,88 @@
     border-bottom: 1px solid var(--border);
   }
 }
+
+/* --- Этажи и лестницы --- */
+
+.floors {
+  position: absolute;
+  top: 44px;
+  left: 12px;
+  z-index: 1;
+}
+
+.underlay {
+  opacity: 0.45;
+}
+
+.underlayFloor {
+  fill: none;
+  stroke: var(--text-3);
+  stroke-width: 1;
+  stroke-dasharray: 6 4;
+}
+
+.underlayWall {
+  fill: rgb(120 112 100 / 25%);
+  stroke: var(--text-3);
+  stroke-width: 1;
+}
+
+.underlayStair {
+  fill: rgb(201 169 110 / 30%);
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+.underlayItem {
+  fill: rgb(120 112 100 / 18%);
+  stroke: var(--text-3);
+  stroke-width: 0.5;
+}
+
+.stair {
+  fill: rgb(201 169 110 / 55%);
+  stroke: var(--text-2);
+  stroke-width: 1;
+  cursor: move;
+}
+
+.stairSelected {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.stairTread {
+  stroke: var(--text-2);
+  stroke-width: 0.75;
+  pointer-events: none;
+}
+
+.stairArrow {
+  stroke: var(--text);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.stairArrowHead {
+  fill: var(--text);
+}
+
+.stairGhost {
+  fill: rgb(201 169 110 / 40%);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+}
+
+.stairGhostInvalid {
+  fill: rgb(217 83 79 / 35%);
+  stroke: var(--danger);
+}
+
+.cutout {
+  fill: rgb(30 28 25 / 12%);
+  stroke: var(--text-2);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}

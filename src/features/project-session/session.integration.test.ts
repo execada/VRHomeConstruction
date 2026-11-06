@@ -4,6 +4,7 @@ import createSagaMiddleware from 'redux-saga';
 import { all, fork } from 'redux-saga/effects';
 import { ApiRequestError } from '@/app/api/client';
 import { CreateProjectFeature } from '@/features/create-project';
+import { reducer as buildingReducer } from '@/features/editor-3d/building/slice';
 import { reducer as editorReducer } from '@/features/editor-3d/slice';
 import { reducer as furnitureReducer, actions as furnitureActions } from '@/features/furniture/slice';
 import { EnvironmentFeature } from '@/features/environment';
@@ -53,6 +54,7 @@ function setup() {
   const store = configureStore({
     reducer: {
       editor: editorReducer,
+      building: buildingReducer,
       furniture: furnitureReducer,
       ...EnvironmentFeature.reducer,
       ...HistoryFeature.reducer,
@@ -135,9 +137,9 @@ describe('project session saga', () => {
     );
     await vi.advanceTimersByTimeAsync(2000);
     expect(api.updateProject).toHaveBeenCalledTimes(1);
-    const payload = api.updateProject.mock.calls[0][1] as { roomData: { furniture: unknown[]; schemaVersion: number } };
-    expect(payload.roomData.schemaVersion).toBe(3);
-    expect(payload.roomData.furniture).toHaveLength(1);
+    const payload = api.updateProject.mock.calls[0][1] as { roomData: { floors: Array<{ furniture: unknown[] }>; schemaVersion: number } };
+    expect(payload.roomData.schemaVersion).toBe(4);
+    expect(payload.roomData.floors[0].furniture).toHaveLength(1);
     expect(store.getState().projectSession.saveState).toBe('saved');
   });
 

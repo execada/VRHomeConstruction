@@ -9,7 +9,7 @@ import { findBuiltinTemplate } from './builtins';
 function loaded(id: string): FurnitureItem[] {
   const result = parseSceneDocument(findBuiltinTemplate(id)!.build());
   if (!result.ok) throw new Error(result.error);
-  return result.doc.furniture as FurnitureItem[];
+  return result.doc.floors[0].furniture as FurnitureItem[];
 }
 
 describe('templates: items on tables and nightstands', () => {

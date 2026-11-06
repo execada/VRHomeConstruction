@@ -1,16 +1,21 @@
 /**
- * Шаблон «Апартаменты 150 м²»: пентхаус 15 × 10 м с потолками 3,2 м, панорамным
- * остеклением и балконом на всю ширину за стеклянной стеной; за окнами — мегаполис
- * на закате. Гостиная-кухня-столовая, мастер-спальня с ванной и гостевая спальня —
- * настоящие помещения, ограниченные внутренними стенами с дверями.
+ * Шаблон «Двухуровневый пентхаус»: два этажа над мегаполисом на закате.
+ *
+ * Нижний уровень 15 × 10 м с потолками 3,2 м — гостиная-кухня-столовая с панорамным
+ * остеклением, гостевой санузел, балкон во всю ширину за стеклянной стеной и прямая
+ * лестница из гостиной вдоль левой стены. Верхний уровень 15 × 7 м отступает от фасада
+ * на 3 м: его крыша над балконом — терраса, на которую выходят стеклянные двери холла
+ * и мастер-спальни. Наверху холл со световым проёмом лестницы, коридор, кабинет,
+ * мастер-спальня, спальня и ванная — настоящие помещения с дверями.
  * @module templates/lib/penthouse
  */
 
 import { DEFAULT_ENVIRONMENT } from '@/features/environment/constants';
 import { DEFAULT_LIGHT, uniformOuterWalls } from '@/features/editor-3d/constants';
-import { createEmptyScene } from '@/features/editor-3d/lib/scene/build';
-import type { SceneDocument } from '@/features/editor-3d/lib/scene/schema';
-import type { Opening, Partition } from '@/features/editor-3d/types';
+import { createEmptyFloor, sceneOf } from '@/features/editor-3d/lib/scene/build';
+import type { FloorDocument, SceneDocument } from '@/features/editor-3d/lib/scene/schema';
+import type { Opening, Partition, RoomDimensions, Stair } from '@/features/editor-3d/types';
+import { MODELS } from '@/features/furniture/lib/knownSizes';
 import type { FurnitureItem } from '@/features/furniture/types';
 import { againstWall, allWalls, doorOn, finish, itemAt, panoramicWindowOn, windowOn } from './compose';
 
@@ -55,58 +60,75 @@ const P = {
   toilet: `${M}/toilet_close_coupled/toilet_close_coupled.gltf`,
 } as const;
 
-const DIMS = { width: 15, height: 3.2, depth: 10 };
-const H = DIMS.height;
+/** Нижний уровень: 15 × 10 м, потолки 3,2 м. */
+const LOWER: RoomDimensions = { width: 15, height: 3.2, depth: 10 };
+/** Верхний уровень: 15 × 7 м, потолки 3 м, смещён к задней стене (впереди — терраса). */
+const UPPER: RoomDimensions = { width: 15, height: 3, depth: 7 };
+const UPPER_OFFSET: [number, number] = [0, -(LOWER.depth - UPPER.depth) / 2];
 const HALF_TURN = Math.PI;
 const FACE_POS_X = Math.PI / 2;
 const FACE_NEG_X = -Math.PI / 2;
+const WALLS = '#efe9e1';
 
 /** Предмет на поверхности опоры (стол, тумба, комод). */
 const onSupport = (item: FurnitureItem, supportId: string): FurnitureItem => ({ ...item, supportId });
 
 /** Внутренняя стена: центр [x, z], вдоль оси X или Z, длина, толщина, материал и проёмы. */
-function wall(id: string, center: [number, number], alongZ: boolean, length: number, thickness: number, material: Partition['material'], openings: Opening[]): Partition {
+function wall(
+  id: string,
+  height: number,
+  center: [number, number],
+  alongZ: boolean,
+  size: [number, number],
+  material: Partition['material'],
+  openings: Opening[],
+): Partition {
   return {
     id,
-    position: [center[0], H / 2, center[1]],
+    position: [center[0], height / 2, center[1]],
     rotation: [0, alongZ ? Math.PI / 2 : 0, 0],
-    size: [length, H, thickness],
+    size: [size[0], height, size[1]],
     openings,
-    finish: finish(null, '#efe9e1'),
+    finish: finish(null, WALLS),
     material,
   };
 }
 
-/** Стеклянная стена балкона, стена спального крыла, стена мастер-сюиты и стена ванной. */
-const partitions = (): Partition[] => [
-  wall('w-balcony', [0, 3.4], false, 15, 0.15, 'monolith', [
-    panoramicWindowOn('bw-bed', 'w-balcony', -5.6, 3.4, 3, 0),
-    doorOn('bd-bed', 'w-balcony', -3.4, 0.9, 2.4, { style: 'glass' }),
+const H1 = LOWER.height;
+const H2 = UPPER.height;
+
+// ——— Нижний уровень ———
+
+/** Стеклянная стена балкона и стены гостевого санузла. */
+const lowerPartitions = (): Partition[] => [
+  wall('w-balcony', H1, [0, 3.4], false, [15, 0.15], 'monolith', [
+    panoramicWindowOn('bw-west', 'w-balcony', -5.6, 3.4, 3, 0),
+    doorOn('bd-west', 'w-balcony', -3.4, 0.9, 2.4, { style: 'glass' }),
     panoramicWindowOn('bw-living-1', 'w-balcony', -1.1, 2, 3, 0),
     doorOn('bd-living', 'w-balcony', 0.5, 0.9, 2.4, { style: 'glass' }),
     panoramicWindowOn('bw-living-2', 'w-balcony', 4.25, 6, 3, 0),
   ]),
-  wall('w-wing', [-2.5, -0.8], true, 8.4, 0.12, 'aerated', [
-    doorOn('dd-master', 'w-wing', -0.8, 0.9, 2.2, { style: 'panel' }),
-    doorOn('dd-guest', 'w-wing', 1.1, 0.9, 2.2, { style: 'panel' }),
-  ]),
-  wall('w-suite', [-5, -0.6], false, 5, 0.12, 'drywall', [doorOn('dd-bath', 'w-suite', -1.3, 0.8, 2.1, { style: 'flush', swing: 'back' })]),
-  wall('w-bath', [-5.3, -2.8], true, 4.4, 0.1, 'drywall', []),
+  wall('w-wc-side', H1, [-6.35, -4], true, [2, 0.1], 'drywall', []),
+  wall('w-wc-front', H1, [-5.35, -3], false, [2, 0.1], 'drywall', [doorOn('dd-wc', 'w-wc-front', 0.3, 0.8, 2.1, { style: 'flush', swing: 'back' })]),
+  wall('w-wc-right', H1, [-4.35, -4], true, [2, 0.1], 'drywall', []),
 ];
 
-/** Панорамное остекление на город, окно кухни, окна ванной и гостевой, входная дверь. */
-const openings = (): Opening[] => [
+/** Панорамное остекление на город, окно кухни, окна санузла и библиотеки, входная дверь. */
+const lowerOpenings = (): Opening[] => [
   panoramicWindowOn('fw-1', 'front', -4.8, 4.4, 3, 0.1),
   panoramicWindowOn('fw-2', 'front', 0, 4.4, 3, 0.1),
   panoramicWindowOn('fw-3', 'front', 4.8, 4.4, 3, 0.1),
   windowOn('rw-kitchen', 'right', -2.6, 2.4, 1.9, 0.9),
-  windowOn('bw-bath', 'back', -6.4, 1, 1, 1.4),
-  windowOn('bw-guest', 'back', -3.9, 1.6, 1.6, 0.8),
+  windowOn('bw-wc', 'back', -5.35, 0.6, 0.6, 1.6),
+  windowOn('bw-library', 'back', -3.2, 1.4, 1.6, 0.8),
   doorOn('d-entry', 'back', -1.2, 1, 2.3, { style: 'panel' }),
 ];
 
+/** Прямая лестница из гостиной вдоль левой стены: подъём к задней стене. */
+const lowerStairs = (): Stair[] => [{ id: 'stair-main', kind: 'straight', position: [-6.99, -0.8], rotation: 0, width: 1 }];
+
 const living = (): FurnitureItem[] => [
-  againstWall('tv-cabinet', P.tvCabinet, DIMS, 'right', 1, { name: 'ТВ-тумба' }),
+  againstWall('tv-cabinet', P.tvCabinet, LOWER, 'right', 1, { name: 'ТВ-тумба' }),
   onSupport(itemAt('tv', P.tv, [7.3, 1], { name: 'Телевизор 65″', angle: FACE_NEG_X, elevation: 0.68 }), 'tv-cabinet'),
   itemAt('sofa', P.sofa, [3.6, 1], { name: 'Бархатный диван', angle: FACE_POS_X }),
   itemAt('coffee', P.coffeeTable, [5.4, 1], { name: 'Кофейный столик' }),
@@ -116,7 +138,18 @@ const living = (): FurnitureItem[] => [
   itemAt('chair-2', P.velvetChair, [5.4, 2.45], { name: 'Бархатное кресло', angle: HALF_TURN }),
   itemAt('floor-lamp', P.floorLamp, [3.3, 2.75], { name: 'Торшер' }),
   itemAt('plant-living', P.plantTall, [6.95, 2.85], { name: 'Растение в кашпо' }),
-  itemAt('pendant', P.ceilingLamp, [5.4, 1], { name: 'Подвесной светильник', elevation: H - 0.952 }),
+  itemAt('pendant', P.ceilingLamp, [5.4, 1], { name: 'Подвесной светильник', elevation: H1 - 0.952 }),
+];
+
+/** Уголок для чтения у лестницы. */
+const library = (): FurnitureItem[] => [
+  itemAt('lounge-rug', P.roundRug, [-4.3, 0], { name: 'Круглый ковёр' }),
+  itemAt('lounge-chair-1', P.loungeChair, [-5.3, 0], { name: 'Лаунж-кресло', angle: FACE_POS_X }),
+  itemAt('lounge-chair-2', P.loungeChair, [-3.3, 0], { name: 'Лаунж-кресло', angle: FACE_NEG_X }),
+  itemAt('lounge-table', P.sideTable, [-4.3, 0], { name: 'Приставной столик' }),
+  onSupport(itemAt('lounge-vase', P.vase, [-4.3, 0], { name: 'Керамическая ваза', elevation: 0.551 }), 'lounge-table'),
+  itemAt('lounge-lamp', P.floorLamp, [-5.6, 1.3], { name: 'Торшер' }),
+  itemAt('lounge-plant', P.plantTall, [-2.95, -2.5], { name: 'Растение в кашпо' }),
 ];
 
 const dining = (): FurnitureItem[] => {
@@ -127,41 +160,24 @@ const dining = (): FurnitureItem[] => {
   return [
     itemAt('dining', P.diningTable, [2, -1.9], { name: 'Обеденный стол из ореха' }),
     onSupport(itemAt('dining-vase', P.brassVase, [2, -1.9], { name: 'Латунная ваза', elevation: 0.76 }), 'dining'),
-    itemAt('chandelier', P.chandelier, [2, -1.9], { name: 'Люстра', elevation: H - 0.798 }),
+    itemAt('chandelier', P.chandelier, [2, -1.9], { name: 'Люстра', elevation: H1 - 0.798 }),
     ...chairs,
   ];
 };
 
 const kitchen = (): FurnitureItem[] => [
-  againstWall('fridge', P.fridge, DIMS, 'back', 6.95, { name: 'Холодильник' }),
-  againstWall('kitchen-base', P.kitchenBase, DIMS, 'back', 5.85, { name: 'Кухонный модуль' }),
-  againstWall('hob', P.hob, DIMS, 'back', 4.9, { name: 'Варочная панель с духовкой' }),
-  againstWall('kitchen-sink', P.kitchenSink, DIMS, 'back', 3.95, { name: 'Кухонный модуль с мойкой' }),
+  againstWall('fridge', P.fridge, LOWER, 'back', 6.95, { name: 'Холодильник' }),
+  againstWall('kitchen-base', P.kitchenBase, LOWER, 'back', 5.85, { name: 'Кухонный модуль' }),
+  againstWall('hob', P.hob, LOWER, 'back', 4.9, { name: 'Варочная панель с духовкой' }),
+  againstWall('kitchen-sink', P.kitchenSink, LOWER, 'back', 3.95, { name: 'Кухонный модуль с мойкой' }),
   itemAt('island', P.island, [5.4, -2.8], { name: 'Кухонный остров' }),
   onSupport(itemAt('island-vase', P.vase, [4.6, -2.8], { name: 'Керамическая ваза', elevation: 0.92 }), 'island'),
   ...[4.6, 5.4, 6.2].map((x, i) => itemAt(`stool-${i + 1}`, P.barStool, [x, -2.006], { name: 'Барный стул', angle: HALF_TURN })),
 ];
 
-const masterSuite = (): FurnitureItem[] => [
-  againstWall('bed-master', P.bed, DIMS, 'left', 1.4, { name: 'Кровать с мягким изголовьем' }),
-  againstWall('ns-1', P.nightstand, DIMS, 'left', 2.705, { name: 'Прикроватная тумба' }),
-  againstWall('ns-2', P.nightstand, DIMS, 'left', 0.095, { name: 'Прикроватная тумба' }),
-  onSupport(itemAt('succulent-1', P.succulent, [-7.25, 2.705], { name: 'Суккулент', elevation: 0.52 }), 'ns-1'),
-  onSupport(itemAt('succulent-2', P.succulent, [-7.25, 0.095], { name: 'Суккулент', elevation: 0.52 }), 'ns-2'),
-  itemAt('master-rug', P.rug, [-5.4, 1.4], { name: 'Ковёр шерстяной' }),
-  itemAt('lounge-master', P.loungeChair, [-4.6, 2.55], { name: 'Лаунж-кресло', angle: HALF_TURN }),
-  itemAt('mirror', P.mirror, [-4.2, -0.4], { name: 'Арочное зеркало' }),
-  againstWall('tub', P.tub, DIMS, 'back', -6.4, { name: 'Отдельно стоящая ванна', gap: 0.1 }),
-  againstWall('shower', P.shower, DIMS, 'left', -2.4, { name: 'Душевая' }),
-  itemAt('vanity', P.vanity, [-5.64, -2.2], { name: 'Тумба с раковиной', angle: FACE_NEG_X }),
-  itemAt('toilet', P.toilet, [-5.687, -3.6], { name: 'Унитаз', angle: FACE_NEG_X }),
-];
-
-const guestRoom = (): FurnitureItem[] => [
-  itemAt('bed-guest', P.guestBed, [-4.21, -3.2], { name: 'Кровать', angle: FACE_POS_X }),
-  itemAt('ns-guest', P.nightstand, [-5.005, -4.3], { name: 'Прикроватная тумба', angle: FACE_POS_X }),
-  itemAt('cabinet-guest', P.drawerCabinet, [-4.3, -0.92], { name: 'Комод', angle: HALF_TURN }),
-  onSupport(itemAt('bust', P.bust, [-4.3, -0.92], { name: 'Мраморный бюст', elevation: 1.881 }), 'cabinet-guest'),
+const guestWc = (): FurnitureItem[] => [
+  againstWall('wc-toilet', P.toilet, LOWER, 'back', -5.8, { name: 'Унитаз' }),
+  itemAt('wc-vanity', P.vanity, [-4.683, -4.45], { name: 'Тумба с раковиной', angle: FACE_NEG_X }),
 ];
 
 const balcony = (): FurnitureItem[] => [
@@ -172,28 +188,108 @@ const balcony = (): FurnitureItem[] => [
   itemAt('balcony-plant-2', P.plant, [-6.6, 4.2], { name: 'Растение в кашпо' }),
 ];
 
-/** Документ сцены апартаментов. */
-export const penthouse = (): SceneDocument => ({
-  ...createEmptyScene(DIMS),
+const lowerFloor = (): FloorDocument => ({
+  ...createEmptyFloor(LOWER, { id: 'floor-1', name: 'Нижний уровень' }),
   outerWalls: uniformOuterWalls(0.3, 'monolith'),
-  finishes: {
-    floor: finish('marble_01'),
-    ceiling: finish(null, '#fbfaf7'),
-    walls: allWalls(finish(null, '#efe9e1')),
-  },
+  finishes: { floor: finish('marble_01'), ceiling: finish(null, '#fbfaf7'), walls: allWalls(finish(null, WALLS)) },
   light: { ...DEFAULT_LIGHT, temperature: 3200, intensity: 1.6 },
-  environment: {
-    sun: { ...DEFAULT_ENVIRONMENT.sun, side: 'front', timeOfDay: 18.2, intensity: 2.2 },
-    sky: { ...DEFAULT_ENVIRONMENT.sky, mode: 'hdri', hdriId: 'sunset_jhbcentral' },
-  },
-  openings: openings(),
-  partitions: partitions(),
+  openings: lowerOpenings(),
+  partitions: lowerPartitions(),
   rooms: [
     { id: 'room-living', name: 'Гостиная, кухня и столовая', anchor: [2.5, -0.5] },
-    { id: 'room-master', name: 'Мастер-спальня', anchor: [-4, 1.4] },
-    { id: 'room-bath', name: 'Ванная', anchor: [-6.4, -2.8] },
-    { id: 'room-guest', name: 'Гостевая спальня', anchor: [-3.9, -2] },
+    { id: 'room-wc', name: 'Гостевой санузел', anchor: [-5.35, -4] },
     { id: 'room-balcony', name: 'Панорамный балкон', anchor: [0, 4.25], kind: 'balcony' },
   ],
-  furniture: [...living(), ...dining(), ...kitchen(), ...masterSuite(), ...guestRoom(), ...balcony()],
+  stairs: lowerStairs(),
+  furniture: [...living(), ...library(), ...dining(), ...kitchen(), ...guestWc(), ...balcony()],
 });
+
+// ——— Верхний уровень (координаты этажа; центр смещён на UPPER_OFFSET) ———
+
+/** Стена холла с проходом в коридор, стены коридора, кабинета и ванной. */
+const upperPartitions = (): Partition[] => [
+  wall('u-hall', H2, [-4.4, 0], true, [7, 0.12], 'aerated', [doorOn('uw-corridor', 'u-hall', 0, 0.9, 2.2, null)]),
+  wall('u-front', H2, [1.55, 0.6], false, [11.9, 0.12], 'aerated', [
+    doorOn('ud-study', 'u-front', -3.95, 0.9, 2.1, { style: 'panel' }),
+    doorOn('ud-master', 'u-front', 0.65, 0.9, 2.1, { style: 'panel' }),
+  ]),
+  wall('u-back', H2, [1.55, -0.6], false, [11.9, 0.12], 'aerated', [
+    doorOn('ud-bedroom', 'u-back', -3.95, 0.9, 2.1, { style: 'panel', swing: 'back' }),
+    doorOn('ud-bath', 'u-back', 2.45, 0.8, 2.1, { style: 'flush', swing: 'back' }),
+  ]),
+  wall('u-study', H2, [1, 2.05], true, [2.9, 0.12], 'drywall', []),
+  wall('u-bath', H2, [2.5, -2.05], true, [2.9, 0.12], 'drywall', []),
+];
+
+/** Выходы на террасу, панорамные окна кабинета и спальни, окна на задний фасад. */
+const upperOpenings = (): Opening[] => [
+  doorOn('ut-hall', 'front', 5.4, 1, 2.4, { style: 'glass' }),
+  panoramicWindowOn('uw-study', 'front', 1.7, 3.6, H2, 0.1),
+  panoramicWindowOn('uw-master', 'front', -2.6, 2.4, H2, 0.1),
+  doorOn('ut-master', 'front', -4.5, 1, 2.4, { style: 'glass' }),
+  windowOn('uw-hall', 'back', -5.9, 1.2, 1.5, 0.9),
+  windowOn('uw-bedroom', 'back', -3.2, 1.4, 1.5, 0.8),
+  windowOn('uw-bath', 'back', 5, 1.2, 1, 1.4),
+];
+
+const hall = (): FurnitureItem[] => [
+  itemAt('hall-plant', P.plantTall, [-5, -3], { name: 'Растение в кашпо' }),
+  itemAt('hall-mirror', P.mirror, [-4.58, -1.8], { name: 'Арочное зеркало', angle: FACE_NEG_X }),
+];
+
+const study = (): FurnitureItem[] => [
+  againstWall('study-desk', MODELS.officeDesk, UPPER, 'front', -1.7, { name: 'Письменный стол' }),
+  itemAt('study-chair', MODELS.woodenChair, [-1.7, 2.15], { name: 'Стул деревянный' }),
+  onSupport(itemAt('study-lamp', MODELS.deskLamp, [-1, 3.05], { name: 'Настольная лампа', elevation: 0.788 }), 'study-desk'),
+  itemAt('study-shelves', MODELS.shelves, [-4.144, 2], { name: 'Стеллаж' }),
+  itemAt('study-plant', P.plant, [0.45, 1.15], { name: 'Растение в кашпо' }),
+];
+
+const masterSuite = (): FurnitureItem[] => [
+  againstWall('bed-master', P.bed, UPPER, 'right', 2.38, { name: 'Кровать с мягким изголовьем' }),
+  againstWall('ns-master', P.nightstand, UPPER, 'right', 1.075, { name: 'Прикроватная тумба' }),
+  onSupport(itemAt('succulent-master', P.succulent, [7.25, 1.075], { name: 'Суккулент', elevation: 0.52 }), 'ns-master'),
+  itemAt('master-rug', P.rug, [5.2, 2.2], { name: 'Ковёр шерстяной' }),
+  itemAt('lounge-master', P.loungeChair, [3, 2.7], { name: 'Лаунж-кресло' }),
+  itemAt('master-mirror', P.mirror, [4, 0.78], { name: 'Арочное зеркало' }),
+];
+
+const bedroom = (): FurnitureItem[] => [
+  againstWall('bed-guest', P.guestBed, UPPER, 'back', -0.9, { name: 'Кровать' }),
+  againstWall('ns-guest', P.nightstand, UPPER, 'back', 0.25, { name: 'Прикроватная тумба' }),
+  itemAt('cabinet-guest', P.drawerCabinet, [2.186, -2], { name: 'Комод', angle: FACE_NEG_X }),
+  onSupport(itemAt('bust', P.bust, [2.186, -2], { name: 'Мраморный бюст', elevation: 1.881 }), 'cabinet-guest'),
+  itemAt('guest-plant', P.plant, [-3.8, -1.3], { name: 'Растение в кашпо' }),
+];
+
+const bathroom = (): FurnitureItem[] => [
+  againstWall('tub', P.tub, UPPER, 'back', 6.3, { name: 'Отдельно стоящая ванна', gap: 0.1 }),
+  againstWall('shower', P.shower, UPPER, 'right', -1.4, { name: 'Душевая' }),
+  itemAt('vanity', P.vanity, [2.843, -2.4], { name: 'Тумба с раковиной', angle: FACE_POS_X }),
+  againstWall('toilet', P.toilet, UPPER, 'back', 3.6, { name: 'Унитаз' }),
+];
+
+const upperFloor = (): FloorDocument => ({
+  ...createEmptyFloor(UPPER, { id: 'floor-2', name: 'Верхний уровень', offset: UPPER_OFFSET }),
+  outerWalls: uniformOuterWalls(0.3, 'monolith'),
+  finishes: { floor: finish('herringbone_parquet'), ceiling: finish(null, '#fbfaf7'), walls: allWalls(finish(null, WALLS)) },
+  light: { ...DEFAULT_LIGHT, temperature: 3000, intensity: 1.4 },
+  openings: upperOpenings(),
+  partitions: upperPartitions(),
+  rooms: [
+    { id: 'up-hall', name: 'Холл', anchor: [-5.5, -2.8] },
+    { id: 'up-corridor', name: 'Коридор', anchor: [1.5, 0] },
+    { id: 'up-study', name: 'Кабинет', anchor: [-2, 2] },
+    { id: 'up-master', name: 'Мастер-спальня', anchor: [3.5, 2] },
+    { id: 'up-bedroom', name: 'Спальня', anchor: [-1.5, -2] },
+    { id: 'up-bath', name: 'Ванная', anchor: [4.5, -2] },
+  ],
+  furniture: [...hall(), ...study(), ...masterSuite(), ...bedroom(), ...bathroom()],
+});
+
+/** Документ сцены пентхауса. */
+export const penthouse = (): SceneDocument =>
+  sceneOf([lowerFloor(), upperFloor()], {
+    sun: { ...DEFAULT_ENVIRONMENT.sun, side: 'front', timeOfDay: 18.2, intensity: 2.2 },
+    sky: { ...DEFAULT_ENVIRONMENT.sky, mode: 'hdri', hdriId: 'sunset_jhbcentral' },
+  });
