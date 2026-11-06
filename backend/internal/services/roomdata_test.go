@@ -54,6 +54,36 @@ func sceneV3() map[string]interface{} {
 	}
 }
 
+// floorV4 — этаж документа сцены v4: квартира v3 плюс id, название, смещение и лестницы.
+func floorV4(id string) map[string]interface{} {
+	floor := sceneV3()
+	delete(floor, "schemaVersion")
+	floor["id"] = id
+	floor["name"] = "Этаж " + id
+	floor["offset"] = []interface{}{0.0, -1.5}
+	floor["stairs"] = []interface{}{map[string]interface{}{
+		"id": "s1", "kind": "straight", "position": []interface{}{-3.0, 0.0}, "rotation": 0.0, "width": 1.0,
+	}}
+	return floor
+}
+
+// sceneV4 — документ сцены v4: здание из двух этажей с лестницей и толщиной перекрытия.
+func sceneV4() map[string]interface{} {
+	return map[string]interface{}{
+		"schemaVersion": 4.0,
+		"slabThickness": 0.3,
+		"environment":   map[string]interface{}{"sun": map[string]interface{}{"enabled": true}, "sky": map[string]interface{}{"mode": "sky"}},
+		"floors":        []interface{}{floorV4("f1"), floorV4("f2")},
+	}
+}
+
+// floorsOf — документ v4 с заданными этажами.
+func floorsOf(floors ...interface{}) map[string]interface{} {
+	doc := sceneV4()
+	doc["floors"] = floors
+	return doc
+}
+
 // nestedObject строит документ из levels вложенных объектов (корень — уровень 1).
 func nestedObject(levels int) map[string]interface{} {
 	root := map[string]interface{}{}
@@ -118,6 +148,11 @@ func TestValidateRoomDataAcceptsValidDocuments(t *testing.T) {
 		"max openings":         map[string]interface{}{"openings": items(maxOpeningItems)},
 		"max rooms":            map[string]interface{}{"rooms": items(maxRoomLabelItems)},
 		"scene v3":             sceneV3(),
+		"scene v4":             sceneV4(),
+		"max floors":           floorsOf(floorV4("a"), floorV4("b"), floorV4("c"), floorV4("d"), floorV4("e")),
+		"max stairs":           floorsOf(map[string]interface{}{"stairs": items(maxStairItems)}),
+		"boundary slab":        map[string]interface{}{"slabThickness": minSlabThickness},
+		"boundary slab max":    map[string]interface{}{"slabThickness": maxSlabThickness},
 	}
 	for name, doc := range docs {
 		t.Run(name, func(t *testing.T) {
@@ -173,13 +208,13 @@ func TestValidateRoomDataDepth(t *testing.T) {
 
 func TestValidateRoomDataSize(t *testing.T) {
 	chunk := strings.Repeat("x", 2000)
-	big := make([]interface{}, 1100) // ~2.2 MB в JSON
+	big := make([]interface{}, 1650) // ~3.3 MB в JSON
 	for i := range big {
 		big[i] = chunk
 	}
 	assertRoomDataErr(t, map[string]interface{}{"extra": big}, "too large")
 
-	fits := make([]interface{}, 1000) // ~2.0 MB — ещё в пределах лимита
+	fits := make([]interface{}, 1500) // ~3.0 MB — ещё в пределах лимита
 	for i := range fits {
 		fits[i] = chunk
 	}
@@ -237,6 +272,58 @@ func TestValidateRoomDataArrayCaps(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assertRoomDataErr(t, tc.doc, tc.want)
 		})
+	}
+}
+
+func TestValidateRoomDataFloors(t *testing.T) {
+	tooMany := func(key string, n int) map[string]interface{} {
+		floor := floorV4("f1")
+		floor[key] = items(n)
+		return floorsOf(floor)
+	}
+	badDims := floorV4("f2")
+	badDims["dimensions"] = map[string]interface{}{"width": 4.0, "height": 30.0, "depth": 4.0}
+	cases := map[string]struct {
+		doc  map[string]interface{}
+		want string
+	}{
+		"too many floors":      {floorsOf(floorV4("a"), floorV4("b"), floorV4("c"), floorV4("d"), floorV4("e"), floorV4("f")), "between 1 and 5 floors"},
+		"no floors":            {floorsOf(), "between 1 and 5 floors"},
+		"floors object":        {map[string]interface{}{"floors": map[string]interface{}{}}, "roomData.floors must be an array"},
+		"floor not object":     {floorsOf(floorV4("f1"), "flat"), "roomData.floors[1] must be an object"},
+		"floor furniture cap":  {tooMany("furniture", maxFurnitureItems+1), "roomData.floors[0].furniture must contain at most 500"},
+		"floor partitions cap": {tooMany("partitions", maxPartitionItems+1), "roomData.floors[0].partitions must contain at most 100"},
+		"floor openings cap":   {tooMany("openings", maxOpeningItems+1), "roomData.floors[0].openings must contain at most 300"},
+		"floor rooms cap":      {tooMany("rooms", maxRoomLabelItems+1), "roomData.floors[0].rooms must contain at most 100"},
+		"floor stairs cap":     {tooMany("stairs", maxStairItems+1), "roomData.floors[0].stairs must contain at most 8"},
+		"floor stairs object":  {floorsOf(map[string]interface{}{"stairs": map[string]interface{}{}}), "roomData.floors[0].stairs must be an array"},
+		"floor dimensions":     {floorsOf(floorV4("f1"), badDims), "roomData.floors[1].dimensions.height"},
+		"floor bson types":     {floorsOf(primitive.M{"stairs": primitive.A(items(maxStairItems + 1))}), "roomData.floors[0].stairs"},
+		"slab too thin":        {map[string]interface{}{"slabThickness": 0.1}, "slabThickness must be a number between 0.15 and 0.6"},
+		"slab too thick":       {map[string]interface{}{"slabThickness": 0.61}, "slabThickness"},
+		"slab not a number":    {map[string]interface{}{"slabThickness": "0.3"}, "slabThickness"},
+		"slab is NaN":          {map[string]interface{}{"slabThickness": math.NaN()}, "slabThickness"},
+		"top-level stairs cap": {map[string]interface{}{"stairs": items(maxStairItems + 1)}, "roomData.stairs must contain at most 8"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assertRoomDataErr(t, tc.doc, tc.want)
+		})
+	}
+}
+
+func TestValidateRoomDataFloorsKeepTheDocument(t *testing.T) {
+	doc, err := validateRoomData(sceneV4())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	floors, ok := asArray(doc["floors"])
+	if !ok || len(floors) != 2 {
+		t.Fatalf("floors must be preserved, got %#v", doc["floors"])
+	}
+	first, _ := asObject(floors[0])
+	if first["name"] != "Этаж f1" {
+		t.Fatalf("floor fields must be preserved, got %#v", first["name"])
 	}
 }
 

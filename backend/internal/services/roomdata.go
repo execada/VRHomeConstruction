@@ -14,18 +14,25 @@ import (
 
 // Ограничения документа сцены (roomData). Глубина считается по объектам/массивам,
 // корневой объект — уровень 1; размер — длина документа в JSON.
+//
+// Документ v4 — здание из этажей (floors): лимиты массивов и размеры комнаты действуют
+// для каждого этажа так же, как для квартиры документа v1–v3 на верхнем уровне.
 const (
 	roomDataMaxDepth     = 12
-	roomDataMaxBytes     = 2 << 20
-	roomDataMaxStringLen = 2048 // символов в любой строке и ключе (превью в roomData не хранятся)
+	roomDataMaxBytes     = 3 << 20 // здание до пяти этажей (тело запроса — до 4 МБ)
+	roomDataMaxStringLen = 2048    // символов в любой строке и ключе (превью в roomData не хранятся)
 	maxFurnitureItems    = 500
 	maxPartitionItems    = 100
 	maxOpeningItems      = 300
 	maxRoomLabelItems    = 100 // названия помещений (документ сцены v3)
+	maxStairItems        = 8   // лестницы на этаже (документ сцены v4)
+	maxFloors            = 5   // этажи здания (документ сцены v4)
 	minRoomSide          = 1.0 // ширина и глубина, м
 	maxRoomSide          = 50.0
 	minRoomHeight        = 1.5
 	maxRoomHeight        = 10.0
+	minSlabThickness     = 0.15 // толщина перекрытия между этажами, м
+	maxSlabThickness     = 0.6
 	roomSchemaVersion    = 1
 	errorPathSegmentMax  = 64 // длина сегмента пути в тексте ошибки
 )
@@ -38,6 +45,7 @@ var roomArrayCaps = []struct {
 	{"partitions", maxPartitionItems},
 	{"openings", maxOpeningItems},
 	{"rooms", maxRoomLabelItems},
+	{"stairs", maxStairItems},
 }
 
 var roomDimensionRanges = []struct {
@@ -60,10 +68,13 @@ func validateRoomData(v interface{}) (models.RoomData, error) {
 	if !ok {
 		return nil, roomDataError("roomData must be a JSON object")
 	}
-	if err := checkRoomArrays(doc); err != nil {
+	if err := checkStorey(doc, "roomData"); err != nil {
 		return nil, err
 	}
-	if err := checkRoomDimensions(doc); err != nil {
+	if err := checkRoomFloors(doc); err != nil {
+		return nil, err
+	}
+	if err := checkSlabThickness(doc); err != nil {
 		return nil, err
 	}
 	if perr := walkValue(doc, 1); perr != nil {
@@ -113,7 +124,16 @@ func cloneRoomData(doc models.RoomData) (models.RoomData, error) {
 	return clone, nil
 }
 
-func checkRoomArrays(doc map[string]interface{}) error {
+// checkStorey проверяет квартиру (документ v1–v3) или этаж документа v4:
+// длины массивов и размеры комнаты. path — путь в тексте ошибки.
+func checkStorey(doc map[string]interface{}, path string) error {
+	if err := checkRoomArrays(doc, path); err != nil {
+		return err
+	}
+	return checkRoomDimensions(doc, path)
+}
+
+func checkRoomArrays(doc map[string]interface{}, path string) error {
 	for _, rule := range roomArrayCaps {
 		raw, present := doc[rule.key]
 		if !present {
@@ -121,29 +141,67 @@ func checkRoomArrays(doc map[string]interface{}) error {
 		}
 		arr, ok := asArray(raw)
 		if !ok {
-			return roomDataError("roomData.%s must be an array", rule.key)
+			return roomDataError("%s.%s must be an array", path, rule.key)
 		}
 		if len(arr) > rule.max {
-			return roomDataError("roomData.%s must contain at most %d items", rule.key, rule.max)
+			return roomDataError("%s.%s must contain at most %d items", path, rule.key, rule.max)
 		}
 	}
 	return nil
 }
 
-func checkRoomDimensions(doc map[string]interface{}) error {
+func checkRoomDimensions(doc map[string]interface{}, path string) error {
 	raw, present := doc["dimensions"]
 	if !present {
 		return nil
 	}
 	dims, ok := asObject(raw)
 	if !ok {
-		return roomDataError("roomData.dimensions must be an object")
+		return roomDataError("%s.dimensions must be an object", path)
 	}
 	for _, r := range roomDimensionRanges {
 		// Отрицание диапазона (а не n < min || n > max), чтобы NaN тоже отклонялся.
 		if n, ok := toFloat(dims[r.key]); !ok || !(n >= r.min && n <= r.max) {
-			return roomDataError("roomData.dimensions.%s must be a number between %g and %g", r.key, r.min, r.max)
+			return roomDataError("%s.dimensions.%s must be a number between %g and %g", path, r.key, r.min, r.max)
 		}
+	}
+	return nil
+}
+
+// checkRoomFloors проверяет этажи документа v4: от одного до maxFloors объектов,
+// у каждого — лимиты массивов (мебель, стены, проёмы, помещения, лестницы) и размеры.
+func checkRoomFloors(doc map[string]interface{}) error {
+	raw, present := doc["floors"]
+	if !present {
+		return nil
+	}
+	floors, ok := asArray(raw)
+	if !ok {
+		return roomDataError("roomData.floors must be an array")
+	}
+	if len(floors) == 0 || len(floors) > maxFloors {
+		return roomDataError("roomData.floors must contain between 1 and %d floors", maxFloors)
+	}
+	for i, item := range floors {
+		floor, ok := asObject(item)
+		if !ok {
+			return roomDataError("roomData.floors[%d] must be an object", i)
+		}
+		if err := checkStorey(floor, fmt.Sprintf("roomData.floors[%d]", i)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// checkSlabThickness проверяет толщину перекрытия между этажами (если она задана).
+func checkSlabThickness(doc map[string]interface{}) error {
+	raw, present := doc["slabThickness"]
+	if !present {
+		return nil
+	}
+	if n, ok := toFloat(raw); !ok || !(n >= minSlabThickness && n <= maxSlabThickness) {
+		return roomDataError("roomData.slabThickness must be a number between %g and %g", minSlabThickness, maxSlabThickness)
 	}
 	return nil
 }
