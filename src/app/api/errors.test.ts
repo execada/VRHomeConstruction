@@ -41,6 +41,14 @@ describe('apiErrorText', () => {
     expect(apiErrorText(new ApiRequestError(400, 'invalid JSON body'), 'x')).toContain('обновите страницу');
   });
 
+  it('переводит ответы восстановления пароля', () => {
+    expect(apiErrorText(new ApiRequestError(429, 'too many password reset attempts, try again later'), 'x')).toBe(
+      'Слишком много неверных кодов — попробуйте через час',
+    );
+    expect(apiErrorText(new ApiRequestError(400, 'password must be at least 6 characters'), 'x')).toBe('Пароль должен быть не короче 6 символов');
+    expect(apiErrorText(new ApiRequestError(400, 'invalid field: code'), 'x')).toBe('Код — 6 цифр из письма');
+  });
+
   it('knownErrorText переводит только известные ответы', () => {
     expect(knownErrorText('Invalid email or password ')).toBe('Неверная почта или пароль');
     expect(knownErrorText('something else')).toBeUndefined();

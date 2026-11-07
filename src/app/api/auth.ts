@@ -1,11 +1,12 @@
 /**
- * API авторизации и профиля: вход, регистрация с кодом из письма, текущий пользователь,
- * смена имени, смена почты с подтверждением кодом. Ответы сервера проверяются схемами.
+ * API авторизации и профиля: вход, регистрация с кодом из письма, восстановление пароля,
+ * текущий пользователь, смена имени, смена почты с подтверждением кодом. Ответы сервера
+ * проверяются схемами.
  * @module app/api/auth
  */
 
 import { api } from './client';
-import { authResponseSchema, sendCodeResponseSchema, userSchema } from './schemas';
+import { authResponseSchema, messageResponseSchema, sendCodeResponseSchema, userSchema } from './schemas';
 import type { User } from '@/features/user/types';
 
 export { getStoredToken, setStoredToken, clearStoredToken } from './token';
@@ -52,6 +53,25 @@ export async function sendCode(email: string, payload: { name: string; password:
  */
 export async function verifyCode(email: string, code: string, token: string): Promise<AuthResponse> {
   return toAuthResponse(await api.post<unknown>('/api/auth/verify-code', { email, code, purpose: 'register', token }));
+}
+
+/**
+ * Восстановление пароля, шаг 1: код на почту. Ответ одинаковый, есть ли аккаунт с этой почтой.
+ * @param email - почта аккаунта
+ */
+export async function sendPasswordResetCode(email: string): Promise<{ message: string }> {
+  return messageResponseSchema.parse(await api.post<unknown>('/api/auth/password/send-code', { email }));
+}
+
+/**
+ * Восстановление пароля, шаг 2: код из письма и новый пароль. Все прежние сессии
+ * перестают действовать — входят заново с новым паролем.
+ * @param email - почта из шага 1
+ * @param code - 6 цифр из письма
+ * @param password - новый пароль (правила — как при регистрации)
+ */
+export async function resetPassword(email: string, code: string, password: string): Promise<{ message: string }> {
+  return messageResponseSchema.parse(await api.post<unknown>('/api/auth/password/reset', { email, code, password }));
 }
 
 export async function fetchMe(): Promise<User> {

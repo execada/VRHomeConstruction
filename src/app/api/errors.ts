@@ -31,6 +31,7 @@ const KNOWN_MESSAGES: Record<string, string> = {
   'password must be at most 72 bytes': 'Пароль слишком длинный',
   'invalid password': 'Неверный пароль',
   'too many login attempts, try again later': 'Слишком много неудачных попыток — попробуйте через 15 минут',
+  'too many password reset attempts, try again later': 'Слишком много неверных кодов — попробуйте через час',
   'name is required': 'Введите имя',
   'invalid email format': 'Введите корректный адрес почты',
   'folder cannot be its own parent': 'Папку нельзя вложить в саму себя',

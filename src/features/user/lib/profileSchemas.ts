@@ -16,6 +16,16 @@ export const emailSchema = z
   .max(254, 'Адрес почты слишком длинный')
   .pipe(z.email('Введите корректный адрес почты'));
 
+/** Пароль bcrypt учитывает только первые 72 байта — более длинный сервер не принимает. */
+const MAX_PASSWORD_BYTES = 72;
+const MIN_PASSWORD_CHARS = 6;
+
+/** Пароль — те же правила, что на сервере: от 6 символов (не байт) до 72 байт в UTF-8. */
+export const passwordSchema = z
+  .string()
+  .refine((value) => Array.from(value).length >= MIN_PASSWORD_CHARS, 'Пароль должен быть не короче 6 символов')
+  .refine((value) => new TextEncoder().encode(value).length <= MAX_PASSWORD_BYTES, 'Пароль слишком длинный');
+
 /** Код подтверждения из письма: 6 цифр. */
 export const verificationCodeSchema = z
   .string()

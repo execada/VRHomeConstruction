@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkField, emailSchema, userNameSchema, verificationCodeSchema } from './profileSchemas';
+import { checkField, emailSchema, passwordSchema, userNameSchema, verificationCodeSchema } from './profileSchemas';
 
 describe('profile schemas', () => {
   it('имя обрезается и ограничивается 60 символами', () => {
@@ -18,6 +18,17 @@ describe('profile schemas', () => {
     expect(checkField(verificationCodeSchema, ' 123456 ')).toEqual({ ok: true, value: '123456' });
     expect(checkField(verificationCodeSchema, '12345').ok).toBe(false);
     expect(checkField(verificationCodeSchema, '12a456').ok).toBe(false);
+  });
+
+  it('пароль — как на сервере: от 6 символов (не байт) до 72 байт', () => {
+    expect(checkField(passwordSchema, 'secret')).toEqual({ ok: true, value: 'secret' });
+    expect(checkField(passwordSchema, 'пароль')).toEqual({ ok: true, value: 'пароль' });
+    expect(checkField(passwordSchema, '12345')).toEqual({ ok: false, error: 'Пароль должен быть не короче 6 символов' });
+    expect(checkField(passwordSchema, '😀😀😀').ok).toBe(false);
+    expect(checkField(passwordSchema, 'a'.repeat(72)).ok).toBe(true);
+    expect(checkField(passwordSchema, 'a'.repeat(73))).toEqual({ ok: false, error: 'Пароль слишком длинный' });
+    // 37 кириллических букв — 74 байта в UTF-8.
+    expect(checkField(passwordSchema, 'я'.repeat(37)).ok).toBe(false);
   });
 
   it('не-строка даёт понятную ошибку', () => {
