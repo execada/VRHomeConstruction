@@ -86,3 +86,21 @@
 
   &:hover { filter: brightness(1.06); transform: translateY(-1px); }
 }
+
+.skip {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text);
+    background: var(--hover);
+  }
+}

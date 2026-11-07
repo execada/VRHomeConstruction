@@ -1,15 +1,16 @@
 /**
- * Панель настроек (Figma): профиль (имя, почта), тема оформления, выход.
+ * Панель настроек (Figma): профиль (имя, почта), тема оформления, подсказки в редакторе, выход.
  * Без входа доступна только тема и кнопка входа.
  * @module widgets/settings-drawer/ui/SettingsDrawer
  */
 
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { HintsFeature } from '@/features/hints';
 import { ThemeFeature, type ThemeMode } from '@/features/theme';
 import { ChangeEmailDialog, ChangeNameDialog, UserFeature } from '@/features/user';
 import { Avatar } from '@/shared/ui/avatar/Avatar';
-import { Button } from '@/shared/ui/controls';
+import { Button, Toggle } from '@/shared/ui/controls';
 import { Drawer } from '@/shared/ui/overlay/Drawer';
 import styles from './settingsDrawer.module.scss';
 
@@ -51,6 +52,13 @@ const ThemeSelect: React.FC = () => {
       </select>
     </label>
   );
+};
+
+/** Подсказки в редакторе: включить или выключить (то же, что ползунок под кнопкой «?»). */
+const HintsToggle: React.FC = () => {
+  const dispatch = useDispatch();
+  const enabled = useSelector(HintsFeature.selectors.selectHintsEnabled);
+  return <Toggle label="Подсказки в редакторе" checked={enabled} onChange={(on) => dispatch(HintsFeature.actions.setEnabled(on))} />;
 };
 
 export const SettingsDrawer: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -96,6 +104,7 @@ export const SettingsDrawer: React.FC<{ onClose: () => void }> = ({ onClose }) =
         </div>
         <hr className={styles.divider} />
         <ThemeSelect />
+        <HintsToggle />
         <div className={styles.footer}>
           {isAuth && (
             <Button

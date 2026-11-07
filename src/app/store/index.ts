@@ -13,6 +13,7 @@ import { CameraFeature } from '@/features/camera';
 import { GraphicsFeature } from '@/features/graphics';
 import { SelectionFeature } from '@/features/selection';
 import { HistoryFeature } from '@/features/history';
+import { HintsFeature } from '@/features/hints';
 import { ThemeFeature } from '@/features/theme';
 import { NotificationsFeature } from '@/features/notifications';
 import { AssetsFeature } from '@/features/assets';
@@ -41,6 +42,7 @@ export const createReduxStore = () => {
       ...SelectionFeature.reducer,
       ...HistoryFeature.reducer,
       ...ThemeFeature.reducer,
+      ...HintsFeature.reducer,
       ...NotificationsFeature.reducer,
       ...AssetsFeature.reducer,
       ...ProjectSessionFeature.reducer,

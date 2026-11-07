@@ -145,7 +145,7 @@ export const CatalogPanel: React.FC = () => {
       {items.length === 0 && !(showStairs && stairsMatch) ? (
         <p className={styles.empty}>Ничего не найдено. Попробуйте другой запрос.</p>
       ) : (
-        <div className={styles.catalog}>
+        <div className={styles.catalog} data-hint="catalog">
           {showStairs && <StairCards query={query} />}
           {items.map((item) => (
             <CatalogCard key={item.path} item={item} active={item.path === placingPath} />

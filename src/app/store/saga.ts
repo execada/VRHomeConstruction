@@ -10,6 +10,7 @@ import { CameraFeature } from '@/features/camera';
 import { GraphicsFeature } from '@/features/graphics';
 import { SelectionFeature } from '@/features/selection';
 import { HistoryFeature } from '@/features/history';
+import { HintsFeature } from '@/features/hints';
 import { ThemeFeature } from '@/features/theme';
 import { NotificationsFeature } from '@/features/notifications';
 import { AssetsFeature } from '@/features/assets';
@@ -44,6 +45,7 @@ export function* rootSaga(): Generator<any, void, any> {
     fork(SelectionFeature.sagas.init),
     fork(HistoryFeature.sagas.init),
     fork(ThemeFeature.sagas.init),
+    fork(HintsFeature.sagas.init),
     fork(NotificationsFeature.sagas.init),
     fork(AssetsFeature.sagas.init),
     fork(ProjectSessionFeature.sagas.init),

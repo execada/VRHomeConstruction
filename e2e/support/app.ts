@@ -12,6 +12,10 @@ export async function useLowGraphics(page: Page): Promise<void> {
       JSON.stringify({ preset: 'low', shadows: false, shadowMapSize: 512, resolutionScale: 0.75, antialias: false, showFps: false }),
     );
     localStorage.setItem('vrhc:onboarded:v2', '1');
+    // Подсказки и обучение не мешают сценариям (свой сценарий их включает — e2e/hints.spec.ts).
+    if (!sessionStorage.getItem('vrhc:e2e-hints')) {
+      localStorage.setItem('vrhc:hints', JSON.stringify({ enabled: false, dismissed: [], tourDone: true }));
+    }
   });
 }
 

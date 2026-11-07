@@ -60,6 +60,7 @@ export const EditorPanel: React.FC = () => {
             role="tab"
             aria-selected={t.id === tab}
             className={cn(styles.tab, t.id === tab && styles.tabActive)}
+            data-hint={`tab-${t.id}`}
             onClick={() => setTab(t.id)}
           >
             <Icon name={t.icon} size={20} />

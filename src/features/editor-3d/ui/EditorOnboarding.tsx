@@ -1,9 +1,12 @@
 /**
- * Обучающее окно при первом входе в редактор (показывается один раз).
+ * Приветственное окно при первом входе в редактор (показывается один раз): краткая шпаргалка
+ * и предложение пройти обучение по редактору (его можно пройти и потом — кнопка «?» вверху).
  * @module editor-3d/ui/EditorOnboarding
  */
 
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { HintsFeature } from '@/features/hints';
 import styles from './EditorOnboarding.module.scss';
 
 const LS_KEY = 'vrhc:onboarded:v2';
@@ -18,6 +21,7 @@ const STEPS: { icon: string; title: string; text: string }[] = [
 ];
 
 export const EditorOnboarding: React.FC = () => {
+  const dispatch = useDispatch();
   const [open, setOpen] = useState(() => {
     try {
       return localStorage.getItem(LS_KEY) !== '1';
@@ -54,8 +58,17 @@ export const EditorOnboarding: React.FC = () => {
             </li>
           ))}
         </ul>
-        <button className={styles.start} onClick={close}>
-          Начать
+        <button
+          className={styles.start}
+          onClick={() => {
+            close();
+            dispatch(HintsFeature.actions.startTour());
+          }}
+        >
+          Пройти обучение (1 минута)
+        </button>
+        <button className={styles.skip} onClick={close}>
+          Сам разберусь — подсказки будут рядом
         </button>
       </div>
     </div>

@@ -7,6 +7,7 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { EditorOnboarding } from '@/features/editor-3d/ui/EditorOnboarding';
+import { HintLayer, TourOverlay } from '@/features/hints';
 import { useEditorShortcuts } from '@/features/editor-3d/model/useEditorShortcuts';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
 import { ProjectSessionFeature } from '@/features/project-session';
@@ -35,6 +36,8 @@ export const EditorWorkspace: React.FC = () => {
         <EditorInspector />
       </div>
       <EditorOnboarding />
+      <HintLayer />
+      <TourOverlay />
     </div>
   );
 };

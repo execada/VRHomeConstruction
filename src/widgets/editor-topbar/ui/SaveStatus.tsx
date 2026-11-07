@@ -28,6 +28,7 @@ export const SaveStatus: React.FC = () => {
       type="button"
       className={cn(styles.status, state === 'saved' && styles.statusSaved, (state === 'error' || state === 'offline') && styles.statusError)}
       title="Сохранить сейчас (Ctrl+S)"
+      data-hint="save"
       onClick={() => dispatch(ProjectSessionFeature.actions.saveNowRequested())}
       aria-live="polite"
     >

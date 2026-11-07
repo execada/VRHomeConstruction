@@ -1,0 +1,174 @@
+.bubble {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 280px;
+  padding: 14px 16px;
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--sh-lg);
+  color: var(--text);
+  animation: hint-in 0.2s ease;
+
+  /* Уголок к элементу */
+  &::before {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--accent);
+    background: var(--card);
+    transform: rotate(45deg);
+  }
+}
+
+.right::before {
+  top: var(--arrow, 50%);
+  left: -6px;
+  margin-top: -5px;
+  border-top: none;
+  border-right: none;
+}
+
+.left::before {
+  top: var(--arrow, 50%);
+  right: -6px;
+  margin-top: -5px;
+  border-bottom: none;
+  border-left: none;
+}
+
+.bottom::before {
+  top: -6px;
+  left: var(--arrow, 50%);
+  margin-left: -5px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.top::before {
+  bottom: -6px;
+  left: var(--arrow, 50%);
+  margin-left: -5px;
+  border-top: none;
+  border-left: none;
+}
+
+.title {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.text {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
+.counter {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+/* Обучение: затемнение экрана с «окошком» вокруг элемента */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  background: rgb(0 0 0 / 45%);
+}
+
+.spotlight {
+  position: fixed;
+  z-index: 86;
+  border: 2px solid var(--accent);
+  border-radius: var(--r-md);
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 45%);
+  pointer-events: none;
+  transition:
+    left 0.25s ease,
+    top 0.25s ease,
+    width 0.25s ease,
+    height 0.25s ease;
+}
+
+.tourCard {
+  position: fixed;
+  z-index: 87;
+  width: 320px;
+}
+
+.shield {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+}
+
+.helpWrap {
+  position: relative;
+}
+
+.helpPopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 260px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--sh-lg);
+}
+
+.helpTitle {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+@keyframes hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

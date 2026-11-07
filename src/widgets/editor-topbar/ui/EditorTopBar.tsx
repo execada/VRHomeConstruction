@@ -21,6 +21,7 @@ import { ProjectTitle } from './ProjectTitle';
 import { SaveStatus } from './SaveStatus';
 import { VrHelpDialog } from './VrHelpDialog';
 import styles from './EditorTopBar.module.scss';
+import { HelpButton } from '@/features/hints';
 
 const VR_FROM_2D_DELAY_MS = 200;
 
@@ -90,7 +91,8 @@ export const EditorTopBar: React.FC<{ xrStore: VrStore }> = ({ xrStore }) => {
           onChange={(mode) => dispatch(CameraFeature.actions.setMode(mode))}
         />
       )}
-      <Button variant="primary" icon="vr" className={styles.vr} onClick={enterVr} title={vrSupported ? 'Войти в VR' : 'Как открыть в VR'}>
+      <HelpButton />
+      <Button variant="primary" icon="vr" className={styles.vr} onClick={enterVr} title={vrSupported ? 'Войти в VR' : 'Как открыть в VR'} data-hint="vr">
         VR
       </Button>
       <Menu

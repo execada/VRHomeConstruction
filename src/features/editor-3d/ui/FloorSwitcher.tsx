@@ -51,7 +51,7 @@ export const FloorSwitcher: React.FC<{ className?: string }> = ({ className }) =
   const topDown = [...floors].reverse();
 
   return (
-    <div className={cn(styles.switcher, className)}>
+    <div className={cn(styles.switcher, className)} data-hint="floors">
       <div className={styles.head}>
         <span className={styles.title}>Этажи</span>
         <IconButton
