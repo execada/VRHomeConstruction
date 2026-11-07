@@ -17,6 +17,8 @@ describe('placementRole', () => {
     ['Комод со стеллажом', MODELS.drawerCabinet],
     ['Кухонная тумба', 'primitive:kitchen_counter'],
     ['Настенная полка', '/models/wall_shelf.glb'],
+    ['Кухонный модуль 120 см', '/models/kitchen_base.glb'],
+    ['Модуль с варочной панелью и духовкой', '/models/kitchen_hob.glb'],
   ])('treats «%s» as a support', (name, path) => {
     expect(role(name, path)).toBe('support');
   });
@@ -47,9 +49,9 @@ describe('placementRole', () => {
     expect(role(name, path)).toBe('floor');
   });
 
-  it('decides plants by size: small pots go on tables, big ones stay on the floor', () => {
+  it('decides plants by size: house plants go on tables, big ones stay on the floor', () => {
     expect(role('Растение в кашпо', MODELS.plantTall)).toBe('floor');
-    expect(role('Комнатное растение', MODELS.plant)).toBe('floor');
+    expect(role('Комнатное растение', MODELS.plant)).toBe('surface');
     expect(role('Дерево в кадке', 'primitive:plant')).toBe('floor');
     expect(role('Цветок', '/models/flower.glb', { halfWidth: 0.08, halfDepth: 0.08, height: 0.3 })).toBe('surface');
     expect(role('Цветок', '/models/flower.glb', undefined)).toBe('floor');

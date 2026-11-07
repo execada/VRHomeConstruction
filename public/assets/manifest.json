@@ -671,7 +671,7 @@
         "depth": 0.657
       },
       "triangles": 69806,
-      "attach": "floor",
+      "attach": "surface",
       "source": "https://polyhaven.com/a/potted_plant_02",
       "license": "CC0",
       "author": "Rico Cilliers"

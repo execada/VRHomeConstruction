@@ -68,6 +68,21 @@ describe('placing items on surfaces', () => {
     if (interactionStore.getState().gridEnabled) interaction.toggleGrid();
   });
 
+  it('puts a house plant on a dining table and a vase on a kitchen counter module', () => {
+    const KITCHEN = '/assets/models/kitchen_base_120/kitchen_base_120.gltf';
+    const { commands, get } = setup([at('table', MODELS.diningTable, 'Обеденный стол', 0, -0.8), at('kitchen', KITCHEN, 'Кухонный модуль 120 см', -0.8, 1.6)]);
+    const plant = commands.furniture.place(MODELS.plant, 'Комнатное растение', [0, -0.8], null, { ray: down(0, -0.8) })!;
+    expect(get(plant).supportId).toBe('table');
+    expect(get(plant).position[1]).toBeCloseTo(KNOWN_MODEL_SIZES[MODELS.diningTable].height);
+    const vase = commands.furniture.place(MODELS.vase, 'Керамическая ваза', [-0.8, 1.6], null, { ray: down(-0.8, 1.6) })!;
+    expect(get(vase).supportId).toBe('kitchen');
+    expect(get(vase).position[1]).toBeCloseTo(KNOWN_MODEL_SIZES[KITCHEN].height);
+    // Большое напольное растение на стол не встаёт
+    const tall = commands.furniture.place(MODELS.plantTall, 'Растение в кашпо', [0, -0.8], null, { ray: down(0, -0.8) })!;
+    expect(get(tall).supportId).toBeUndefined();
+    expect(get(tall).position[1]).toBe(0);
+  });
+
   it('puts a desk lamp on the desk the pointer looks at', () => {
     const { commands, get } = setup([desk()]);
     const id = commands.furniture.place(MODELS.deskLamp, 'Настольная лампа', [0.2, 0], null, { ray: down(0.2, 0) })!;
