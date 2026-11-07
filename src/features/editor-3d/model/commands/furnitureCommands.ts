@@ -7,10 +7,11 @@
  * полок, тумб: точно по высоте поверхности, не свисая и не пересекаясь с соседями.
  * Подушки садятся в посадочные места диванов и кресел (у спинки, на сиденье).
  * Опора переносит такие предметы с собой; при её удалении они снимаются на пол.
+ * Настенные предметы висят на стенах, потолочные — под потолком (см. mountPlacement).
  * @module editor-3d/model/commands/furnitureCommands
  */
 
-import { clamp, type Obb, type Vec2 } from '@/shared/lib/math/geometry2d';
+import { add2, clamp, rotateLocal, type Obb, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { actions as furnitureActions } from '@/features/furniture/slice';
 import { furnitureSizesCache } from '@/features/furniture/sizesCache';
 import type { FurnitureItem } from '@/features/furniture/types';
@@ -28,9 +29,11 @@ import { itemsOn, withCarried, withoutSupport } from '../../lib/supportLinks';
 import { furnitureRole } from '../../lib/supportRole';
 import { interiorRect } from '../../lib/walls';
 import type { PlacementGhost } from '../interactionStore';
-import { createId, placementOptions, type CommandContext } from './context';
+import { createId, DRAFT_ITEM_ID, placementOptions, type CommandContext } from './context';
+import { attachOf, isMounted } from '../../lib/attachRole';
 import { cushionOf } from '../../lib/cushionRole';
 import { createCushionPlacement, type CushionTarget } from './cushionPlacement';
+import { createMountPlacement, mountedAt, mountProblem, type MountTarget } from './mountPlacement';
 import { fixtureObstacles } from './fixtures';
 import { createSupportPlacement, type SurfaceAim, type SurfaceTarget } from './supportPlacement';
 
@@ -42,7 +45,7 @@ const DUPLICATE_OFFSET = 0.35;
 function draftItem(path: string, name: string): FurnitureItem {
   const sizes = furnitureSizesCache.get(path);
   return {
-    id: '__draft__',
+    id: DRAFT_ITEM_ID,
     name,
     modelPath: path,
     position: [0, 0, 0],
@@ -61,6 +64,17 @@ const at = (item: FurnitureItem, footprint: Obb): FurnitureItem => ({
 });
 
 const isSurfaceItem = (item: FurnitureItem) => furnitureRole(item) === 'surface';
+const xz = (item: FurnitureItem): Vec2 => [item.position[0], item.position[2]];
+
+/** Призрак настенного или потолочного предмета. */
+const mountGhost = (goal: MountTarget): PlacementGhost => ({
+  center: goal.pose.center,
+  angle: goal.pose.angle,
+  valid: goal.valid,
+  elevation: goal.pose.elevation,
+  supportId: null,
+  mount: goal.mount,
+});
 
 /** Призрак подушки в посадочном месте. */
 const cushionGhost = (goal: CushionTarget): PlacementGhost => ({
@@ -79,6 +93,7 @@ export function createFurnitureCommands(ctx: CommandContext) {
   const find = (id: string) => items().find((i) => i.id === id) ?? null;
   const support = createSupportPlacement(ctx);
   const cushions = createCushionPlacement(ctx);
+  const mounts = createMountPlacement(ctx);
 
   /** Препятствия для предмета на полу: без него самого и без предметов на его поверхности; лестницы и вырезы в полу. */
   function floorObstacles(item: FurnitureItem) {
@@ -110,6 +125,9 @@ export function createFurnitureCommands(ctx: CommandContext) {
     return true;
   }
 
+  /** Повесить предмет в новое положение (полка на стене переносит предметы на себе). */
+  const commitMount = (item: FurnitureItem, goal: MountTarget): boolean => goal.valid && commit(item, mountedAt(item, goal));
+
   /** Поставить предмет на поверхность (перемещение или поворот на ней). */
   function commitOnSurface(item: FurnitureItem, goal: SurfaceTarget, angle: number): boolean {
     const placed = support.onSurface(item, goal, angle);
@@ -137,6 +155,8 @@ export function createFurnitureCommands(ctx: CommandContext) {
   function move(id: string, center: Vec2, aim: SurfaceAim = {}): boolean {
     const item = find(id);
     if (!item || item.locked) return false;
+    const mount = mounts.target(item, center, item.rotation[1], aim);
+    if (mount) return commitMount(item, mount);
     const seat = cushionOf(item) ? cushions.target(item, center, aim) : null;
     if (seat) {
       if (seat.free) update(cushions.seat(item, seat));
@@ -158,6 +178,12 @@ export function createFurnitureCommands(ctx: CommandContext) {
       if (turned) update(turned);
       return turned !== null;
     }
+    if (attachOf(item) === 'wall') {
+      ctx.notify('Настенный предмет висит фасадом в комнату — его поворачивает стена');
+      return false;
+    }
+    const mount = mounts.target(item, xz(item), angle);
+    if (mount) return commitMount(item, mount);
     const goal = support.currentTarget(item);
     if (goal) return commitOnSurface(item, goal, angle);
     const result = resolve(item, [item.position[0], item.position[2]], angle);
@@ -204,6 +230,17 @@ export function createFurnitureCommands(ctx: CommandContext) {
     return true;
   }
 
+  /** Масштаб подвешенного предмета: центр остаётся на той же высоте, на той же стене или под потолком. */
+  function scaleMounted(item: FurnitureItem, scaled: FurnitureItem): boolean {
+    const elevation = item.position[1] + (itemSizes(item).height - itemSizes(scaled).height) / 2;
+    const mount = mounts.target(scaled, xz(item), item.rotation[1], { elevation });
+    if (!mount?.valid) {
+      ctx.notify('Предмет такого размера здесь не помещается');
+      return false;
+    }
+    return applyScaled(item, mountedAt(scaled, mount));
+  }
+
   /** Масштаб предмета на полу; предметы на опоре досаживаются на её новую поверхность. */
   function scaleOnFloor(item: FurnitureItem, scaled: FurnitureItem): boolean {
     const result = resolve(scaled, [item.position[0], item.position[2]], item.rotation[1]);
@@ -212,7 +249,11 @@ export function createFurnitureCommands(ctx: CommandContext) {
       ctx.notify('Предмет такого размера не помещается в комнате');
       return false;
     }
-    const next = at(scaled, footprint);
+    return applyScaled(item, at(scaled, footprint));
+  }
+
+  /** Применить масштаб: предметы на поверхностях и подушки досаживаются вместе с опорой. */
+  function applyScaled(item: FurnitureItem, next: FurnitureItem): boolean {
     const fit = support.refit(item, next);
     const children = [...fit.items, ...cushions.reseatAll(item, next)];
     if (children.length === 0) update(next);
@@ -225,6 +266,8 @@ export function createFurnitureCommands(ctx: CommandContext) {
     /** Призрак размещения модели под курсором (на полу или на поверхности опоры). */
     previewPlacement(path: string, center: Vec2, angle: number | null, options: { name?: string; aim?: SurfaceAim } = {}): PlacementGhost {
       const draft = draftItem(path, options.name ?? '');
+      const mount = mounts.target(draft, center, angle ?? 0, options.aim ?? {});
+      if (mount) return mountGhost(mount);
       const seat = cushionOf(draft) ? cushions.target(draft, center, options.aim ?? {}) : null;
       if (seat) return cushionGhost(seat);
       const goal = isSurfaceItem(draft) ? support.target(draft, center, options.aim ?? {}) : null;
@@ -248,6 +291,12 @@ export function createFurnitureCommands(ctx: CommandContext) {
      */
     place(path: string, name: string, center: Vec2, angle: number | null, aim: SurfaceAim = {}): string | null {
       const draft = draftItem(path, name);
+      const mount = mounts.target(draft, center, angle ?? 0, aim);
+      if (mount && !mount.valid) {
+        ctx.notify(mountProblem(mount));
+        return null;
+      }
+      if (mount) return add({ ...mountedAt(draft, mount), id: createId('furn') });
       const seat = cushionOf(draft) ? cushions.target(draft, center, aim) : null;
       if (seat && !seat.free) {
         ctx.notify('Все места для подушек здесь заняты');
@@ -293,6 +342,7 @@ export function createFurnitureCommands(ctx: CommandContext) {
         else ctx.notify('Подушка такого размера не помещается на этом месте');
         return resized !== null;
       }
+      if (isMounted(item)) return scaleMounted(item, scaled);
       const goal = support.currentTarget(item);
       return goal ? scaleOnSurface(scaled, goal) : scaleOnFloor(item, scaled);
     },
@@ -304,6 +354,12 @@ export function createFurnitureCommands(ctx: CommandContext) {
     setElevation(id: string, elevation: number): void {
       const item = find(id);
       if (!item) return;
+      if (isMounted(item)) {
+        const mount = attachOf(item) === 'wall' ? mounts.target(item, xz(item), item.rotation[1], { elevation }) : null;
+        if (!mount) ctx.notify('Потолочный предмет висит под потолком');
+        else if (!commitMount(item, mount)) ctx.notify(mountProblem(mount));
+        return;
+      }
       const { height } = ctx.getState().editor.dimensions;
       const own = itemSizes(item).height;
       if (item.supportId) {
@@ -332,6 +388,14 @@ export function createFurnitureCommands(ctx: CommandContext) {
       const item = find(id);
       if (!item) return null;
       const copy: FurnitureItem = { ...item, id: createId('furn'), locked: false };
+      if (isMounted(item)) {
+        // Настенный — рядом вдоль стены, потолочный — рядом под потолком.
+        const step: Vec2 = attachOf(item) === 'wall' ? rotateLocal([itemSizes(item).halfWidth * 2 + 0.1, 0], item.rotation[1]) : [DUPLICATE_OFFSET, DUPLICATE_OFFSET];
+        const mount = mounts.target(copy, add2(xz(item), step), item.rotation[1], { elevation: item.position[1] });
+        if (mount?.valid) return add(mountedAt(copy, mount));
+        ctx.notify('Нет места для копии');
+        return null;
+      }
       const seatedCopy = item.socket ? cushions.nextSeat(item, copy) : null;
       if (seatedCopy) return add(seatedCopy);
       const goal = support.currentTarget(item);
@@ -363,8 +427,9 @@ export function createFurnitureCommands(ctx: CommandContext) {
     },
 
     /**
-     * «Досадить» мебель после изменения перегородок: предметы, оказавшиеся
-     * внутри стен, выталкиваются в ближайшее свободное место; предметы на опорах едут с ними.
+     * «Досадить» мебель после изменения стен или размеров комнаты: предметы, оказавшиеся
+     * внутри стен, выталкиваются в ближайшее свободное место; подвешенные — пересаживаются на свою
+     * стену или под новый потолок; предметы на опорах едут с ними.
      */
     settle(): void {
       const state = ctx.getState();
@@ -373,14 +438,15 @@ export function createFurnitureCommands(ctx: CommandContext) {
       const options = placementOptions();
       const current = items();
       const fixtures = fixtureObstacles(state);
-      const floor = current.filter((i) => !i.supportId).reduce<FurnitureItem[]>((placed, item) => {
+      const floor = current.filter((i) => !i.supportId && !i.mount).reduce<FurnitureItem[]>((placed, item) => {
         const subject = furnitureSubject(item);
         const obstacles = [...buildObstacles(editor.partitions, placed, item.id), ...fixtures];
         const result = resolvePlacement(subject, rect, obstacles, { ...options, gridStep: null, wallMagnet: 0 });
         const footprint = result.valid ? result.footprint : findFreeSpot(subject, rect, obstacles, options) ?? result.footprint;
         return [...placed, at(item, footprint)];
       }, []);
-      const settled = withCarried(current, floor);
+      const hanging = current.filter((i) => !i.supportId && i.mount).map((i) => mounts.remount(i) ?? i);
+      const settled = withCarried(current, [...floor, ...hanging]);
       const moved = settled.some((s, i) => s.position.some((v, k) => v !== current[i].position[k]));
       if (moved) ctx.dispatch(furnitureActions.replaceFurniture(settled));
     },

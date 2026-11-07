@@ -26,15 +26,20 @@ export function clampDimensions(dims: RoomDimensions): RoomDimensions {
   };
 }
 
-/** Создать команды комнаты. */
-export function createRoomCommands(ctx: CommandContext) {
+/**
+ * Создать команды комнаты.
+ * @param ctx - контекст команд
+ * @param settleFurniture - досадка мебели (подвешенные предметы пересаживаются на свои стены и под потолок)
+ */
+export function createRoomCommands(ctx: CommandContext, settleFurniture: () => void = () => {}) {
   const editor = () => ctx.getState().editor;
 
   /**
    * Изменить размеры комнаты. Проёмы, перегородки, лестницы и мебель пересчитываются,
    * чтобы остаться внутри и на своих местах относительно неподвижных стен;
-   * предметы на опорах (лампа на столе) едут вместе со своей опорой. Этаж смещается
-   * в здании так, что неподвижные стены и содержимое остаются на месте и над этажом ниже.
+   * предметы на опорах (лампа на столе) едут вместе со своей опорой, картины остаются на своих
+   * стенах, люстры — под потолком. Этаж смещается в здании так, что неподвижные стены
+   * и содержимое остаются на месте и над этажом ниже.
    */
   function resize(next: RoomDimensions, anchor: ResizeAnchor = {}): void {
     const { dimensions, openings, partitions, rooms, stairs } = editor();
@@ -58,6 +63,7 @@ export function createRoomCommands(ctx: CommandContext) {
       ctx.dispatch(buildingActions.floorOffsetSet({ id: meta.id, offset: [meta.offset[0] - shift[0], meta.offset[1] - shift[1]] }));
     }
     syncLayout(ctx);
+    if (ctx.getState().furniture.items.some((i) => i.mount)) settleFurniture();
   }
 
   return {

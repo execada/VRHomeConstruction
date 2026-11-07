@@ -398,6 +398,7 @@
           ]
         }
       ],
+      "attach": "floor",
       "source": "https://polyhaven.com/a/Sofa_01",
       "license": "CC0",
       "author": "Kirill Sannikov"
@@ -436,6 +437,7 @@
           ]
         }
       ],
+      "attach": "floor",
       "source": "https://polyhaven.com/a/modern_arm_chair_01",
       "license": "CC0",
       "author": "Vibrant Nordic"
@@ -453,6 +455,7 @@
         "depth": 0.576
       },
       "triangles": 22013,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/dining_chair_02",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -470,6 +473,7 @@
         "depth": 0.54
       },
       "triangles": 724,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/painted_wooden_chair_01",
       "license": "CC0",
       "author": "Kuutti Siitonen"
@@ -487,6 +491,7 @@
         "depth": 1.202
       },
       "triangles": 4504,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/modern_coffee_table_01",
       "license": "CC0",
       "author": "Amin"
@@ -504,6 +509,7 @@
         "depth": 0.706
       },
       "triangles": 196,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/wooden_table_02",
       "license": "CC0",
       "author": "Serhii Khromov"
@@ -521,6 +527,7 @@
         "depth": 2.04
       },
       "triangles": 18745,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/GothicBed_01",
       "license": "CC0",
       "author": "Kirill Sannikov"
@@ -538,6 +545,7 @@
         "depth": 0.45
       },
       "triangles": 2756,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/side_table_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -555,6 +563,7 @@
         "depth": 1.078
       },
       "triangles": 3174,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/wooden_display_shelves_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -572,6 +581,7 @@
         "depth": 0.52
       },
       "triangles": 24976,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/modern_wooden_cabinet",
       "license": "CC0",
       "author": "Patrik Pangerl"
@@ -589,6 +599,7 @@
         "depth": 0.488
       },
       "triangles": 26406,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/drawer_cabinet",
       "license": "CC0",
       "author": "Ulan Cabanilla"
@@ -606,6 +617,7 @@
         "depth": 0.432
       },
       "triangles": 5602,
+      "attach": "ceiling",
       "source": "https://polyhaven.com/a/modern_ceiling_lamp_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -623,6 +635,7 @@
         "depth": 0.614
       },
       "triangles": 24102,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/desk_lamp_arm_01",
       "license": "CC0",
       "author": "Yann Kervran, Kuutti Siitonen"
@@ -640,6 +653,7 @@
         "depth": 0.634
       },
       "triangles": 176226,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/potted_plant_01",
       "license": "CC0",
       "author": "Rico Cilliers"
@@ -657,6 +671,7 @@
         "depth": 0.657
       },
       "triangles": 69806,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/potted_plant_02",
       "license": "CC0",
       "author": "Rico Cilliers"
@@ -674,6 +689,7 @@
         "depth": 0.185
       },
       "triangles": 8929,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/potted_plant_04",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -691,6 +707,7 @@
         "depth": 0.218
       },
       "triangles": 11128,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/ceramic_vase_02",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -708,6 +725,7 @@
         "depth": 0.201
       },
       "triangles": 1634,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/standing_picture_frame_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -737,6 +755,7 @@
           "tilt": 30
         }
       ],
+      "attach": "floor",
       "source": "https://polyhaven.com/a/mid_century_lounge_chair",
       "license": "CC0",
       "author": "Kuutti Siitonen"
@@ -754,6 +773,7 @@
         "depth": 0.621
       },
       "triangles": 4240,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/Ottoman_01",
       "license": "CC0",
       "author": "Caspian Fortune"
@@ -771,6 +791,7 @@
         "depth": 0.473
       },
       "triangles": 6532,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/metal_stool_02",
       "license": "CC0",
       "author": "Ulan Cabanilla"
@@ -788,6 +809,7 @@
         "depth": 0.471
       },
       "triangles": 6576,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/metal_stool_03",
       "license": "CC0",
       "author": "Flo Tasser"
@@ -805,6 +827,7 @@
         "depth": 1.301
       },
       "triangles": 4044,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/coffee_table_round_01",
       "license": "CC0",
       "author": "Ulan Cabanilla"
@@ -822,6 +845,7 @@
         "depth": 0.947
       },
       "triangles": 6898,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/metal_office_desk",
       "license": "CC0",
       "author": "Ulan Cabanilla"
@@ -842,6 +866,7 @@
       "normalize": {
         "unit": "dm"
       },
+      "attach": "floor",
       "source": "https://polyhaven.com/a/steel_frame_shelves_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -859,6 +884,7 @@
         "depth": 0.502
       },
       "triangles": 4348,
+      "attach": "floor",
       "source": "https://polyhaven.com/a/steel_frame_shelves_02",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -876,6 +902,7 @@
         "depth": 0.816
       },
       "triangles": 26860,
+      "attach": "ceiling",
       "source": "https://polyhaven.com/a/Chandelier_01",
       "license": "CC0",
       "author": "Kirill Sannikov"
@@ -896,6 +923,7 @@
       "cushion": {
         "upright": true
       },
+      "attach": "surface",
       "source": "https://polyhaven.com/a/throw_pillows_01",
       "license": "CC0",
       "author": "Serhii Khromov"
@@ -914,6 +942,7 @@
       },
       "triangles": 3136,
       "cushion": {},
+      "attach": "surface",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -932,6 +961,7 @@
       },
       "triangles": 3136,
       "cushion": {},
+      "attach": "surface",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -949,6 +979,7 @@
         "depth": 0.204
       },
       "triangles": 10296,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/ceramic_vase_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -966,6 +997,7 @@
         "depth": 0.112
       },
       "triangles": 11136,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/ceramic_vase_03",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -983,6 +1015,7 @@
         "depth": 0.181
       },
       "triangles": 9000,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/ceramic_vase_04",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -1000,6 +1033,7 @@
         "depth": 0.227
       },
       "triangles": 21440,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/brass_vase_01",
       "license": "CC0",
       "author": "Rico Cilliers"
@@ -1017,6 +1051,7 @@
         "depth": 0.3
       },
       "triangles": 17456,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/marble_bust_01",
       "license": "CC0",
       "author": "Rico Cilliers"
@@ -1034,6 +1069,7 @@
         "depth": 0.108
       },
       "triangles": 22388,
+      "attach": "surface",
       "source": "https://polyhaven.com/a/horse_statue_01",
       "license": "CC0",
       "author": "Rico Cilliers"
@@ -1051,6 +1087,8 @@
         "depth": 0.016
       },
       "triangles": 2586,
+      "attach": "wall",
+      "mountHeight": 1.5,
       "source": "https://polyhaven.com/a/hanging_picture_frame_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -1068,6 +1106,8 @@
         "depth": 0.033
       },
       "triangles": 3678,
+      "attach": "wall",
+      "mountHeight": 1.5,
       "source": "https://polyhaven.com/a/hanging_picture_frame_02",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -1088,6 +1128,7 @@
       "normalize": {
         "rotationY": 270
       },
+      "attach": "surface",
       "source": "https://polyhaven.com/a/standing_picture_frame_02",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -1105,6 +1146,8 @@
         "depth": 0.026
       },
       "triangles": 14246,
+      "attach": "wall",
+      "mountHeight": 1.5,
       "source": "https://polyhaven.com/a/ornate_mirror_01",
       "license": "CC0",
       "author": "James Ray Cock"
@@ -1122,6 +1165,8 @@
         "depth": 0.047
       },
       "triangles": 3658,
+      "attach": "wall",
+      "mountHeight": 1.9,
       "source": "https://polyhaven.com/a/wall_clock",
       "license": "CC0",
       "author": "PierreB3D"
@@ -1179,6 +1224,7 @@
           ]
         }
       ],
+      "attach": "floor",
       "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/GlamVelvetSofa",
       "license": "CC-BY 4.0",
       "author": "Eric Chadwick, Wayfair LLC"
@@ -1217,6 +1263,7 @@
           ]
         }
       ],
+      "attach": "floor",
       "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SheenChair",
       "license": "CC0",
       "author": "Eric Chadwick, Wayfair LLC"
@@ -1234,6 +1281,7 @@
         "depth": 0.634
       },
       "triangles": 2050,
+      "attach": "floor",
       "source": "https://opengameart.org/content/toilets",
       "license": "CC0",
       "author": "loafbrr"
@@ -1251,6 +1299,7 @@
         "depth": 0.305
       },
       "triangles": 718,
+      "attach": "floor",
       "source": "https://opengameart.org/content/toilets",
       "license": "CC0",
       "author": "loafbrr"
@@ -1268,6 +1317,8 @@
         "depth": 0.305
       },
       "triangles": 606,
+      "attach": "wall",
+      "mountHeight": 0.69,
       "source": "https://opengameart.org/content/toilets",
       "license": "CC0",
       "author": "loafbrr"
@@ -1285,6 +1336,7 @@
         "depth": 0.62
       },
       "triangles": 4116,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1302,6 +1354,7 @@
         "depth": 0.62
       },
       "triangles": 8212,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1319,6 +1372,7 @@
         "depth": 0.64
       },
       "triangles": 7428,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1336,6 +1390,7 @@
         "depth": 1.018
       },
       "triangles": 7644,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1353,6 +1408,7 @@
         "depth": 0.771
       },
       "triangles": 6132,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1370,6 +1426,7 @@
         "depth": 0.81
       },
       "triangles": 4000,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1387,6 +1444,7 @@
         "depth": 0.9
       },
       "triangles": 5236,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1404,6 +1462,7 @@
         "depth": 0.546
       },
       "triangles": 7144,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1421,6 +1480,7 @@
         "depth": 0.614
       },
       "triangles": 5340,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1438,6 +1498,7 @@
         "depth": 2.17
       },
       "triangles": 10584,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1455,6 +1516,7 @@
         "depth": 0.451
       },
       "triangles": 3580,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1472,6 +1534,7 @@
         "depth": 1
       },
       "triangles": 5880,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1489,6 +1552,7 @@
         "depth": 2
       },
       "triangles": 588,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1506,6 +1570,7 @@
         "depth": 2
       },
       "triangles": 384,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1523,6 +1588,7 @@
         "depth": 0.5
       },
       "triangles": 704,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1540,6 +1606,7 @@
         "depth": 0.22
       },
       "triangles": 1597,
+      "attach": "floor",
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
@@ -1557,6 +1624,45 @@
         "depth": 0.26
       },
       "triangles": 2364,
+      "attach": "surface",
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "wall_shelf_oak",
+      "label": "Полка настенная",
+      "category": "storage",
+      "file": "/assets/models/wall_shelf_oak/wall_shelf_oak.gltf",
+      "thumbnail": "/assets/models/wall_shelf_oak/thumb.jpg",
+      "sizeBytes": 2116100,
+      "dimensions": {
+        "width": 0.8,
+        "height": 0.195,
+        "depth": 0.22
+      },
+      "triangles": 2940,
+      "attach": "wall",
+      "mountHeight": 1.4,
+      "source": "scripts/models/build-procedural.mjs",
+      "license": "CC0",
+      "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"
+    },
+    {
+      "id": "split_air_conditioner",
+      "label": "Кондиционер настенный",
+      "category": "appliances",
+      "file": "/assets/models/split_air_conditioner/split_air_conditioner.gltf",
+      "thumbnail": "/assets/models/split_air_conditioner/thumb.jpg",
+      "sizeBytes": 183914,
+      "dimensions": {
+        "width": 0.8,
+        "height": 0.28,
+        "depth": 0.23
+      },
+      "triangles": 1776,
+      "attach": "wall",
+      "mountHeight": 2.25,
       "source": "scripts/models/build-procedural.mjs",
       "license": "CC0",
       "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)"

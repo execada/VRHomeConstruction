@@ -8,6 +8,7 @@ import cn from 'classnames';
 import { useDispatch, useSelector } from 'react-redux';
 import { CameraFeature } from '@/features/camera';
 import { GraphicsFeature } from '@/features/graphics';
+import { attachOf } from '@/features/editor-3d/lib/attachRole';
 import { interaction, interactionStore } from '@/features/editor-3d/model/interactionStore';
 import { sceneBridgeStore } from '@/features/editor-3d/model/sceneBridge';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
@@ -53,20 +54,35 @@ export const FpsBadge: React.FC = () => {
 
 const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => <kbd className={styles.kbd}>{children}</kbd>;
 
+/** Подсказка при размещении модели: куда кликать зависит от типа крепления. */
+const PlacingHint: React.FC<{ path: string; name: string }> = ({ path, name }) => {
+  const attach = attachOf({ modelPath: path, name });
+  if (attach === 'wall') {
+    return (
+      <>
+        «{name}»: наведите на стену и кликните — предмет повиснет на ней · <Kbd>Shift</Kbd>+клик — ещё один · <Kbd>Esc</Kbd> отмена
+      </>
+    );
+  }
+  const where = attach === 'ceiling' ? 'кликните по полу — предмет повиснет под потолком над этой точкой' : 'кликните по полу, столу или полке, чтобы поставить';
+  return (
+    <>
+      «{name}»: {where} · <Kbd>R</Kbd> поворот · <Kbd>Shift</Kbd>+клик — ещё один · <Kbd>Esc</Kbd> отмена
+    </>
+  );
+};
+
 /** Подсказка по текущему действию. */
 export const ViewportHint: React.FC = () => {
   const mode = useExternalStore(interactionStore, (s) => s.mode);
   const placingName = useExternalStore(interactionStore, (s) => s.placingName);
+  const placingPath = useExternalStore(interactionStore, (s) => s.placingPath);
   const tool = useSelector(editorSelectors.selectActiveTool);
   const camera = useSelector(CameraFeature.selectors.selectCameraMode);
 
   let content: React.ReactNode = null;
   if (mode === 'placing') {
-    content = (
-      <>
-        «{placingName}»: кликните по полу, столу или полке, чтобы поставить · <Kbd>R</Kbd> поворот · <Kbd>Shift</Kbd>+клик — ещё один · <Kbd>Esc</Kbd> отмена
-      </>
-    );
+    content = <PlacingHint path={placingPath ?? ''} name={placingName ?? ''} />;
   } else if (tool === 'window' || tool === 'door') {
     content = <>Кликните по стене или перегородке, чтобы добавить {tool === 'window' ? 'окно' : 'дверь'} · <Kbd>Esc</Kbd> отмена</>;
   } else if (tool === 'partition') {

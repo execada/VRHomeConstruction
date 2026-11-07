@@ -34,7 +34,7 @@ export default defineConfig({
   projects: [
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
     { name: 'guest', testMatch: /guest\.spec\.ts/ },
-    { name: 'app', testMatch: /(dashboard|editor|floors|cushions)\.spec\.ts/, dependencies: ['setup'], use: { storageState: 'e2e/.auth/user.json' } },
+    { name: 'app', testMatch: /(dashboard|editor|floors|cushions|mounts)\.spec\.ts/, dependencies: ['setup'], use: { storageState: 'e2e/.auth/user.json' } },
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined

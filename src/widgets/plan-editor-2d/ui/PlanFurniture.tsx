@@ -9,6 +9,7 @@
 import React, { useMemo } from 'react';
 import cn from 'classnames';
 import { useSelector } from 'react-redux';
+import { attachOf } from '@/features/editor-3d/lib/attachRole';
 import { furnitureFootprint, itemSizes } from '@/features/editor-3d/lib/placement';
 import { ROTATE_STEP } from '@/features/editor-3d/model/interactionStore';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
@@ -70,7 +71,7 @@ const PlanItem: React.FC<{ svg: SvgRef; item: FurnitureItem; selected: boolean; 
       <text x={footprint.center[0]} y={footprint.center[1]} fontSize={fontSize} className={styles.label}>
         {item.name.length > 18 ? `${item.name.slice(0, 17)}…` : item.name}
       </text>
-      {selected && <RotateHandle svg={svg} item={item} />}
+      {selected && attachOf(item) !== 'wall' && <RotateHandle svg={svg} item={item} />}
     </g>
   );
 };

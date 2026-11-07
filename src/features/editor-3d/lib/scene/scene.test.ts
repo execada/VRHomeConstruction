@@ -342,6 +342,14 @@ describe('support links in the document', () => {
     expect(sceneDocumentSchema.safeParse(withFurniture([desk, { ...cushion, socket: 'Back 1!' }])).success).toBe(false);
   });
 
+  it('keeps where a wall or ceiling item hangs and rejects malformed places', () => {
+    const picture = { ...lamp, id: 'pic', mount: 'p_1:a' };
+    const parsed = sceneDocumentSchema.safeParse(withFurniture([desk, picture, { ...lamp, id: 'lamp2', mount: 'ceiling' }]));
+    expect(parsed.success && parsed.data.floors[0].furniture.map((f) => f.mount)).toEqual([undefined, 'p_1:a', 'ceiling']);
+    expect(sceneDocumentSchema.safeParse(withFurniture([{ ...picture, mount: 'wall:c' }])).success).toBe(false);
+    expect(sceneDocumentSchema.safeParse(withFurniture([{ ...picture, mount: '../x' }])).success).toBe(false);
+  });
+
   it('rejects malformed support ids', () => {
     expect(sceneDocumentSchema.safeParse(withFurniture([desk, { ...lamp, supportId: 'x'.repeat(65) }])).success).toBe(false);
   });

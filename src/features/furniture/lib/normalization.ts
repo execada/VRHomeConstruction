@@ -32,7 +32,8 @@ export interface SizeRange {
 export const CATEGORY_SIZE_RANGES: Readonly<Record<ModelCategory, SizeRange>> = {
   seating: { height: [0.3, 1.4], footprint: [0.3, 3.6] },
   tables: { height: [0.25, 1.2], footprint: [0.3, 3.2] },
-  storage: { height: [0.3, 2.7], footprint: [0.25, 3.2] },
+  // Низ диапазона — настенная полка на кронштейнах (~20 см)
+  storage: { height: [0.15, 2.7], footprint: [0.25, 3.2] },
   bedroom: { height: [0.3, 2.0], footprint: [0.3, 2.6] },
   lighting: { height: [0.05, 2.4], footprint: [0.05, 1.8] },
   decor: { height: [0.003, 2.4], footprint: [0.03, 4.0] },

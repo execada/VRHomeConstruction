@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { cushionSchema, cushionSocketsSchema, modelCategorySchema, normalizeRuleSchema, type ModelEntry } from './manifest';
+import { attachTypeSchema, cushionSchema, cushionSocketsSchema, modelCategorySchema, normalizeRuleSchema, type ModelEntry } from './manifest';
 
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/);
 const LICENSE_URLS: Record<string, string> = {
@@ -27,6 +27,10 @@ const common = {
   sockets: cushionSocketsSchema.optional(),
   /** Модель — подушка */
   cushion: cushionSchema.optional(),
+  /** Тип крепления: пол, стена, потолок или поверхность мебели */
+  attach: attachTypeSchema.optional(),
+  /** Высота центра настенной модели над полом при установке, м */
+  mountHeight: z.number().min(0.1).max(4).optional(),
 };
 
 const creditSchema = z
@@ -152,6 +156,8 @@ export function buildModelEntry(source: ModelSource, measured: MeasuredModel): M
     ...(source.normalize ? { normalize: source.normalize } : {}),
     ...(source.sockets ? { sockets: source.sockets } : {}),
     ...(source.cushion ? { cushion: source.cushion } : {}),
+    ...(source.attach ? { attach: source.attach } : {}),
+    ...(source.mountHeight !== undefined ? { mountHeight: source.mountHeight } : {}),
     ...credit,
   };
 }

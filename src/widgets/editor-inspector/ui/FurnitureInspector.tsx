@@ -1,7 +1,7 @@
 /**
  * Свойства предмета мебели: положение, поворот, высота над полом, опора (на чём стоит
- * предмет, в каком месте дивана сидит подушка, сколько предметов стоит на нём), масштаб,
- * тонирование, закрепление, дублирование и удаление.
+ * предмет, в каком месте дивана сидит подушка, сколько предметов стоит на нём), где висит
+ * настенный или потолочный предмет, масштаб, тонирование, закрепление, дублирование и удаление.
  * @module widgets/editor-inspector/ui/FurnitureInspector
  */
 
@@ -11,9 +11,11 @@ import type { FurnitureItem } from '@/features/furniture/types';
 import { selectFurnitureCatalog } from '@/features/furniture/model/selectors';
 import { selectors as furnitureSelectors } from '@/features/furniture/selectors';
 import { catalogEntry, HEAVY_MODEL_BYTES } from '@/features/furniture/catalog';
+import { attachOf } from '@/features/editor-3d/lib/attachRole';
 import { socketsOf } from '@/features/editor-3d/lib/cushionRole';
 import { MAX_TWIST } from '@/features/editor-3d/lib/cushionSeats';
 import { itemSizes } from '@/features/editor-3d/lib/placement';
+import { isWallSide, WALL_LABELS } from '@/features/editor-3d/lib/walls';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { pluralize } from '@/shared/lib/plural';
 import { Button, ColorField, FieldRow, IconButton, NumberField, Section, Slider, Toggle } from '@/shared/ui/controls';
@@ -22,6 +24,40 @@ import { cm, toDegrees, toRadians } from '../lib/format';
 import styles from './EditorInspector.module.scss';
 
 const SEAT_LABELS = { back: 'у спинки', seat: 'на сиденье' } as const;
+
+/** Где висит настенный предмет: «Левая стена», «Перегородка». */
+function wallLabel(mount: string | undefined): string {
+  if (!mount) return 'пока не на стене — перетащите к стене';
+  return isWallSide(mount) ? `${WALL_LABELS[mount]} стена` : 'Перегородка';
+}
+
+/** Поворот предмета: ползунок и кнопки 90° (настенный предмет поворачивает стена). */
+const RotationControls: React.FC<{ item: FurnitureItem }> = ({ item }) => {
+  const f = useSceneCommands().furniture;
+  return (
+    <>
+      <Slider
+        label="Поворот"
+        value={toDegrees(item.rotation[1])}
+        min={-180}
+        max={180}
+        step={1}
+        format={(v) => `${v}°`}
+        disabled={item.locked}
+        onChange={(deg) => f.rotate(item.id, toRadians(deg))}
+      />
+      {item.socket && <span className={styles.hint}>Подушка доворачивается в своём месте не больше чем на ±{Math.round(toDegrees(MAX_TWIST))}°.</span>}
+      <div className={styles.actions}>
+        <Button size="sm" icon="rotate" disabled={item.locked} title="По часовой стрелке (R)" onClick={() => f.rotateBy(item.id, -Math.PI / 2)}>
+          90° ↻
+        </Button>
+        <Button size="sm" disabled={item.locked} title="Против часовой стрелки (Shift+R)" onClick={() => f.rotateBy(item.id, Math.PI / 2)}>
+          90° ↺
+        </Button>
+      </div>
+    </>
+  );
+};
 
 /** Где сидит подушка: модель и место («Диван — у спинки»). */
 function seatLabel(item: FurnitureItem, support: FurnitureItem): string {
@@ -64,6 +100,7 @@ export const FurnitureInspector: React.FC<{ item: FurnitureItem }> = ({ item }) 
   const entry = catalogEntry(catalog, item.modelPath);
   const sizes = itemSizes(item);
   const f = commands.furniture;
+  const attach = attachOf(item);
 
   return (
     <>
@@ -78,27 +115,24 @@ export const FurnitureInspector: React.FC<{ item: FurnitureItem }> = ({ item }) 
           <NumberField label="X" unit="см" scale={100} precision={0} value={item.position[0]} disabled={item.locked} onChange={(x) => f.move(item.id, [x, item.position[2]])} />
           <NumberField label="Z" unit="см" scale={100} precision={0} value={item.position[2]} disabled={item.locked} onChange={(z) => f.move(item.id, [item.position[0], z])} />
         </FieldRow>
-        <NumberField label="Высота над полом" unit="см" scale={100} precision={0} min={0} value={item.position[1]} disabled={item.locked} onChange={(y) => f.setElevation(item.id, y)} />
-        <SupportInfo item={item} />
-        <Slider
-          label="Поворот"
-          value={toDegrees(item.rotation[1])}
-          min={-180}
-          max={180}
-          step={1}
-          format={(v) => `${v}°`}
-          disabled={item.locked}
-          onChange={(deg) => f.rotate(item.id, toRadians(deg))}
+        <NumberField
+          label="Высота над полом"
+          unit="см"
+          scale={100}
+          precision={0}
+          min={0}
+          value={item.position[1]}
+          disabled={item.locked || attach === 'ceiling'}
+          onChange={(y) => f.setElevation(item.id, y)}
         />
-        {item.socket && <span className={styles.hint}>Подушка доворачивается в своём месте не больше чем на ±{Math.round(toDegrees(MAX_TWIST))}°.</span>}
-        <div className={styles.actions}>
-          <Button size="sm" icon="rotate" disabled={item.locked} title="По часовой стрелке (R)" onClick={() => f.rotateBy(item.id, -Math.PI / 2)}>
-            90° ↻
-          </Button>
-          <Button size="sm" disabled={item.locked} title="Против часовой стрелки (Shift+R)" onClick={() => f.rotateBy(item.id, Math.PI / 2)}>
-            90° ↺
-          </Button>
-        </div>
+        {attach === 'wall' && <Readout label="Висит на" value={wallLabel(item.mount)} />}
+        {attach === 'ceiling' && <Readout label="Висит" value="под потолком" />}
+        <SupportInfo item={item} />
+        {attach === 'wall' ? (
+          <span className={styles.hint}>Настенный предмет висит фасадом в комнату — перетащите его вдоль стены, выше-ниже или на другую стену.</span>
+        ) : (
+          <RotationControls item={item} />
+        )}
       </Section>
       <Section title="Размер">
         <Slider label="Масштаб" value={Math.round(item.scale * 100)} min={20} max={300} step={1} format={(v) => `${v}%`} onChange={(v) => f.setScale(item.id, v / 100)} />

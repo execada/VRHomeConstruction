@@ -130,10 +130,10 @@ export function createPartitionCommands(ctx: CommandContext, settleFurniture: ()
       syncLayout(ctx);
     },
 
-    /** Удалить перегородку. */
+    /** Удалить перегородку (картины с неё перевешиваются на ближайшую стену). */
     remove(id: string): void {
       ctx.dispatch(editorActions.removePartition(id));
-      syncLayout(ctx);
+      settle();
     },
 
     /** Завершить жест (перемещение, поворот, концы): стыки, проёмы, подписи, мебель. */

@@ -3,7 +3,8 @@
  *
  * Строит премиальные предметы, для которых нет свободных фотореалистичных моделей
  * (кухонные модули, холодильник, ванна, душ, тумба с раковиной, стиральная машина,
- * кровать, тумба, обеденный стол, ковры, торшер, зеркало, телевизор, подушки), и пишет glTF в
+ * кровать, тумба, обеденный стол, ковры, торшер, зеркало, телевизор, подушки, настенная полка,
+ * кондиционер), и пишет glTF в
  * public/assets/models/<id>/. Материалы — CC0-текстуры Poly Haven 1k, скачиваются
  * идемпотентно (md5) в public/assets/models/_textures/ вместе с credits.json для LICENSES.md.
  * Затем: `npm run models:thumbs` и `npm run models:sync`.
@@ -31,6 +32,7 @@ import {
   tv65,
 } from './procedural/living.mjs';
 import { pillowLinen, pillowVelvet } from './procedural/textiles.mjs';
+import { splitAirConditioner, wallShelf } from './procedural/wall.mjs';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const MODELS_DIR = path.join(ROOT, 'public/assets/models');
@@ -59,6 +61,8 @@ const MODELS = {
   tv_65: tv65,
   pillow_velvet_ochre: pillowVelvet,
   pillow_linen_sand: pillowLinen,
+  wall_shelf_oak: wallShelf,
+  split_air_conditioner: splitAirConditioner,
 };
 
 const log = (message) => process.stdout.write(`${message}\n`);

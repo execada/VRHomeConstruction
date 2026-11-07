@@ -28,6 +28,9 @@ export interface CommandContext {
   notify: (message: string) => void;
 }
 
+/** id черновика предмета из каталога (до добавления в сцену). */
+export const DRAFT_ITEM_ID = '__draft__';
+
 /** Новый уникальный id с префиксом. */
 export function createId(prefix: string): string {
   return `${prefix}_${nanoid(12)}`;

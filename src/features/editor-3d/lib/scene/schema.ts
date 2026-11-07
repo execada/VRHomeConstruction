@@ -150,6 +150,8 @@ export const furnitureSchema = z.object({
   supportId: id.optional(),
   /** Посадочное место дивана или кресла, в котором сидит подушка */
   socket: z.string().regex(/^[a-z][a-z0-9-]{0,23}$/).optional(),
+  /** Где висит предмет: грань стены (`front`, `${перегородка}:a`) или `ceiling` */
+  mount: z.string().regex(/^[\w-]{1,64}(:[ab])?$/).optional(),
 });
 
 export const lightSchema = z.object({

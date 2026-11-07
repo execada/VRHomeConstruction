@@ -27,6 +27,7 @@ import { SceneBridge } from './SceneBridge';
 import { StairsLayer } from './stairs/StairsLayer';
 import { StairTool } from './stairs/StairTool';
 import { SunLight } from './SunLight';
+import { MountHints } from './MountHints';
 import { SocketHints } from './SocketHints';
 import { SurfaceHints } from './SurfaceHints';
 import { WallDrawController } from './WallDrawController';
@@ -79,6 +80,7 @@ export const SceneContent: React.FC<SceneContentProps> = ({ onSave }) => {
         <PlacementLayer />
         <SurfaceHints />
         <SocketHints />
+        <MountHints />
         <SnapGrid />
         {tool === 'partition' && !inXR && <WallDrawController />}
         {tool === 'stair' && !inXR && <StairTool />}

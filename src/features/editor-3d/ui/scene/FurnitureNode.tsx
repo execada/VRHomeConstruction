@@ -1,7 +1,7 @@
 /**
  * Предмет мебели в сцене: нормализованная модель, перетаскивание по полу и по поверхностям
- * опор (луч указателя или контроллера VR выбирает столешницу или полку), кольцо поворота
- * и рамка выделения. Все ограничения (стены, перегородки, другая мебель, края поверхностей,
+ * опор (луч указателя или контроллера VR выбирает столешницу или полку), настенного предмета —
+ * по стене (вдоль и по высоте), кольцо поворота (у настенных его нет) и рамка выделения. Все ограничения (стены, перегородки, другая мебель, края поверхностей,
  * сетка, магнит к стенам) применяют команды сцены. Опоры измеряют свои поверхности по мешам.
  * @module editor-3d/ui/scene/FurnitureNode
  */
@@ -13,13 +13,14 @@ import { actions as furnitureActions } from '@/features/furniture/slice';
 import { NormalizedModel } from '@/features/furniture/ui/NormalizedModel';
 import type { ModelSizes } from '@/features/furniture/lib/modelLook';
 import type { FurnitureItem } from '@/features/furniture/types';
-import { add2, snapAngle, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
+import { add2, dot2, rotateLocal, snapAngle, sub2, type Vec2 } from '@/shared/lib/math/geometry2d';
 import { useSceneCommands } from '../../model/useSceneCommands';
 import { interactionStore, ROTATE_STEP } from '../../model/interactionStore';
+import { attachOf } from '../../lib/attachRole';
 import { itemSizes, uprightSizes } from '../../lib/placement';
 import { furnitureRole } from '../../lib/supportRole';
 import { itemTilt } from '../../lib/tilt';
-import { HELPER_DATA, NO_RAYCAST, floorHeight, floorRay, rayToFloor, toRay3 } from './pointer';
+import { HELPER_DATA, NO_RAYCAST, floorHeight, floorPoint, floorRay, rayToFloor, toRay3, type ScenePointerEvent } from './pointer';
 import { TiltGroup } from './TiltGroup';
 import { useDragGesture } from './useDragGesture';
 
@@ -35,6 +36,20 @@ interface FurnitureNodeProps {
 
 /** Угол направления на полу в соглашении поворотов three.js. */
 const headingOf = (v: Vec2) => Math.atan2(-v[1], v[0]);
+
+/** Контекст перетаскивания: смещение захвата на полу и высота над низом, у настенного — на стене (вдоль, вверх). */
+interface DragContext {
+  offset: Vec2;
+  lift: number;
+  wall: Vec2 | null;
+}
+
+/** Смещение центра настенного предмета от точки захвата в координатах его стены. */
+function wallGrab(item: FurnitureItem, height: number, e: ScenePointerEvent): Vec2 {
+  const grab = floorPoint(e.point);
+  const along = dot2(sub2([item.position[0], item.position[2]], [grab.x, grab.z]), rotateLocal([1, 0], item.rotation[1]));
+  return [along, item.position[1] + height / 2 - grab.y];
+}
 
 /** Кольцо поворота вокруг основания выделенного предмета. */
 const RotateRing: React.FC<{ item: FurnitureItem; radius: number }> = ({ item, radius }) => {
@@ -70,6 +85,7 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
   const tilt = itemTilt(item.rotation);
   const upright = uprightSizes(item);
   const isSupport = furnitureRole(item) === 'support';
+  const onWall = attachOf(item) === 'wall';
   const look = useMemo(() => (item.color ? { tint: item.color } : undefined), [item.color]);
 
   useEffect(() => {
@@ -94,17 +110,24 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
   // Тянем в горизонтальной плоскости на высоте точки захвата над низом предмета: схваченная
   // точка остаётся под курсором (без параллакса), даже когда предмет переходит со стола на пол.
   // Луч указателя (или контроллера VR) выбирает поверхность опоры, на которую смотрит пользователь.
-  const drag = useDragGesture<{ offset: Vec2; lift: number }>({
+  // Настенный предмет ведёт луч по стенам: схваченная точка остаётся под курсором вдоль стены и по высоте.
+  const drag = useDragGesture<DragContext>({
     id: item.id,
     onStart: (e) => {
       commands.select({ kind: 'furniture', id: item.id });
       if (item.locked) return null;
+      if (onWall) return { offset: [0, 0], lift: 0, wall: wallGrab(item, sizes.height, e) };
       const grabY = floorHeight(e.point.y);
       const hit = rayToFloor(floorRay(e.ray), grabY);
-      return hit ? { offset: sub2([item.position[0], item.position[2]], hit), lift: grabY - item.position[1] } : null;
+      return hit ? { offset: sub2([item.position[0], item.position[2]], hit), lift: grabY - item.position[1], wall: null } : null;
     },
     onMove: (e, ctx) => {
       const ray = floorRay(e.ray);
+      if (ctx.wall) {
+        const floor = rayToFloor(ray) ?? ([item.position[0], item.position[2]] as Vec2);
+        commands.furniture.move(item.id, floor, { ray: toRay3(ray), wallOffset: ctx.wall });
+        return;
+      }
       const hit = rayToFloor(ray, item.position[1] + ctx.lift);
       if (hit) commands.furniture.move(item.id, add2(hit, ctx.offset), { ray: toRay3(ray), offset: ctx.offset });
     },
@@ -155,7 +178,7 @@ export const FurnitureNode: React.FC<FurnitureNodeProps> = memo(({ item, selecte
           <Edges color={item.locked ? LOCKED_COLOR : SELECTED_COLOR} transparent opacity={selected ? 1 : 0.45} raycast={NO_RAYCAST} />
         </mesh>
       )}
-      {selected && <RotateRing item={item} radius={ringRadius} />}
+      {selected && !onWall && <RotateRing item={item} radius={ringRadius} />}
     </group>
   );
 });

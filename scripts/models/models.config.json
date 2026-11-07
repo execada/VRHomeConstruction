@@ -5,6 +5,7 @@
       "id": "Sofa_01",
       "label": "Диван",
       "category": "seating",
+      "attach": "floor",
       "sockets": [
         {
           "id": "back-1",
@@ -38,6 +39,7 @@
       "id": "modern_arm_chair_01",
       "label": "Кресло",
       "category": "seating",
+      "attach": "floor",
       "sockets": [
         {
           "id": "back-1",
@@ -56,103 +58,120 @@
       "source": "polyhaven",
       "id": "dining_chair_02",
       "label": "Стул мягкий",
-      "category": "seating"
+      "category": "seating",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "painted_wooden_chair_01",
       "label": "Стул деревянный",
-      "category": "seating"
+      "category": "seating",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "modern_coffee_table_01",
       "label": "Журнальный столик",
-      "category": "tables"
+      "category": "tables",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "wooden_table_02",
       "label": "Обеденный стол",
-      "category": "tables"
+      "category": "tables",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "GothicBed_01",
       "label": "Кровать",
-      "category": "bedroom"
+      "category": "bedroom",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "side_table_01",
       "label": "Прикроватная тумба",
-      "category": "bedroom"
+      "category": "bedroom",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "wooden_display_shelves_01",
       "label": "Стеллаж",
-      "category": "storage"
+      "category": "storage",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "modern_wooden_cabinet",
       "label": "ТВ-тумба",
-      "category": "storage"
+      "category": "storage",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "drawer_cabinet",
       "label": "Комод со стеллажом",
-      "category": "storage"
+      "category": "storage",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "modern_ceiling_lamp_01",
       "label": "Подвесной светильник",
-      "category": "lighting"
+      "category": "lighting",
+      "attach": "ceiling"
     },
     {
       "source": "polyhaven",
       "id": "desk_lamp_arm_01",
       "label": "Настольная лампа",
-      "category": "lighting"
+      "category": "lighting",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "potted_plant_01",
       "label": "Растение в кашпо",
-      "category": "plants"
+      "category": "plants",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "potted_plant_02",
       "label": "Комнатное растение",
-      "category": "plants"
+      "category": "plants",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "potted_plant_04",
       "label": "Суккулент",
-      "category": "plants"
+      "category": "plants",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "ceramic_vase_02",
       "label": "Керамическая ваза",
-      "category": "decor"
+      "category": "decor",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "standing_picture_frame_01",
       "label": "Фоторамка",
-      "category": "decor"
+      "category": "decor",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "mid_century_lounge_chair",
       "label": "Лаунж-кресло",
       "category": "seating",
+      "attach": "floor",
       "sockets": [
         {
           "id": "back-1",
@@ -166,37 +185,43 @@
       "source": "polyhaven",
       "id": "Ottoman_01",
       "label": "Пуф кожаный",
-      "category": "seating"
+      "category": "seating",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "metal_stool_02",
       "label": "Табурет",
-      "category": "seating"
+      "category": "seating",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "metal_stool_03",
       "label": "Барный стул",
-      "category": "seating"
+      "category": "seating",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "coffee_table_round_01",
       "label": "Журнальный столик круглый",
-      "category": "tables"
+      "category": "tables",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "metal_office_desk",
       "label": "Письменный стол офисный",
-      "category": "tables"
+      "category": "tables",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "steel_frame_shelves_01",
       "label": "Стеллаж металлический",
       "category": "storage",
+      "attach": "floor",
       "normalize": {
         "unit": "dm"
       }
@@ -205,19 +230,22 @@
       "source": "polyhaven",
       "id": "steel_frame_shelves_02",
       "label": "Стеллаж узкий",
-      "category": "storage"
+      "category": "storage",
+      "attach": "floor"
     },
     {
       "source": "polyhaven",
       "id": "Chandelier_01",
       "label": "Люстра классическая",
-      "category": "lighting"
+      "category": "lighting",
+      "attach": "ceiling"
     },
     {
       "source": "polyhaven",
       "id": "throw_pillows_01",
       "label": "Декоративные подушки",
       "category": "decor",
+      "attach": "surface",
       "cushion": {
         "upright": true
       }
@@ -227,6 +255,7 @@
       "id": "pillow_velvet_ochre",
       "label": "Подушка бархатная",
       "category": "decor",
+      "attach": "surface",
       "file": "pillow_velvet_ochre.gltf",
       "cushion": {},
       "credit": {
@@ -240,6 +269,7 @@
       "id": "pillow_linen_sand",
       "label": "Подушка льняная",
       "category": "decor",
+      "attach": "surface",
       "file": "pillow_linen_sand.gltf",
       "cushion": {},
       "credit": {
@@ -252,55 +282,66 @@
       "source": "polyhaven",
       "id": "ceramic_vase_01",
       "label": "Ваза-кувшин белая",
-      "category": "decor"
+      "category": "decor",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "ceramic_vase_03",
       "label": "Ваза высокая",
-      "category": "decor"
+      "category": "decor",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "ceramic_vase_04",
       "label": "Ваза с ручкой",
-      "category": "decor"
+      "category": "decor",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "brass_vase_01",
       "label": "Ваза латунная",
-      "category": "decor"
+      "category": "decor",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "marble_bust_01",
       "label": "Мраморный бюст",
-      "category": "decor"
+      "category": "decor",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "horse_statue_01",
       "label": "Статуэтка «Конь»",
-      "category": "decor"
+      "category": "decor",
+      "attach": "surface"
     },
     {
       "source": "polyhaven",
       "id": "hanging_picture_frame_01",
       "label": "Постер в чёрной раме",
-      "category": "decor"
+      "category": "decor",
+      "attach": "wall",
+      "mountHeight": 1.5
     },
     {
       "source": "polyhaven",
       "id": "hanging_picture_frame_02",
       "label": "Картина в белой раме",
-      "category": "decor"
+      "category": "decor",
+      "attach": "wall",
+      "mountHeight": 1.5
     },
     {
       "source": "polyhaven",
       "id": "standing_picture_frame_02",
       "label": "Фоторамка белая",
       "category": "decor",
+      "attach": "surface",
       "normalize": {
         "rotationY": 270
       }
@@ -309,19 +350,24 @@
       "source": "polyhaven",
       "id": "ornate_mirror_01",
       "label": "Зеркало в латунной раме",
-      "category": "decor"
+      "category": "decor",
+      "attach": "wall",
+      "mountHeight": 1.5
     },
     {
       "source": "polyhaven",
       "id": "wall_clock",
       "label": "Настенные часы",
-      "category": "decor"
+      "category": "decor",
+      "attach": "wall",
+      "mountHeight": 1.9
     },
     {
       "source": "local",
       "id": "glam_velvet_sofa",
       "label": "Диван бархатный",
       "category": "seating",
+      "attach": "floor",
       "file": "glam_velvet_sofa.gltf",
       "credit": {
         "author": "Eric Chadwick, Wayfair LLC",
@@ -360,6 +406,7 @@
       "id": "sheen_velvet_chair",
       "label": "Кресло бархатное",
       "category": "seating",
+      "attach": "floor",
       "file": "sheen_velvet_chair.gltf",
       "credit": {
         "author": "Eric Chadwick, Wayfair LLC",
@@ -385,6 +432,7 @@
       "id": "toilet_close_coupled",
       "label": "Унитаз-компакт",
       "category": "bathroom",
+      "attach": "floor",
       "file": "toilet_close_coupled.gltf",
       "credit": {
         "author": "loafbrr",
@@ -397,6 +445,7 @@
       "id": "pedestal_sink",
       "label": "Раковина на пьедестале",
       "category": "bathroom",
+      "attach": "floor",
       "file": "pedestal_sink.gltf",
       "credit": {
         "author": "loafbrr",
@@ -409,6 +458,8 @@
       "id": "wall_sink",
       "label": "Раковина подвесная",
       "category": "bathroom",
+      "attach": "wall",
+      "mountHeight": 0.69,
       "file": "wall_sink.gltf",
       "credit": {
         "author": "loafbrr",
@@ -421,6 +472,7 @@
       "id": "kitchen_base_120",
       "label": "Кухонный модуль 120 см",
       "category": "kitchen",
+      "attach": "floor",
       "file": "kitchen_base_120.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -433,6 +485,7 @@
       "id": "kitchen_sink_120",
       "label": "Кухонный модуль с мойкой",
       "category": "kitchen",
+      "attach": "floor",
       "file": "kitchen_sink_120.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -445,6 +498,7 @@
       "id": "kitchen_hob_oven_60",
       "label": "Модуль с варочной панелью и духовкой",
       "category": "kitchen",
+      "attach": "floor",
       "file": "kitchen_hob_oven_60.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -457,6 +511,7 @@
       "id": "kitchen_island",
       "label": "Кухонный остров",
       "category": "kitchen",
+      "attach": "floor",
       "file": "kitchen_island.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -469,6 +524,7 @@
       "id": "fridge_french_door",
       "label": "Холодильник French Door",
       "category": "kitchen",
+      "attach": "floor",
       "file": "fridge_french_door.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -481,6 +537,7 @@
       "id": "bathtub_freestanding",
       "label": "Ванна отдельностоящая",
       "category": "bathroom",
+      "attach": "floor",
       "file": "bathtub_freestanding.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -493,6 +550,7 @@
       "id": "shower_walk_in",
       "label": "Душевое ограждение",
       "category": "bathroom",
+      "attach": "floor",
       "file": "shower_walk_in.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -505,6 +563,7 @@
       "id": "vanity_walnut",
       "label": "Тумба с раковиной",
       "category": "bathroom",
+      "attach": "floor",
       "file": "vanity_walnut.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -517,6 +576,7 @@
       "id": "washing_machine",
       "label": "Стиральная машина",
       "category": "appliances",
+      "attach": "floor",
       "file": "washing_machine.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -529,6 +589,7 @@
       "id": "bed_upholstered",
       "label": "Кровать с мягким изголовьем",
       "category": "bedroom",
+      "attach": "floor",
       "file": "bed_upholstered.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -541,6 +602,7 @@
       "id": "nightstand_walnut",
       "label": "Прикроватная тумба (орех)",
       "category": "bedroom",
+      "attach": "floor",
       "file": "nightstand_walnut.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -553,6 +615,7 @@
       "id": "dining_table_walnut",
       "label": "Обеденный стол (орех)",
       "category": "tables",
+      "attach": "floor",
       "file": "dining_table_walnut.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -565,6 +628,7 @@
       "id": "rug_wool",
       "label": "Ковёр шерстяной",
       "category": "decor",
+      "attach": "floor",
       "file": "rug_wool.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -577,6 +641,7 @@
       "id": "rug_round_boucle",
       "label": "Ковёр круглый букле",
       "category": "decor",
+      "attach": "floor",
       "file": "rug_round_boucle.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -589,6 +654,7 @@
       "id": "floor_lamp_drum",
       "label": "Торшер",
       "category": "lighting",
+      "attach": "floor",
       "file": "floor_lamp_drum.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -601,6 +667,7 @@
       "id": "floor_mirror_arch",
       "label": "Напольное зеркало",
       "category": "decor",
+      "attach": "floor",
       "file": "floor_mirror_arch.gltf",
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
@@ -613,7 +680,36 @@
       "id": "tv_65",
       "label": "Телевизор 65″",
       "category": "appliances",
+      "attach": "surface",
       "file": "tv_65.gltf",
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "wall_shelf_oak",
+      "label": "Полка настенная",
+      "category": "storage",
+      "file": "wall_shelf_oak.gltf",
+      "attach": "wall",
+      "mountHeight": 1.4,
+      "credit": {
+        "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
+        "license": "CC0",
+        "url": "scripts/models/build-procedural.mjs"
+      }
+    },
+    {
+      "source": "local",
+      "id": "split_air_conditioner",
+      "label": "Кондиционер настенный",
+      "category": "appliances",
+      "file": "split_air_conditioner.gltf",
+      "attach": "wall",
+      "mountHeight": 2.25,
       "credit": {
         "author": "VR Home Construction (procedural; CC0 textures by Poly Haven)",
         "license": "CC0",

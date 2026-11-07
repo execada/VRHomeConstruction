@@ -1,9 +1,12 @@
 /**
  * Роль предмета сцены при расстановке (опора / предмет для поверхности / напольный)
- * с учётом габаритов его модели. Результат кешируется: роль нужна на каждый кадр перетаскивания.
+ * с учётом габаритов его модели и типа крепления из каталога (у модели с attach `surface`
+ * роль — поверхность, у остальных опоры остаются опорами, прочее — на полу).
+ * Результат кешируется: роль нужна на каждый кадр перетаскивания.
  * @module editor-3d/lib/supportRole
  */
 
+import { attachType } from '@/features/furniture/lib/attachType';
 import { placementRole, type PlacementRole } from '@/features/furniture/lib/placementRole';
 import { furnitureSizesCache } from '@/features/furniture/sizesCache';
 import type { FurnitureItem } from '@/features/furniture/types';
@@ -28,7 +31,9 @@ export function furnitureRole(item: RoleItem): PlacementRole {
   const key = [item.modelPath, item.name, sizes?.halfWidth.toFixed(2), sizes?.halfDepth.toFixed(2), sizes?.height.toFixed(2)].join('|');
   const known = cache.get(key);
   if (known) return known;
-  const role = placementRole({ modelPath: item.modelPath, name: item.name, sizes });
+  const subject = { modelPath: item.modelPath, name: item.name, sizes };
+  const keywords = placementRole(subject);
+  const role: PlacementRole = keywords === 'support' ? 'support' : attachType(subject) === 'surface' ? 'surface' : 'floor';
   if (cache.size >= CACHE_LIMIT) cache.clear();
   cache.set(key, role);
   return role;

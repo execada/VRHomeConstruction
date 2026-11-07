@@ -136,6 +136,12 @@ export const cushionSocketsSchema = z
   .refine((list) => new Set(list.map((s) => s.id)).size === list.length, 'id посадочных мест повторяются');
 
 /**
+ * Тип крепления модели: `floor` — на полу, `wall` — на стене, `ceiling` — под потолком,
+ * `surface` — на столешницах и полках.
+ */
+export const attachTypeSchema = z.enum(['floor', 'wall', 'ceiling', 'surface']);
+
+/**
  * Модель — подушка: садится на посадочные места диванов и кресел. `upright` — модель уже
  * стоит с наклоном (набор подушек): ставится только к спинке и без дополнительного наклона.
  */
@@ -156,6 +162,10 @@ export const modelEntrySchema = z.object({
   sockets: cushionSocketsSchema.optional(),
   /** Модель — подушка */
   cushion: cushionSchema.optional(),
+  /** Тип крепления */
+  attach: attachTypeSchema.optional(),
+  /** Высота центра настенной модели над полом при установке, м */
+  mountHeight: z.number().min(0.1).max(4).optional(),
   ...credit,
 });
 

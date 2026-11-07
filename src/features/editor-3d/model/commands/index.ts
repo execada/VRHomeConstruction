@@ -21,7 +21,7 @@ export function createSceneCommands(ctx: CommandContext) {
   const furniture = createFurnitureCommands(ctx);
   const openings = createOpeningCommands(ctx);
   const partitions = createPartitionCommands(ctx, furniture.settle);
-  const room = createRoomCommands(ctx);
+  const room = createRoomCommands(ctx, furniture.settle);
   const rooms = createRoomLabelCommands(ctx);
   const stairs = createStairCommands(ctx);
   const floors = createFloorCommands(ctx);
