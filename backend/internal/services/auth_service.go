@@ -55,6 +55,8 @@ var (
 // userRepository и verificationRepository — зависимости сервиса авторизации
 // (объявлены на стороне потребителя, чтобы подменять фейками в тестах).
 // UpdateName/UpdateEmail возвращают обновлённого пользователя или nil, если его нет.
+// UpdatePassword меняет пароль, только пока у пользователя эта почта, и увеличивает версию
+// сессий; SessionVersion возвращает её (found=false — пользователя нет).
 type userRepository interface {
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
 	FindByUsername(ctx context.Context, username string) (*models.User, error)
@@ -62,12 +64,17 @@ type userRepository interface {
 	Insert(ctx context.Context, user *models.User) error
 	UpdateName(ctx context.Context, id, name string) (*models.User, error)
 	UpdateEmail(ctx context.Context, id, email string) (*models.User, error)
+	UpdatePassword(ctx context.Context, id, email, passwordHash string) (*models.User, error)
+	SessionVersion(ctx context.Context, id string) (version int64, found bool, err error)
 }
 
+// Claim удаляет запись кода, только если она всё ещё та же (id и хэш кода), и сообщает,
+// удалил ли её этот вызов: из параллельных подтверждений одного кода проходит одно.
 type verificationRepository interface {
 	Upsert(ctx context.Context, record *models.VerificationRecord) error
 	FindValid(ctx context.Context, email, purpose string) (*models.VerificationRecord, error)
 	ConsumeAttempt(ctx context.Context, key models.VerificationKey, maxAttempts int) (*models.VerificationRecord, error)
+	Claim(ctx context.Context, id, codeHash string) (bool, error)
 	Delete(ctx context.Context, email, purpose string) error
 }
 
@@ -78,6 +85,8 @@ type AuthService struct {
 	sender        email.Sender
 	mail          *mailQueue
 	failures      *failureGuard
+	// resetFailures — неверные коды сброса пароля по адресу (по всем выданным кодам).
+	resetFailures *failureGuard
 }
 
 func NewAuthService(
@@ -93,6 +102,7 @@ func NewAuthService(
 		sender:        sender,
 		mail:          newMailQueue(sender, mailConcurrency),
 		failures:      newFailureGuard(maxLoginFailures, loginFailureWindow),
+		resetFailures: newFailureGuard(maxResetFailures, resetFailureWindow),
 	}
 }
 
@@ -244,7 +254,7 @@ func (s *AuthService) GetByID(ctx context.Context, userID string) (*models.UserP
 }
 
 func (s *AuthService) buildAuthResponse(user *models.User) (*models.AuthResponse, error) {
-	token, err := s.tokens.Generate(user.ID)
+	token, err := s.tokens.Generate(user.ID, user.TokenVersion)
 	if err != nil {
 		return nil, fmt.Errorf("generate token: %w", err)
 	}

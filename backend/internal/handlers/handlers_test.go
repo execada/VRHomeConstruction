@@ -302,6 +302,8 @@ func authEngine(t *testing.T) (*gin.Engine, *memUserRepo, *memVerificationRepo) 
 	r.POST("/auth/send-code", h.SendCode)
 	r.POST("/auth/verify-code", h.VerifyCode)
 	r.POST("/auth/login", h.Login)
+	r.POST("/auth/password/send-code", h.SendPasswordResetCode)
+	r.POST("/auth/password/reset", h.ResetPassword)
 	return r, users, vers
 }
 

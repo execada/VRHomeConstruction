@@ -121,6 +121,38 @@ func (h *AuthHandler) VerifyEmailChange(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// SendPasswordResetCode — POST /api/auth/password/send-code: код для сброса пароля на почту.
+// Ответ одинаковый, есть ли аккаунт с этой почтой или нет.
+func (h *AuthHandler) SendPasswordResetCode(c *gin.Context) {
+	var req models.PasswordResetCodeRequest
+	if !bindJSON(c, &req) {
+		return
+	}
+
+	resp, err := h.service.SendPasswordResetCode(c.Request.Context(), req)
+	if err != nil {
+		h.handleAuthError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// ResetPassword — POST /api/auth/password/reset: код из письма и новый пароль; прежние
+// сессии перестают действовать.
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req models.PasswordResetRequest
+	if !bindJSON(c, &req) {
+		return
+	}
+
+	resp, err := h.service.ResetPassword(c.Request.Context(), req)
+	if err != nil {
+		h.handleAuthError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
 func (h *AuthHandler) handleAuthError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, services.ErrUserAlreadyExists):
@@ -142,6 +174,8 @@ func (h *AuthHandler) handleAuthError(c *gin.Context, err error) {
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many invalid attempts, request a new code"})
 	case errors.Is(err, services.ErrTooManyLoginAttempts):
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many login attempts, try again later"})
+	case errors.Is(err, services.ErrTooManyResetAttempts):
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many password reset attempts, try again later"})
 	case errors.Is(err, services.ErrNameRequired), errors.Is(err, services.ErrPasswordTooShort),
 		errors.Is(err, services.ErrPasswordTooLong), errors.Is(err, services.ErrInvalidPurpose),
 		services.IsValidationError(err):

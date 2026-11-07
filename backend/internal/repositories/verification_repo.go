@@ -103,6 +103,17 @@ func (r *VerificationRepo) ConsumeAttempt(ctx context.Context, key models.Verifi
 	return &record, nil
 }
 
+// Claim удаляет запись кода, только если она всё ещё та же (тот же id и хэш кода — код не
+// заменили новым), и сообщает, удалил ли её этот вызов: из параллельных подтверждений
+// одного кода проходит только одно.
+func (r *VerificationRepo) Claim(ctx context.Context, id, codeHash string) (bool, error) {
+	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id, "codeHash": codeHash})
+	if err != nil {
+		return false, fmt.Errorf("claim verification code: %w", err)
+	}
+	return res.DeletedCount == 1, nil
+}
+
 func (r *VerificationRepo) Delete(ctx context.Context, email, purpose string) error {
 	if _, err := r.collection.DeleteOne(ctx, bson.M{"email": email, "purpose": purpose}); err != nil {
 		return fmt.Errorf("delete verification code: %w", err)
