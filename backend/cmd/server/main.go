@@ -88,6 +88,7 @@ func wire(cfg *config.Config, client *mongo.Client, db *mongo.Database) (*servic
 
 	return authService, server.Deps{
 		Tokens:   tokens,
+		Sessions: authService,
 		Auth:     handlers.NewAuthHandler(authService),
 		Projects: handlers.NewProjectHandler(projectService),
 		Folders:  handlers.NewFolderHandler(services.NewFolderService(folderRepo)),

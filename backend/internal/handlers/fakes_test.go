@@ -179,6 +179,24 @@ func (r *memUserRepo) UpdateEmail(_ context.Context, id, email string) (*models.
 	return r.update(id, func(u *models.User) { u.Email = email })
 }
 
+func (r *memUserRepo) UpdatePassword(_ context.Context, id, email, passwordHash string) (*models.User, error) {
+	if u, ok := r.byID[id]; !ok || u.Email != email {
+		return nil, nil
+	}
+	return r.update(id, func(u *models.User) {
+		u.PasswordHash = passwordHash
+		u.TokenVersion++
+	})
+}
+
+func (r *memUserRepo) SessionVersion(_ context.Context, id string) (int64, bool, error) {
+	u, ok := r.byID[id]
+	if !ok {
+		return 0, false, nil
+	}
+	return u.TokenVersion, true, nil
+}
+
 func (r *memUserRepo) update(id string, change func(*models.User)) (*models.User, error) {
 	u, ok := r.byID[id]
 	if !ok {
@@ -224,6 +242,16 @@ func (r *memVerificationRepo) ConsumeAttempt(_ context.Context, key models.Verif
 	rec.Attempts++
 	out := *rec
 	return &out, nil
+}
+
+func (r *memVerificationRepo) Claim(_ context.Context, id, codeHash string) (bool, error) {
+	for key, rec := range r.records {
+		if rec.ID == id && rec.CodeHash == codeHash {
+			delete(r.records, key)
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (r *memVerificationRepo) Delete(_ context.Context, email, purpose string) error {

@@ -241,3 +241,103 @@ func TestEnsureIndexesMigratesLegacyEmailIndex(t *testing.T) {
 		}
 	}
 }
+
+// Сброс пароля: новый хэш и версия сессий +1 за один запрос; у старых документов поля
+// версии нет — это версия 0.
+func TestUserRepoUpdatePasswordBumpsSessionVersion(t *testing.T) {
+	ctx := requireDB(t, "users")
+	repo := NewUserRepo(testDB)
+	if err := repo.Insert(ctx, &models.User{ID: "u1", Name: "U", Email: "u@example.com", PasswordHash: "old"}); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+	if v, found, err := repo.SessionVersion(ctx, "u1"); err != nil || !found || v != 0 {
+		t.Fatalf("a user without the field has version 0, got %d %v (%v)", v, found, err)
+	}
+
+	// Код сброса уходил на почту: сменилась почта — пароль не меняется.
+	if stale, err := repo.UpdatePassword(ctx, "u1", "other@example.com", "new"); err != nil || stale != nil {
+		t.Fatalf("a foreign email must not match, got %+v (%v)", stale, err)
+	}
+	for want := int64(1); want <= 2; want++ {
+		updated, err := repo.UpdatePassword(ctx, "u1", " U@Example.com ", "new")
+		if err != nil || updated == nil || updated.PasswordHash != "new" || updated.TokenVersion != want {
+			t.Fatalf("UpdatePassword #%d: %+v (%v)", want, updated, err)
+		}
+		if v, found, err := repo.SessionVersion(ctx, "u1"); err != nil || !found || v != want {
+			t.Fatalf("SessionVersion after #%d: %d %v (%v)", want, v, found, err)
+		}
+	}
+	if got, err := repo.FindByEmail(ctx, "u@example.com"); err != nil || got.TokenVersion != 2 || got.Name != "U" {
+		t.Fatalf("other fields must stay, got %+v (%v)", got, err)
+	}
+
+	if missing, err := repo.UpdatePassword(ctx, "ghost", "u@example.com", "x"); err != nil || missing != nil {
+		t.Fatalf("a missing user must be nil, got %+v (%v)", missing, err)
+	}
+	if v, found, err := repo.SessionVersion(ctx, "ghost"); err != nil || found || v != 0 {
+		t.Fatalf("a missing user has no session, got %d %v (%v)", v, found, err)
+	}
+}
+
+// Claim забирает запись, только если в ней всё ещё тот же код: повторно, с чужим id
+// или после замены кода новым — нет.
+func TestVerificationRepoClaimIsSingleUse(t *testing.T) {
+	ctx := requireDB(t, "verification_codes")
+	repo := NewVerificationRepo(testDB)
+	rec := verification("reset@example.com", "u1", "", time.Minute)
+	rec.Purpose = models.VerificationPurposeResetPassword
+	if err := repo.Upsert(ctx, rec); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+
+	if ok, err := repo.Claim(ctx, "other-id", rec.CodeHash); err != nil || ok {
+		t.Fatalf("a foreign id must not claim, got %v (%v)", ok, err)
+	}
+	if ok, err := repo.Claim(ctx, rec.ID, "stale-hash"); err != nil || ok {
+		t.Fatalf("a replaced code must not claim, got %v (%v)", ok, err)
+	}
+	if ok, err := repo.Claim(ctx, rec.ID, rec.CodeHash); err != nil || !ok {
+		t.Fatalf("the current code must claim, got %v (%v)", ok, err)
+	}
+	if ok, err := repo.Claim(ctx, rec.ID, rec.CodeHash); err != nil || ok {
+		t.Fatalf("a claimed code must be gone, got %v (%v)", ok, err)
+	}
+	if got, err := repo.FindValid(ctx, rec.Email, rec.Purpose); err != nil || got != nil {
+		t.Fatalf("the record must be deleted, got %+v (%v)", got, err)
+	}
+}
+
+// Параллельные Claim одного кода: ровно один успешный.
+func TestVerificationRepoClaimIsAtomic(t *testing.T) {
+	ctx := requireDB(t, "verification_codes")
+	repo := NewVerificationRepo(testDB)
+	rec := verification("race-claim@example.com", "u1", "", time.Minute)
+	if err := repo.Upsert(ctx, rec); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+
+	const callers = 10
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	won := 0
+	for i := 0; i < callers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ok, err := repo.Claim(ctx, rec.ID, rec.CodeHash)
+			if err != nil {
+				t.Errorf("claim: %v", err)
+				return
+			}
+			if ok {
+				mu.Lock()
+				won++
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	if won != 1 {
+		t.Fatalf("expected exactly one successful claim, got %d", won)
+	}
+}

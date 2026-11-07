@@ -13,6 +13,9 @@ type User struct {
 	Role         string  `json:"-" bson:"role,omitempty"`
 	PasswordHash string  `json:"-" bson:"passwordHash"`
 	Avatar       *string `json:"avatar,omitempty" bson:"avatar,omitempty"`
+	// TokenVersion — версия сессий: попадает в JWT и растёт при сбросе пароля, после чего
+	// выданные раньше токены не принимаются (у старых документов поля нет — версия 0).
+	TokenVersion int64 `json:"-" bson:"tokenVersion,omitempty"`
 }
 
 // UserPublic is the API representation expected by the frontend (id, not _id).

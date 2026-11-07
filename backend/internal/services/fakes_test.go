@@ -322,6 +322,7 @@ type fakeUserRepo struct {
 	insertErr         error
 	updateErr         error
 	updateEmailErr    error
+	sessionErr        error
 }
 
 func newFakeUserRepo() *fakeUserRepo {
@@ -353,6 +354,35 @@ func (f *fakeUserRepo) UpdateCredentials(_ context.Context, id, passwordHash, ro
 	f.store(&updated)
 	out := updated
 	return &out, nil
+}
+
+// UpdatePassword меняет пароль и увеличивает версию сессий в новой копии пользователя —
+// только пока у него эта почта (как фильтр {_id, email} в репозитории).
+func (f *fakeUserRepo) UpdatePassword(_ context.Context, id, email, passwordHash string) (*models.User, error) {
+	if f.updateErr != nil {
+		return nil, f.updateErr
+	}
+	u, ok := f.byID[id]
+	if !ok || u.Email != emailKey(email) {
+		return nil, nil
+	}
+	updated := *u
+	updated.PasswordHash = passwordHash
+	updated.TokenVersion++
+	f.store(&updated)
+	out := updated
+	return &out, nil
+}
+
+func (f *fakeUserRepo) SessionVersion(_ context.Context, id string) (int64, bool, error) {
+	if f.sessionErr != nil {
+		return 0, false, f.sessionErr
+	}
+	u, ok := f.byID[id]
+	if !ok {
+		return 0, false, nil
+	}
+	return u.TokenVersion, true, nil
 }
 
 // store раскладывает пользователя по индексам фейка (пустая почта/логин не индексируются).
@@ -445,6 +475,7 @@ type fakeVerificationRepo struct {
 	upsertErr  error
 	deleteErr  error
 	consumeErr error
+	claimErr   error
 }
 
 func newFakeVerificationRepo() *fakeVerificationRepo {
@@ -497,6 +528,22 @@ func (f *fakeVerificationRepo) ConsumeAttempt(_ context.Context, key models.Veri
 	r.Attempts++
 	out := *r
 	return &out, nil
+}
+
+// Claim удаляет запись, только если у неё тот же id и хэш кода (как фильтр DeleteOne).
+func (f *fakeVerificationRepo) Claim(_ context.Context, id, codeHash string) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.claimErr != nil {
+		return false, f.claimErr
+	}
+	for key, r := range f.records {
+		if r.ID == id && r.CodeHash == codeHash {
+			delete(f.records, key)
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (f *fakeVerificationRepo) Delete(_ context.Context, email, purpose string) error {

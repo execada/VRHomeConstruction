@@ -102,6 +102,9 @@ jobs:
         run: bash .github/scripts/e2e-account.sh "$RUNNER_TEMP/backend.log"
       - name: Сценарии
         run: npm run test:e2e
+        env:
+          # Сценарий сброса пароля берёт коды из лога бэкенда.
+          E2E_BACKEND_LOG: ${{ runner.temp }}/backend.log
       - name: Отчёт о падении
         if: failure()
         uses: actions/upload-artifact@v4

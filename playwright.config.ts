@@ -2,7 +2,8 @@
  * E2E-тесты ключевых сценариев (Playwright + Chromium из `npx playwright install chromium`;
  * установленный Google Chrome — через E2E_CHANNEL=chrome).
  * Нужны запущенные бэкенд (порт 8080) и тестовый аккаунт в e2e/.env.e2e.local
- * (E2E_EMAIL, E2E_PASSWORD) — см. e2e/README.md. Дев-сервер поднимается сам, если не запущен.
+ * (E2E_EMAIL, E2E_PASSWORD) — см. e2e/README.md; сценарию сброса пароля — ещё лог бэкенда
+ * с кодами (E2E_BACKEND_LOG, режим SMTP_LOG_ONLY). Дев-сервер поднимается сам, если не запущен.
  */
 import { defineConfig } from '@playwright/test';
 import { loadE2eEnv } from './e2e/support/env';
@@ -34,6 +35,8 @@ export default defineConfig({
   projects: [
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
     { name: 'guest', testMatch: /guest\.spec\.ts/ },
+    // Сброс пароля — на своём новом аккаунте, без сохранённой сессии общего тестового аккаунта.
+    { name: 'account', testMatch: /password-reset\.spec\.ts/ },
     { name: 'app', testMatch: /(dashboard|editor|floors|cushions|mounts)\.spec\.ts/, dependencies: ['setup'], use: { storageState: 'e2e/.auth/user.json' } },
   ],
   webServer: process.env.E2E_BASE_URL
