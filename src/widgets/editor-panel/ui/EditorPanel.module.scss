@@ -1,4 +1,5 @@
 .wrap {
+  position: relative;
   display: flex;
   height: 100%;
   border-right: 1px solid var(--border);
@@ -48,7 +49,43 @@
   display: flex;
   flex-direction: column;
   width: 300px;
-  overflow-y: auto;
+  overflow: hidden auto;
+}
+
+/* Разделитель на правом краю панели: тянется мышью, пальцем и клавишами. */
+.resizer {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  bottom: 0;
+  z-index: 5;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 4px;
+    width: 2px;
+    background: transparent;
+    transition: background 0.15s ease;
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    background: var(--accent);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.resizerActive::after {
+  background: var(--accent);
 }
 
 .panelTitle {
@@ -113,7 +150,9 @@
 
 .catalog {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+
+  /* Сколько колонок помещается; minmax(…, 1fr) не даёт длинному названию растянуть колонку за край */
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 10px;
   padding: 4px 16px 16px;
 }
@@ -122,6 +161,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
   padding: 6px;
   border: 1px solid var(--border);
   border-radius: var(--r-md);
@@ -227,7 +267,7 @@
 
 .hdriGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 8px;
 }
 
