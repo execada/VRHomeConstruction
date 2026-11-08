@@ -4,7 +4,7 @@
  * (в CI его задаёт .github/workflows/ci-cd.yml).
  */
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { expect, type APIRequestContext } from '@playwright/test';
+import { expect, type APIRequestContext, type APIResponse } from '@playwright/test';
 
 /** Назначения кодов — как в письмах и в логе бэкенда. */
 export const CODE_PURPOSE = { register: 'регистрации', resetPassword: 'восстановления пароля' } as const;
@@ -19,6 +19,22 @@ export function backendLogPath(): string | undefined {
 /** Отметка конца лога: коды ищутся только в строках, появившихся после неё. */
 export function logMark(path: string): number {
   return existsSync(path) ? statSync(path).size : 0;
+}
+
+/**
+ * POST к API кодов. Бэкенд выдаёт не больше 10 кодов в минуту на IP, а все сценарии ходят
+ * с одного адреса: на 429 ждём Retry-After и повторяем.
+ * @param request - HTTP-клиент Playwright
+ * @param url - адрес API
+ * @param data - тело запроса
+ */
+async function postCodeRequest(request: APIRequestContext, url: string, data: Record<string, string>): Promise<APIResponse> {
+  for (let attempt = 0; ; attempt += 1) {
+    const res = await request.post(url, { data });
+    if (res.status() !== 429 || attempt >= 3) return res;
+    const seconds = Math.min(Math.max(Number(res.headers()['retry-after']) || 10, 1), 60);
+    await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+  }
 }
 
 /**
@@ -43,6 +59,24 @@ export async function waitForCode(path: string, mark: number, purpose: string): 
 }
 
 /**
+ * Сменить пароль через «Забыли пароль?» по API (код — из лога): все сессии аккаунта,
+ * открытые до этого, перестают действовать.
+ * @param request - HTTP-клиент Playwright (baseURL — фронтенд, /api проксируется)
+ * @param log - лог бэкенда
+ * @param email - почта аккаунта
+ * @param password - новый пароль
+ */
+export async function resetPassword(request: APIRequestContext, log: string, email: string, password: string): Promise<void> {
+  const mark = logMark(log);
+  const sent = await postCodeRequest(request, '/api/auth/password/send-code', { email });
+  expect(sent.status(), await sent.text()).toBe(200);
+
+  const code = await waitForCode(log, mark, CODE_PURPOSE.resetPassword);
+  const reset = await postCodeRequest(request, '/api/auth/password/reset', { email, code, password });
+  expect(reset.status(), await reset.text()).toBe(200);
+}
+
+/**
  * Зарегистрировать аккаунт через API (код — из лога) и вернуть токен его сессии.
  * @param request - HTTP-клиент Playwright (baseURL — фронтенд, /api проксируется)
  * @param log - лог бэкенда
@@ -51,12 +85,12 @@ export async function waitForCode(path: string, mark: number, purpose: string): 
  */
 export async function registerAccount(request: APIRequestContext, log: string, email: string, password: string): Promise<string> {
   const mark = logMark(log);
-  const sent = await request.post('/api/auth/send-code', { data: { email, purpose: 'register', name: 'E2E', password } });
+  const sent = await postCodeRequest(request, '/api/auth/send-code', { email, purpose: 'register', name: 'E2E', password });
   expect(sent.status(), await sent.text()).toBe(200);
   const { token } = (await sent.json()) as { token: string };
 
   const code = await waitForCode(log, mark, CODE_PURPOSE.register);
-  const verified = await request.post('/api/auth/verify-code', { data: { email, code, purpose: 'register', token } });
+  const verified = await postCodeRequest(request, '/api/auth/verify-code', { email, code, purpose: 'register', token });
   expect(verified.status(), await verified.text()).toBe(200);
   return ((await verified.json()) as { token: string }).token;
 }

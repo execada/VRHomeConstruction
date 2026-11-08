@@ -1,19 +1,25 @@
 /**
  * Саги авторизации: вход по паролю, регистрация с кодом на email,
- * восстановление пароля по коду из письма, восстановление сессии.
+ * восстановление пароля по коду из письма, восстановление сессии,
+ * выход при конце сессии (отказ сервера или выход в другой вкладке).
  * @module user/saga
  */
 
-import { takeLatest, put, call, select, all } from 'typed-redux-saga';
+import { buffers, eventChannel } from 'redux-saga';
+import { takeLatest, take, put, call, fork, select, all } from 'typed-redux-saga';
 import { authApi } from '@/app/api';
-import { apiErrorText } from '@/app/api/errors';
+import { apiErrorText, isSessionEnded, SESSION_ENDED_TEXT } from '@/app/api/errors';
+import { subscribeSessionEnd, type SessionEndSource } from '@/app/api/session';
 import { clearStoredToken, getStoredToken, setStoredToken } from '@/app/api/token';
+import { toast } from '@/shared/lib/toast';
 import { checkField, emailSchema, passwordSchema, verificationCodeSchema } from './lib/profileSchemas';
 import { actions } from './slice';
 import { selectors } from './selectors';
 
 const RESET_CODE_SENT = 'Если аккаунт с этой почтой есть, мы отправили на неё код. Проверьте входящие и папку «Спам».';
 const PASSWORD_CHANGED = 'Пароль изменён. Войдите с новым паролем.';
+/** Сообщение о конце сессии висит дольше обычного: выход мог случиться посреди работы. */
+const SESSION_ENDED_TOAST_MS = 6000;
 
 /** Восстановить пользователя по сохранённому JWT */
 export function* restoreSession() {
@@ -26,11 +32,54 @@ export function* restoreSession() {
     yield* put(actions.setLoading(true));
     const user = yield* call(authApi.fetchMe);
     yield* put(actions.setUser(user));
-  } catch {
-    clearStoredToken();
-    yield* put(actions.logout());
+  } catch (error) {
+    // Отказ сервера в сессии уже закончил её (handleSessionEnded): второй выход не нужен.
+    if (!isSessionEnded(error)) {
+      clearStoredToken();
+      yield* put(actions.logout());
+    }
   } finally {
     yield* put(actions.setLoading(false));
+  }
+}
+
+/**
+ * Сессия закончилась: сервер отклонил токен этой вкладки (клиент API его уже стёр) или токен
+ * стёрт в другой вкладке. Выход — как по кнопке «Выйти» (данные пользователя очищаются,
+ * открытый проект закрывается с локальной копией правок) и одно сообщение.
+ * @param source - откуда узнали о конце сессии
+ */
+function* handleSessionEnded(source: SessionEndSource) {
+  // Другая вкладка вышла из аккаунта, а здесь входа и не было — выходить не из чего.
+  if (source === 'elsewhere' && !(yield* select(selectors.selectUserIsAuth))) return;
+  yield* put(actions.logout());
+  yield* call(toast.info, SESSION_ENDED_TEXT, SESSION_ENDED_TOAST_MS);
+}
+
+/** События конца сессии из клиента API и других вкладок. */
+function sessionEndChannel() {
+  return eventChannel<SessionEndSource>((emit) => subscribeSessionEnd(emit), buffers.expanding(2));
+}
+
+/** Обработать одно событие; сбой не должен останавливать вход и наблюдение за сессией. */
+function* handleSessionEndedSafely(source: SessionEndSource) {
+  try {
+    yield* call(handleSessionEnded, source);
+  } catch (error) {
+    console.error('Не удалось обработать конец сессии', error);
+  }
+}
+
+/** События обрабатываются по очереди: второе (например, из другой вкладки) видит, что выход уже был. */
+function* watchSessionEnd() {
+  const channel = yield* call(sessionEndChannel);
+  try {
+    while (true) {
+      const source = yield* take(channel);
+      yield* call(handleSessionEndedSafely, source);
+    }
+  } finally {
+    channel.close();
   }
 }
 
@@ -206,5 +255,6 @@ export function* initSaga() {
     takeLatest(actions.resetPasswordRequested.type, handleResetPassword),
     takeLatest(actions.logout.type, handleLogout),
     takeLatest(actions.restoreSessionRequested.type, restoreSession),
+    fork(watchSessionEnd),
   ]);
 }

@@ -1,6 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { ApiRequestError } from './client';
-import { apiErrorText, knownErrorText } from './errors';
+import { apiErrorText, isSessionEnded, knownErrorText, SESSION_ENDED_TEXT } from './errors';
+
+describe('конец сессии', () => {
+  it('отказ сервера в сессии — одно сообщение для всех запросов', () => {
+    expect(SESSION_ENDED_TEXT).toBe('Сессия завершена — войдите снова');
+    expect(apiErrorText(new ApiRequestError(401, 'invalid or expired token', true), 'Не удалось сохранить')).toBe(SESSION_ENDED_TEXT);
+    expect(apiErrorText(new ApiRequestError(401, 'authorization required', true), 'Не удалось удалить проект')).toBe(SESSION_ENDED_TEXT);
+    expect(knownErrorText('invalid or expired token')).toBe(SESSION_ENDED_TEXT);
+    expect(knownErrorText('unauthorized')).toBe(SESSION_ENDED_TEXT);
+  });
+
+  it('гостю без токена — приглашение войти, а не «сессия завершена»', () => {
+    expect(apiErrorText(new ApiRequestError(401, 'authorization required'), 'x')).toBe('Войдите в аккаунт, чтобы продолжить');
+  });
+
+  it('isSessionEnded отличает конец сессии от остальных ошибок', () => {
+    expect(isSessionEnded(new ApiRequestError(401, 'invalid or expired token', true))).toBe(true);
+    expect(isSessionEnded(new ApiRequestError(401, 'invalid or expired token'))).toBe(false);
+    expect(isSessionEnded(new ApiRequestError(0, 'Нет связи с сервером'))).toBe(false);
+    expect(isSessionEnded(new Error('invalid or expired token'))).toBe(false);
+    expect(isSessionEnded(undefined)).toBe(false);
+  });
+});
 
 describe('apiErrorText', () => {
   it('переводит известные коды сервера', () => {

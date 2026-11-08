@@ -1,6 +1,6 @@
 /**
  * Страница редактора проекта: открывает проект по id из адреса, показывает
- * загрузку/ошибку, затем рабочее пространство. Сохранение — автоматическое.
+ * загрузку/ошибку или просьбу войти, затем рабочее пространство. Сохранение — автоматическое.
  * @module pages/project-editor/ui/ProjectEditorPage
  */
 
@@ -11,6 +11,7 @@ import { ProjectSessionFeature } from '@/features/project-session';
 import { useProjectSession } from '@/features/project-session/model/useProjectSession';
 import { PageLoader } from '@/shared/ui/loader/PageLoader';
 import { EditorWorkspace } from './EditorWorkspace';
+import { SignInRequired } from './SignInRequired';
 import styles from './ProjectEditorPage.module.scss';
 
 export const ProjectEditorPage = () => {
@@ -28,6 +29,8 @@ export const ProjectEditorPage = () => {
       </div>
     );
   }
+
+  if (status === 'signedOut') return <SignInRequired />;
 
   if (status !== 'ready') return <PageLoader label="Загружаем проект…" />;
 

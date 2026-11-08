@@ -24,6 +24,34 @@ export function readStore<T>(page: Page, pick: string): Promise<T> {
   }, pick);
 }
 
+/**
+ * Записывать тексты всплывающих сообщений по мере появления (вызвать до goto). Тост живёт
+ * секунды, а в CI кадр сцены рисуется дольше секунды: проверка «сколько раз показано» не должна
+ * зависеть от того, застала ли она тост на экране.
+ */
+export async function recordToasts(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const shown: string[] = [];
+    Object.assign(window, { __vrhcToasts: shown });
+    // Тост — div в контейнере тостов (role="status", aria-live), текст — в последнем span.
+    const selector = '[role="status"][aria-live="polite"] > div';
+    const collect = (node: Node) => {
+      if (!(node instanceof HTMLElement)) return;
+      const toasts = node.matches(selector) ? [node] : Array.from(node.querySelectorAll<HTMLElement>(selector));
+      toasts.forEach((toast) => shown.push(toast.lastElementChild?.textContent ?? ''));
+    };
+    new MutationObserver((records) => records.forEach((record) => record.addedNodes.forEach(collect))).observe(document, {
+      childList: true,
+      subtree: true,
+    });
+  });
+}
+
+/** Тексты всех сообщений, показанных с загрузки страницы (см. recordToasts). */
+export function toastsShown(page: Page): Promise<string[]> {
+  return page.evaluate(() => (window as unknown as { __vrhcToasts?: string[] }).__vrhcToasts ?? []);
+}
+
 /** Дождаться открытия проекта и окончания загрузки ассетов сцены. */
 export async function waitForScene(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/project\/[\w-]+$/);

@@ -4,6 +4,7 @@ import { foldersActions } from '@/features/folders';
 import { actions } from './slice';
 import { selectors } from './selectors';
 import { foldersApi } from '@/app/api';
+import { isSessionEnded } from '@/app/api/errors';
 
 function* handleCreateFolder() {
   try {
@@ -23,6 +24,8 @@ function* handleCreateFolder() {
     yield* put(actions.resetForm());
     yield* put(ModalsFeature.actions.closeCreateFolderModal());
   } catch (error: any) {
+    // Конец сессии: окно закрывается при выходе, сообщение о нём общее.
+    if (isSessionEnded(error)) return;
     const errorMessage = error.message || 'Ошибка при создании папки';
     yield* put(actions.setError(errorMessage));
   } finally {
