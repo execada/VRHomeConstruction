@@ -5,13 +5,16 @@
  * → разбор и миграция документа → загрузка сцены → восстановление камеры.
  * Без связи открывается локальная копия.
  * Автосохранение: через 1.5 с после последней правки; локальная копия — через 0.4 с.
+ * Сохранения идут по одному; правки, сделанные во время запроса, отправляет следующее.
  * Ошибки сети повторяются с паузой; правки при этом не теряются (локальная копия).
  * @module project-session/saga
  */
 
-import { call, debounce, delay, put, select, takeEvery, takeLatest } from 'typed-redux-saga';
+import { channel, type Channel } from 'redux-saga';
+import { call, debounce, delay, put, select, take, takeEvery, takeLatest } from 'typed-redux-saga';
 import { projectsApi } from '@/app/api';
 import { ApiRequestError } from '@/app/api/client';
+import type { SaveProjectInput } from '@/app/api/projects';
 import type { ProjectDetails } from '@/app/api/schemas';
 import { setRestorePose, cameraSession } from '@/features/camera/model/cameraSession';
 import { CreateProjectFeature } from '@/features/create-project';
@@ -126,56 +129,142 @@ function* backupSaga() {
   yield* put(actions.setSaveState('dirty'));
 }
 
-/** Создать сагу сохранения с памятью о последнем сохранённом состоянии. */
+/** Что уходит на сервер: тело запроса и номер правки сцены, на которой оно собрано. */
+interface SaveDraft {
+  id: string;
+  payload: SaveProjectInput;
+  key: string;
+  thumbnail: string | null;
+  /** Время сборки (мс) */
+  at: number;
+  revision: number;
+}
+
+/** Открыт ли ещё проект id: сохранение могло ждать очереди или ответа, пока открыли другой. */
+function* isOpen(id: string): Generator<unknown, boolean> {
+  return (yield* select(selectors.selectSessionProjectId)) === id;
+}
+
+/** Статус сохранения проекта id — только если он ещё открыт. */
+function* putIfOpen(id: string, action: ReturnType<typeof actions.setSaveState> | ReturnType<typeof actions.saved>) {
+  if (yield* isOpen(id)) yield* put(action);
+}
+
+/** Выполнить сохранение в свою очередь: следующее начнётся после окончания этого. */
+function* inTurn(turn: Channel<true>, work: Generator<unknown, void>) {
+  yield* take(turn);
+  try {
+    yield* work;
+  } finally {
+    turn.put(true);
+  }
+}
+
+/**
+ * Создать сохранение с памятью о последнем сохранённом состоянии.
+ * `noteEdit` вызывается на каждую правку сцены: по номеру правки сохранение видит, что сцена
+ * изменилась, пока шёл запрос. Документ с отправленным не сравниваем: смена этажа и измерение
+ * габаритов моделей меняют его, но правками не считаются и автосохранение не запускают —
+ * статус остался бы «Есть изменения» без сохранения.
+ */
 function createSaver() {
   let lastKey = '';
   let lastThumbnailAt = 0;
   let warned = false;
+  let revision = 0;
+  /**
+   * Очередь: сохранения идут одно за другим — запросы не перекрываются, и ответ на старый не перепишет
+   * статус и lastKey нового. Поэтому задачи сохранения не отменяются (takeEvery, а не takeLatest):
+   * отмена освободила бы очередь при неотвеченном запросе.
+   */
+  const turn = channel<true>();
+  turn.put(true);
 
-  return function* saveSaga(force: boolean) {
+  /** Собрать сохранение текущей сцены (null — сохранять нечего или документ повреждён). */
+  function* prepare(force: boolean): Generator<unknown, SaveDraft | null> {
     const id = yield* select(selectors.selectSessionProjectId);
     const status = yield* select(selectors.selectSessionStatus);
-    if (!id || status !== 'ready') return;
+    if (!id || status !== 'ready') return null;
     const project = (yield* select(CreateProjectFeature.selectors.selectProjects)).find((p) => p.id === id);
-    if (!project) return;
+    if (!project) return null;
+    // Номер правки — до документа: правка между ними даст лишнее сохранение, а не потерянное.
+    const draftRevision = revision;
     const doc = yield* select(selectSceneDocument);
     if (!sceneDocumentSchema.safeParse(doc).success) {
       console.error('Документ сцены не прошёл проверку перед сохранением', doc);
       yield* put(actions.setSaveState('error'));
-      return;
+      return null;
     }
-    const now = Date.now();
-    const thumbnail = force || now - lastThumbnailAt > THUMBNAIL_INTERVAL_MS ? sceneBridge.capture(480) : null;
+    const at = Date.now();
+    const thumbnail = force || at - lastThumbnailAt > THUMBNAIL_INTERVAL_MS ? sceneBridge.capture(480) : null;
     const payload = buildSavePayload({ project, doc, camera: cameraSession.getState().pose, thumbnail });
-    const key = payloadKey(payload);
-    if (!force && key === lastKey) {
-      yield* put(actions.setSaveState('saved'));
-      return;
-    }
-    yield* put(actions.setSaveState('saving'));
-    writeBackup(id, { roomData: payload.roomData, camera: cameraSession.getState().pose, savedAt: new Date(now).toISOString(), synced: false });
+    return { id, payload, key: `${id} ${payloadKey(payload)}`, thumbnail, at, revision: draftRevision };
+  }
 
+  /** Отправить с повторами при сбоях сети; null — не удалось (статус и предупреждение уже показаны). */
+  function* send(id: string, payload: SaveProjectInput) {
     for (let attempt = 0; ; attempt += 1) {
       try {
-        const updated = yield* call(projectsApi.updateProject, id, payload);
-        yield* put(CreateProjectFeature.actions.upsertProject(updated));
-        markBackupSynced(id);
-        lastKey = key;
-        if (thumbnail) lastThumbnailAt = now;
-        warned = false;
-        yield* put(actions.saved(new Date().toISOString()));
-        return;
+        return yield* call(projectsApi.updateProject, id, payload);
       } catch (error) {
         if (!isRetryable(error) || attempt >= RETRY_DELAYS_MS.length) {
           console.error('Не удалось сохранить проект', error);
-          yield* put(actions.setSaveState(isOffline(error) ? 'offline' : 'error'));
+          yield* putIfOpen(id, actions.setSaveState(isOffline(error) ? 'offline' : 'error'));
           if (!warned) toast.error('Не удалось сохранить на сервер — изменения сохранены на этом устройстве');
           warned = true;
-          return;
+          return null;
         }
         yield* delay(RETRY_DELAYS_MS[attempt]);
       }
     }
+  }
+
+  /** Отправить собранное сохранение (в своей очереди). */
+  function* commit(draft: SaveDraft, force: boolean) {
+    if (!force && draft.key === lastKey) {
+      // На сервере уже ровно это (например, правку отменили, пока шёл предыдущий запрос)
+      markBackupSynced(draft.id);
+      yield* putIfOpen(draft.id, actions.setSaveState('saved'));
+      return;
+    }
+    yield* putIfOpen(draft.id, actions.setSaveState('saving'));
+    writeBackup(draft.id, { roomData: draft.payload.roomData, camera: cameraSession.getState().pose, savedAt: new Date(draft.at).toISOString(), synced: false });
+    const updated = yield* send(draft.id, draft.payload);
+    if (!updated) return;
+    yield* put(CreateProjectFeature.actions.upsertProject(updated));
+    lastKey = draft.key;
+    if (draft.thumbnail) lastThumbnailAt = draft.at;
+    warned = false;
+    if (revision !== draft.revision && (yield* isOpen(draft.id))) {
+      // Правки этого проекта во время запроса на сервер не попали: копия на устройстве новее сервера,
+      // статус — «Есть изменения»; их отправит автосохранение, которое эти правки запустили.
+      yield* put(actions.setSaveState('dirty'));
+      return;
+    }
+    markBackupSynced(draft.id);
+    yield* putIfOpen(draft.id, actions.saved(new Date().toISOString()));
+  }
+
+  function* saveCurrent(force: boolean) {
+    const draft = yield* prepare(force);
+    if (draft) yield* commit(draft, force);
+  }
+
+  return {
+    /** Учесть правку сцены (каждое действие из AUTOSAVE_TRIGGERS). */
+    noteEdit: () => {
+      revision += 1;
+    },
+    /** Сохранить сцену, какой она будет в начале своей очереди (force — даже без изменений, с превью). */
+    save: (force: boolean) => inTurn(turn, saveCurrent(force)),
+    /**
+     * Сохранить сцену, какой её оставили при закрытии: снимок — сразу, отправка — в своей очереди
+     * (пока она подойдёт, может открыться другой проект со своей сценой).
+     */
+    *saveOnClose() {
+      const draft = yield* prepare(false);
+      if (draft) yield* inTurn(turn, commit(draft, false));
+    },
   };
 }
 
@@ -198,14 +287,17 @@ function* thumbnailSaga() {
 
 /** Корневая сага сессии */
 export function* initSaga() {
-  const save = createSaver();
+  const { save, saveOnClose, noteEdit } = createSaver();
+  /** Сколько раз открывали проект: закрытие, ждавшее сохранения, не очищает сцену открытого после него. */
+  let openings = 0;
 
-  /** Закрыть проект: сохранить изменения и очистить сцену (если не открыт другой). */
+  /** Закрыть проект: сохранить изменения и очистить сцену (если с тех пор не открыли проект — другой или тот же). */
   function* closeSaga() {
     const id = yield* select(selectors.selectSessionProjectId);
+    const opening = openings;
     const saveState = yield* select(selectors.selectSaveState);
-    if (id && saveState !== 'saved') yield* call(save, false);
-    if ((yield* select(selectors.selectSessionProjectId)) !== id) return;
+    if (id && saveState !== 'saved') yield* call(saveOnClose);
+    if (openings !== opening || (yield* select(selectors.selectSessionProjectId)) !== id) return;
     interaction.reset();
     setRestorePose(null);
     yield* put(editorActions.resetEditor());
@@ -217,11 +309,16 @@ export function* initSaga() {
     yield* put(actions.resetSession());
   }
 
+  yield* takeEvery(actions.openRequested.type, () => {
+    openings += 1;
+  });
   yield* takeLatest(actions.openRequested.type, openSaga);
+  yield* takeEvery(AUTOSAVE_TRIGGERS, noteEdit);
   yield* takeEvery(AUTOSAVE_TRIGGERS, markDirtySaga);
   yield* debounce(BACKUP_DELAY_MS, AUTOSAVE_TRIGGERS, backupSaga);
   yield* debounce(AUTOSAVE_DELAY_MS, AUTOSAVE_TRIGGERS, () => save(false));
-  yield* takeLatest(actions.saveNowRequested.type, () => save(true));
+  // Сохранения не отменяются (см. очередь в createSaver): повторное «Сохранить» встаёт в очередь
+  yield* takeEvery(actions.saveNowRequested.type, () => save(true));
   yield* takeLatest(actions.thumbnailRequested.type, thumbnailSaga);
-  yield* takeLatest(actions.closeRequested.type, closeSaga);
+  yield* takeEvery(actions.closeRequested.type, closeSaga);
 }
