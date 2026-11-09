@@ -10,8 +10,20 @@ const emptyForm: AuthForm = {
   name: '',
   email: '',
   password: '',
+  passwordRepeat: '',
   code: '',
 };
+
+/**
+ * Форма при переходе в другой режим: почта остаётся, а при входе в восстановление пароля
+ * и выходе из него пароли и код очищаются — неудачный пароль входа не становится «новым»,
+ * и наоборот. Логин администратора (без «@») — не почта, для сброса его не подставляем.
+ */
+function formForMode(form: AuthForm, from: AuthMode, to: AuthMode): AuthForm {
+  if (from !== 'reset' && to !== 'reset') return form;
+  const email = to === 'reset' && !form.email.includes('@') ? '' : form.email;
+  return { ...form, email, password: '', passwordRepeat: '', code: '' };
+}
 
 const initialState: UserState = {
   authData: undefined,
@@ -90,8 +102,9 @@ export const { actions, name, reducer } = createSlice({
       state.form = emptyForm;
       state.registrationToken = undefined;
     },
-    /** Переключить режим: вход / регистрация */
+    /** Переключить режим: вход / регистрация / восстановление пароля */
     setAuthMode: (state, action: PayloadAction<AuthMode>) => {
+      state.form = formForMode(state.form, state.authMode, action.payload);
       state.authMode = action.payload;
       state.authStep = 'form';
       state.codeSent = false;
@@ -135,5 +148,18 @@ export const { actions, name, reducer } = createSlice({
     verifyCodeRequested: () => {},
     /** Восстановить сессию по токену из localStorage */
     restoreSessionRequested: () => {},
+    /** Восстановление пароля: запросить код на почту */
+    sendResetCodeRequested: () => {},
+    /** Восстановление пароля: код и новый пароль */
+    resetPasswordRequested: () => {},
+    /** Пароль изменён: к входу с той же почтой и сообщением (войти нужно новым паролем) */
+    passwordResetSucceeded: (state, action: PayloadAction<string>) => {
+      state.authMode = 'login';
+      state.authStep = 'form';
+      state.codeSent = false;
+      state.error = undefined;
+      state.successMessage = action.payload;
+      state.form = { ...emptyForm, email: state.form.email };
+    },
   },
 });

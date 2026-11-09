@@ -1,3 +1,4 @@
+import { isSessionRejection, rejectSession } from './session';
 import { getStoredToken } from './token';
 
 const BASE_URL = '';
@@ -10,6 +11,12 @@ export class ApiRequestError extends Error {
   constructor(
     public status: number,
     message: string,
+    /**
+     * Сервер отклонил токен запроса (срок вышел или сессию отозвали): сессия этого запроса
+     * закончилась, выход по ней выполнен — этим ответом или раньше. Повторять запрос с более
+     * новым токеном нельзя: это была бы уже другая сессия (возможно, другого пользователя).
+     */
+    public readonly sessionEnded = false,
   ) {
     super(message);
     this.name = 'ApiRequestError';
@@ -17,6 +24,26 @@ export class ApiRequestError extends Error {
 }
 
 const REQUEST_TIMEOUT_MS = 20000;
+
+/** Текст ошибки из ответа сервера `{ error: "…" }`; без него (например, ответ прокси) — «HTTP <код>». */
+function errorMessage(body: unknown, status: number): string {
+  const error = (body as Partial<ApiError> | null)?.error;
+  return typeof error === 'string' ? error : `HTTP ${status}`;
+}
+
+/**
+ * Ошибка ответа. Отказ в сессии на запрос, ушедший с токеном, ещё и заканчивает сессию
+ * (токен стирается, сага пользователя выходит из аккаунта — см. app/api/session). Запросы
+ * без токена (вход, регистрация, сброс пароля) так не заканчиваются никогда.
+ * @param status - HTTP-статус
+ * @param message - текст ошибки сервера
+ * @param token - токен, с которым ушёл запрос
+ */
+function responseError(status: number, message: string, token: string | null): ApiRequestError {
+  const sessionEnded = token !== null && isSessionRejection(status, message);
+  if (sessionEnded) rejectSession(token);
+  return new ApiRequestError(status, message, sessionEnded);
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
@@ -27,7 +54,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...(options?.headers as Record<string, string>),
   };
 
-  const token = getStoredToken();
+  const token = getStoredToken() || null;
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -55,8 +82,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    const body: ApiError = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-    throw new ApiRequestError(res.status, body.error);
+    const body: unknown = await res.json().catch(() => null);
+    throw responseError(res.status, errorMessage(body, res.status), token);
   }
 
   if (res.status === 204) return undefined as T;

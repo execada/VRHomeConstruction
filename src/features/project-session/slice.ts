@@ -14,6 +14,7 @@ const initialState: ProjectSessionState = {
   saveState: 'saved',
   lastSavedAt: null,
   fromLocalBackup: false,
+  unsavedKept: false,
 };
 
 export const { actions, name, reducer } = createSlice({
@@ -49,6 +50,16 @@ export const { actions, name, reducer } = createSlice({
     thumbnailRequested: () => {},
     /** Закрыть проект (сохранить изменения и очистить сцену) */
     closeRequested: () => {},
+    /**
+     * Нет входа (вышли из аккаунта, сессия закончилась или проект открыли без входа): сцена
+     * закрыта, страница просит войти, после входа проект откроется снова.
+     */
+    signedOut: (state, action: PayloadAction<{ unsavedKept: boolean }>) => ({
+      ...initialState,
+      projectId: state.projectId,
+      status: 'signedOut',
+      unsavedKept: action.payload.unsavedKept,
+    }),
     /** Сбросить сессию */
     resetSession: () => initialState,
   },

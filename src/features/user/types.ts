@@ -15,7 +15,8 @@ export interface User {
   role?: string;
 }
 
-export type AuthMode = 'login' | 'register';
+/** Вход, регистрация или восстановление пароля («Забыли пароль?»). */
+export type AuthMode = 'login' | 'register' | 'reset';
 
 /** Шаг формы: данные или ввод кода из письма */
 export type AuthStep = 'form' | 'code';
@@ -23,7 +24,10 @@ export type AuthStep = 'form' | 'code';
 export interface AuthForm {
   name: string;
   email: string;
+  /** Пароль; при восстановлении — новый пароль. */
   password: string;
+  /** Повтор нового пароля (только при восстановлении). */
+  passwordRepeat: string;
   code: string;
 }
 

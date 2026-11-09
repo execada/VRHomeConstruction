@@ -26,7 +26,12 @@ function dismiss(id: number) {
   emit();
 }
 
+/**
+ * Показать тост. То же сообщение, что уже на экране, не повторяется: несколько ошибок
+ * с одной причиной (например, конец сессии) показываются одним тостом.
+ */
 function push(type: ToastType, message: string, ttl = 3500) {
+  if (toasts.some((t) => t.message === message)) return;
   const id = Date.now() + Math.random();
   toasts = [...toasts, { id, type, message }];
   emit();
@@ -36,7 +41,11 @@ function push(type: ToastType, message: string, ttl = 3500) {
 export const toast = {
   success: (message: string) => push('success', message),
   error: (message: string) => push('error', message, 5000),
-  info: (message: string) => push('info', message),
+  /**
+   * @param message - текст
+   * @param ttl - сколько показывать, мс (по умолчанию 3,5 с)
+   */
+  info: (message: string, ttl?: number) => push('info', message, ttl),
   dismiss,
 };
 

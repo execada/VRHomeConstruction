@@ -53,6 +53,17 @@ describe('сохранение папок', () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
+  it('конец сессии: без своего сообщения и без повторной загрузки (выход очистит папки)', async () => {
+    api.updateFolder.mockRejectedValue(new ApiRequestError(401, 'invalid or expired token', true));
+    const store = setup([folder('a')]);
+
+    store.dispatch(actions.renameFolder({ folderId: 'a', name: 'Кухни' }));
+    await flush();
+
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(api.fetchFolders).not.toHaveBeenCalled();
+  });
+
   it('при отказе сервера показывает причину и возвращает сохранённое состояние', async () => {
     api.updateFolder.mockRejectedValue(new ApiRequestError(400, 'folder cannot be moved into its own subfolder'));
     api.fetchFolders.mockResolvedValue([folder('a')]);

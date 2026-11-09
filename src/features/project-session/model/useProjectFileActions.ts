@@ -7,6 +7,7 @@
 import { useCallback } from 'react';
 import { useDispatch, useStore } from 'react-redux';
 import { layoutsApi } from '@/app/api';
+import { isSessionEnded } from '@/app/api/errors';
 import type { RootState } from '@/app/store';
 import { cameraSession } from '@/features/camera/model/cameraSession';
 import { CreateLayoutFeature } from '@/features/create-layout';
@@ -72,6 +73,8 @@ export function useProjectFileActions() {
       dispatch(NotificationsFeature.actions.pushNotification({ kind: 'success', title: 'Шаблон создан', message: name }));
       toast.success('Комната сохранена как шаблон');
     } catch (error) {
+      // Конец сессии: выход и сообщение о нём — общие.
+      if (isSessionEnded(error)) return;
       console.error('Не удалось сохранить шаблон', error);
       toast.error('Не удалось сохранить шаблон');
     }

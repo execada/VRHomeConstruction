@@ -34,13 +34,27 @@ func (s *AuthService) checkResendCooldown(ctx context.Context, email, purpose st
 // issueCode генерирует код, сохраняет его хэш в записи pending (поля цели —
 // email, purpose и т.д. — заполняет вызывающий) и отправляет письмо в фоне.
 func (s *AuthService) issueCode(ctx context.Context, pending models.VerificationRecord, purposeLabel string) (*models.SendCodeResponse, error) {
+	code, err := s.storeCode(ctx, pending)
+	if err != nil {
+		return nil, err
+	}
+	s.mail.Send(pending.Email, code, purposeLabel)
+	if s.sender.LogOnly() {
+		return &models.SendCodeResponse{Message: msgCodeInLogs}, nil
+	}
+	return &models.SendCodeResponse{Message: msgCodeSent}, nil
+}
+
+// storeCode генерирует код и сохраняет его хэш в записи pending (новый код заменяет
+// прежний и обнуляет попытки). Возвращает сам код — для письма.
+func (s *AuthService) storeCode(ctx context.Context, pending models.VerificationRecord) (string, error) {
 	code, err := generateCode()
 	if err != nil {
-		return nil, fmt.Errorf("generate code: %w", err)
+		return "", fmt.Errorf("generate code: %w", err)
 	}
 	codeHash, err := bcrypt.GenerateFromPassword([]byte(code), bcrypt.MinCost)
 	if err != nil {
-		return nil, fmt.Errorf("hash code: %w", err)
+		return "", fmt.Errorf("hash code: %w", err)
 	}
 
 	now := time.Now()
@@ -50,19 +64,27 @@ func (s *AuthService) issueCode(ctx context.Context, pending models.Verification
 	record.ExpiresAt = now.Add(verificationTTL)
 	record.LastSentAt = now
 	if err := s.verifications.Upsert(ctx, &record); err != nil {
-		return nil, fmt.Errorf("store verification code: %w", err)
+		return "", fmt.Errorf("store verification code: %w", err)
 	}
-
-	s.mail.Send(record.Email, code, purposeLabel)
-	if s.sender.LogOnly() {
-		return &models.SendCodeResponse{Message: msgCodeInLogs}, nil
-	}
-	return &models.SendCodeResponse{Message: msgCodeSent}, nil
+	return code, nil
 }
 
 // verifyCode тратит одну попытку и сверяет код. Попытка расходуется атомарно до
 // сравнения, поэтому параллельные запросы не получат больше maxCodeAttempts проверок.
 func (s *AuthService) verifyCode(ctx context.Context, key models.VerificationKey, code string) (*models.VerificationRecord, error) {
+	record, err := s.consumeAttempt(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	if !codeMatches(record, code) {
+		return nil, wrongCodeError(record)
+	}
+	return record, nil
+}
+
+// consumeAttempt атомарно списывает попытку у живой записи с ключом key. Если такой
+// записи нет — ошибка «попытки исчерпаны» или «кода нет / истёк» (сравнения не было).
+func (s *AuthService) consumeAttempt(ctx context.Context, key models.VerificationKey) (*models.VerificationRecord, error) {
 	record, err := s.verifications.ConsumeAttempt(ctx, key, maxCodeAttempts)
 	if err != nil {
 		return nil, fmt.Errorf("consume verification attempt: %w", err)
@@ -70,13 +92,19 @@ func (s *AuthService) verifyCode(ctx context.Context, key models.VerificationKey
 	if record == nil {
 		return nil, s.missingCodeError(ctx, key)
 	}
-	if bcrypt.CompareHashAndPassword([]byte(record.CodeHash), []byte(strings.TrimSpace(code))) != nil {
-		if record.Attempts >= maxCodeAttempts {
-			return nil, ErrTooManyAttempts
-		}
-		return nil, ErrInvalidCode
-	}
 	return record, nil
+}
+
+func codeMatches(record *models.VerificationRecord, code string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(record.CodeHash), []byte(strings.TrimSpace(code))) == nil
+}
+
+// wrongCodeError — ответ на неверный код: последняя попытка аннулирует код.
+func wrongCodeError(record *models.VerificationRecord) error {
+	if record.Attempts >= maxCodeAttempts {
+		return ErrTooManyAttempts
+	}
+	return ErrInvalidCode
 }
 
 // missingCodeError различает «попытки исчерпаны» и «кода нет / истёк / запрошен не вами».

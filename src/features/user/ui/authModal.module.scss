@@ -41,7 +41,19 @@
   color: var(--accent);
   font-size: var(--fs-sm);
 
-  &:hover {
+  &:hover:not(:disabled) {
     text-decoration: underline;
   }
+
+  &:disabled {
+    color: var(--text-3);
+    cursor: default;
+  }
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
 }

@@ -11,8 +11,9 @@ import { EnvironmentFeature } from '@/features/environment';
 import { HistoryFeature } from '@/features/history';
 import { SelectionFeature } from '@/features/selection';
 import { createEmptyScene } from '@/features/editor-3d/lib/scene/build';
+import { actions as userActions } from '@/features/user/slice';
 import { ProjectSessionFeature } from './index';
-import { writeBackup } from './lib/localBackup';
+import { readBackup, removeBackup, writeBackup } from './lib/localBackup';
 import { sceneBridgeStore } from '@/features/editor-3d/model/sceneBridge';
 
 const api = vi.hoisted(() => ({
@@ -22,7 +23,8 @@ const api = vi.hoisted(() => ({
 }));
 
 vi.mock('@/app/api', () => ({ projectsApi: api }));
-vi.mock('@/shared/lib/toast', () => ({ toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() } }));
+const toast = vi.hoisted(() => ({ info: vi.fn(), error: vi.fn(), success: vi.fn() }));
+vi.mock('@/shared/lib/toast', () => ({ toast }));
 
 const serverProject = (roomData: unknown, updatedAt = '2026-01-01T00:00:00Z') => ({
   id: 'p1',
@@ -193,5 +195,194 @@ describe('project session saga', () => {
     await flush();
     expect(store.getState().projectSession.status).toBe('idle');
     expect(store.getState().editor.dimensions.width).toBe(4);
+  });
+});
+
+describe('выход из аккаунта на странице проекта', () => {
+  const user = { id: 'u1', name: 'Анна', email: 'anna@example.com' };
+  const stool = { id: 'f1', name: 'Стул', modelPath: 'primitive:stool', position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], scale: 1 };
+  const backupFurniture = () => (readBackup('p1')?.roomData as { floors: Array<{ furniture: unknown[] }> } | undefined)?.floors[0].furniture;
+
+  beforeEach(() => {
+    vi.stubGlobal('window', { localStorage: memoryStorage() });
+    api.fetchProject.mockReset();
+    api.updateProject.mockReset();
+    api.patchProject.mockReset();
+    Object.values(toast).forEach((fn) => fn.mockReset());
+    sceneBridgeStore.setState({ screenToFloor: null, capture: null, fps: 0 });
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    removeBackup('p1');
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  async function openedProject() {
+    api.fetchProject.mockResolvedValue(serverProject(createEmptyScene(), '2026-01-01T00:00:00Z'));
+    const store = setup();
+    store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+    await vi.runAllTimersAsync();
+    expect(store.getState().projectSession.status).toBe('ready');
+    return store;
+  }
+
+  it('несохранённая правка остаётся локальной копией, сцена закрывается, страница просит войти', async () => {
+    const store = await openedProject();
+    store.dispatch(furnitureActions.addFurniture(stool));
+
+    store.dispatch(userActions.logout());
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(readBackup('p1')?.synced).toBe(false);
+    expect(backupFurniture()).toHaveLength(1);
+    expect(store.getState().furniture.items).toHaveLength(0);
+    expect(store.getState().projectSession).toMatchObject({ projectId: 'p1', status: 'signedOut', unsavedKept: true });
+    expect(api.updateProject).not.toHaveBeenCalled();
+  });
+
+  it('после входа проект открывается снова с несохранённой правкой и досохраняется', async () => {
+    const store = await openedProject();
+    store.dispatch(furnitureActions.addFurniture(stool));
+    store.dispatch(userActions.logout());
+    await vi.advanceTimersByTimeAsync(100);
+    api.updateProject.mockImplementation(async () => serverProject(null, new Date().toISOString()));
+
+    store.dispatch(userActions.setUser(user));
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(api.fetchProject).toHaveBeenCalledTimes(2);
+    expect(store.getState().projectSession.status).toBe('ready');
+    expect(store.getState().furniture.items).toHaveLength(1);
+    expect(api.updateProject).toHaveBeenCalledTimes(1);
+    expect(store.getState().projectSession.saveState).toBe('saved');
+    expect(readBackup('p1')?.synced).toBe(true);
+  });
+
+  it('localStorage переполнен: правка доживает до входа в памяти вкладки', async () => {
+    const store = await openedProject();
+    const storage = window.localStorage;
+    vi.stubGlobal('window', { localStorage: { ...storage, getItem: storage.getItem, setItem: () => { throw new DOMException('full', 'QuotaExceededError'); } } });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    store.dispatch(furnitureActions.addFurniture(stool));
+
+    store.dispatch(userActions.logout());
+    await vi.advanceTimersByTimeAsync(100);
+    expect(store.getState().projectSession).toMatchObject({ status: 'signedOut', unsavedKept: true });
+
+    api.updateProject.mockImplementation(async () => serverProject(null, new Date().toISOString()));
+    store.dispatch(userActions.setUser(user));
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(store.getState().furniture.items).toHaveLength(1);
+    expect(api.updateProject).toHaveBeenCalledTimes(1);
+    expect(store.getState().projectSession.saveState).toBe('saved');
+  });
+
+  it('без несохранённых правок копия не пишется', async () => {
+    const store = await openedProject();
+
+    store.dispatch(userActions.logout());
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(readBackup('p1')).toBeNull();
+    expect(store.getState().projectSession).toMatchObject({ status: 'signedOut', unsavedKept: false });
+  });
+
+  it('вход на другой странице (проект не открыт) ничего не открывает', async () => {
+    const store = setup();
+
+    store.dispatch(userActions.logout());
+    store.dispatch(userActions.setUser(user));
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(api.fetchProject).not.toHaveBeenCalled();
+    expect(store.getState().projectSession.status).toBe('idle');
+  });
+
+  it('проект без входа (401) просит войти и помнит о локальной копии', async () => {
+    writeBackup('p1', { roomData: createEmptyScene(), camera: null, savedAt: '2026-02-01T00:00:00Z', synced: false });
+    api.fetchProject.mockRejectedValue(new ApiRequestError(401, 'authorization required'));
+    const store = setup();
+
+    store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(store.getState().projectSession).toMatchObject({ status: 'signedOut', unsavedKept: true, error: null });
+  });
+
+  it('выход во время открытия: сцена не загружается', async () => {
+    let answer: (project: unknown) => void = () => {};
+    api.fetchProject.mockImplementation(() => new Promise((resolve) => (answer = resolve)));
+    const store = setup();
+    store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+    await vi.advanceTimersByTimeAsync(10);
+
+    store.dispatch(userActions.logout());
+    answer(serverProject(createEmptyScene({ width: 9, height: 3, depth: 4 })));
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(store.getState().projectSession.status).toBe('signedOut');
+    expect(store.getState().editor.dimensions.width).toBe(4);
+    expect(store.getState().createProject.projects).toHaveLength(0);
+  });
+
+  it('автосохранение, отклонённое из-за конца сессии, не показывает своей ошибки', async () => {
+    const store = await openedProject();
+    api.updateProject.mockRejectedValue(new ApiRequestError(401, 'invalid or expired token', true));
+
+    store.dispatch(furnitureActions.addFurniture(stool));
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(api.updateProject).toHaveBeenCalledTimes(1);
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(store.getState().projectSession.saveState).not.toBe('error');
+  });
+
+  it('выход во время паузы перед повтором сохранения: повтора и сообщения об ошибке нет', async () => {
+    const store = await openedProject();
+    api.updateProject.mockRejectedValue(new ApiRequestError(0, 'offline'));
+    store.dispatch(furnitureActions.addFurniture(stool));
+    await vi.advanceTimersByTimeAsync(1600);
+    expect(api.updateProject).toHaveBeenCalledTimes(1);
+
+    store.dispatch(userActions.logout());
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(api.updateProject).toHaveBeenCalledTimes(1);
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(readBackup('p1')?.synced).toBe(false);
+  });
+
+  it('ответ на сохранение после выхода не отмечает копию синхронизированной', async () => {
+    const store = await openedProject();
+    let answer: (project: unknown) => void = () => {};
+    api.updateProject.mockImplementation(() => new Promise((resolve) => (answer = resolve)));
+    store.dispatch(furnitureActions.addFurniture(stool));
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(api.updateProject).toHaveBeenCalledTimes(1);
+
+    store.dispatch(furnitureActions.addFurniture({ ...stool, id: 'f2' }));
+    store.dispatch(userActions.logout());
+    answer(serverProject(null, new Date().toISOString()));
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(readBackup('p1')?.synced).toBe(false);
+    expect(backupFurniture()).toHaveLength(2);
+    expect(store.getState().projectSession).toMatchObject({ status: 'signedOut', saveState: 'saved', lastSavedAt: null });
+  });
+
+  it('уход со страницы после выхода закрывает сессию без сохранения', async () => {
+    const store = await openedProject();
+    store.dispatch(furnitureActions.addFurniture(stool));
+    store.dispatch(userActions.logout());
+    await vi.advanceTimersByTimeAsync(100);
+
+    store.dispatch(ProjectSessionFeature.actions.closeRequested());
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(store.getState().projectSession.status).toBe('idle');
+    expect(api.updateProject).not.toHaveBeenCalled();
+    expect(readBackup('p1')?.synced).toBe(false);
   });
 });

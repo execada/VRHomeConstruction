@@ -79,6 +79,11 @@ export const sendCodeResponseSchema = z.object({
   token: z.string().min(1).max(128),
 });
 
+/** Ответ с текстом для пользователя (восстановление пароля). */
+export const messageResponseSchema = z.object({
+  message: z.string().max(500).optional().default(''),
+});
+
 /** Полные данные проекта (с документом сцены). */
 export type ProjectDetails = Project & {
   roomData: unknown;

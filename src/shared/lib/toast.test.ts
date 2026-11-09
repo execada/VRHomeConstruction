@@ -34,6 +34,33 @@ describe('toast', () => {
     unsubscribe();
   });
 
+  it('одинаковое сообщение на экране не повторяется', () => {
+    let current: ToastItem[] = [];
+    const unsubscribe = subscribeToasts((items) => (current = items));
+    toast.info('Сессия завершена — войдите снова', 6000);
+    toast.error('Сессия завершена — войдите снова');
+    toast.error('Не удалось удалить проект');
+    expect(current.map((t) => `${t.type}:${t.message}`)).toEqual(['info:Сессия завершена — войдите снова', 'error:Не удалось удалить проект']);
+
+    vi.advanceTimersByTime(6100);
+    expect(current).toEqual([]);
+    toast.info('Сессия завершена — войдите снова');
+    expect(current.map((t) => t.message)).toEqual(['Сессия завершена — войдите снова']);
+    unsubscribe();
+    vi.runAllTimers();
+  });
+
+  it('уведомлению можно задать время показа', () => {
+    let current: ToastItem[] = [];
+    const unsubscribe = subscribeToasts((items) => (current = items));
+    toast.info('Дольше обычного', 6000);
+    vi.advanceTimersByTime(5000);
+    expect(current.map((t) => t.message)).toEqual(['Дольше обычного']);
+    vi.advanceTimersByTime(1100);
+    expect(current).toEqual([]);
+    unsubscribe();
+  });
+
   it('ручное закрытие и отписка', () => {
     let current: ToastItem[] = [];
     let calls = 0;

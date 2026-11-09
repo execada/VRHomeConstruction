@@ -3,6 +3,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -18,7 +19,8 @@ const (
 	// requestTimeout — крайний срок запроса (обращения к MongoDB прерываются, а не висят).
 	requestTimeout = 15 * time.Second
 	healthTimeout  = 2 * time.Second
-	// Лимиты на IP: вход (перебор паролей) и коды подтверждения (перебор кодов, спам письмами).
+	// Лимиты на IP: вход (перебор паролей) и коды подтверждения — регистрация, смена почты,
+	// сброс пароля (перебор кодов, спам письмами); у всех маршрутов с кодами лимит общий.
 	loginPerMinute = 20
 	codesPerMinute = 10
 	// Лимит изменяющих запросов на пользователя (автосохранение — не чаще раза в 1,5 с).
@@ -27,7 +29,9 @@ const (
 
 // Deps — обработчики и проверки, из которых собирается API.
 type Deps struct {
-	Tokens   *auth.TokenService
+	Tokens *auth.TokenService
+	// Sessions отклоняет токены, выданные до сброса пароля (версия сессий в JWT устарела).
+	Sessions middleware.SessionChecker
 	Auth     *handlers.AuthHandler
 	Projects *handlers.ProjectHandler
 	Folders  *handlers.FolderHandler
@@ -44,6 +48,9 @@ func NewRouter(cfg *config.Config, d Deps) (*gin.Engine, error) {
 	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
 		return nil, fmt.Errorf("trusted proxies: %w", err)
 	}
+	if d.Sessions == nil {
+		return nil, errors.New("session checker is required: revoked tokens would be accepted")
+	}
 	r.Use(
 		gin.Logger(),
 		gin.Recovery(),
@@ -59,7 +66,7 @@ func NewRouter(cfg *config.Config, d Deps) (*gin.Engine, error) {
 	registerAuthRoutes(api.Group("/auth"), d)
 
 	protected := api.Group("",
-		middleware.Auth(d.Tokens),
+		middleware.Auth(d.Tokens, d.Sessions),
 		middleware.WritesOnly(middleware.RateLimitBy(writesPerMinute, time.Minute, middleware.ByUserID)),
 	)
 	registerProjectRoutes(protected.Group("/projects"), d.Projects)
@@ -75,8 +82,11 @@ func registerAuthRoutes(g *gin.RouterGroup, d Deps) {
 	g.POST("/login", loginLimit, d.Auth.Login)
 	g.POST("/send-code", codeLimit, d.Auth.SendCode)
 	g.POST("/verify-code", codeLimit, d.Auth.VerifyCode)
+	// Восстановление пароля: код на почту, затем код и новый пароль (прежние сессии отзываются).
+	g.POST("/password/send-code", codeLimit, d.Auth.SendPasswordResetCode)
+	g.POST("/password/reset", codeLimit, d.Auth.ResetPassword)
 
-	me := g.Group("", middleware.Auth(d.Tokens))
+	me := g.Group("", middleware.Auth(d.Tokens, d.Sessions))
 	me.GET("/me", d.Auth.Me)
 	me.PATCH("/me", d.Auth.UpdateMe)
 	// Смена почты: код уходит на новый адрес; нужен текущий пароль.

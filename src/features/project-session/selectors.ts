@@ -22,6 +22,8 @@ const selectSessionError = createSelector(root, (s) => s?.error ?? null);
 const selectSaveState = createSelector(root, (s) => s?.saveState ?? 'saved');
 /** Время последнего сохранения */
 const selectLastSavedAt = createSelector(root, (s) => s?.lastSavedAt ?? null);
+/** Без входа: несохранённые правки остались на этом устройстве */
+const selectUnsavedKept = createSelector(root, (s) => s?.unsavedKept ?? false);
 
 export const selectors = {
   selectSessionProjectId,
@@ -29,4 +31,5 @@ export const selectors = {
   selectSessionError,
   selectSaveState,
   selectLastSavedAt,
+  selectUnsavedKept,
 };

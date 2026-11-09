@@ -84,6 +84,43 @@ func (r *UserRepo) UpdateEmail(ctx context.Context, id, email string) (*models.U
 	return r.updateFields(ctx, id, bson.M{"email": normalizeEmail(email)})
 }
 
+// UpdatePassword задаёт новый хэш пароля и в том же запросе увеличивает версию сессий:
+// токены, выданные до смены пароля, перестают приниматься. Срабатывает, только пока у
+// пользователя эта почта (на неё уходил код сброса); nil — нет такого пользователя с этой почтой.
+func (r *UserRepo) UpdatePassword(ctx context.Context, id, email, passwordHash string) (*models.User, error) {
+	var user models.User
+	err := r.collection.FindOneAndUpdate(
+		ctx,
+		bson.M{"_id": id, "email": normalizeEmail(email)},
+		bson.M{"$set": bson.M{"passwordHash": passwordHash}, "$inc": bson.M{"tokenVersion": 1}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	).Decode(&user)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("update password: %w", err)
+	}
+	return &user, nil
+}
+
+// SessionVersion — текущая версия сессий пользователя (читается только это поле);
+// found=false — пользователя нет.
+func (r *UserRepo) SessionVersion(ctx context.Context, id string) (int64, bool, error) {
+	var doc struct {
+		TokenVersion int64 `bson:"tokenVersion"`
+	}
+	opts := options.FindOne().SetProjection(bson.M{"tokenVersion": 1})
+	err := r.collection.FindOne(ctx, bson.M{"_id": id}, opts).Decode(&doc)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("find session version: %w", err)
+	}
+	return doc.TokenVersion, true, nil
+}
+
 func (r *UserRepo) updateFields(ctx context.Context, id string, fields bson.M) (*models.User, error) {
 	var user models.User
 	err := r.collection.FindOneAndUpdate(

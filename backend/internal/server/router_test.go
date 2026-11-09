@@ -17,6 +17,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var testTokens = auth.NewTokenService(strings.Repeat("k", 32)+"0123456789", time.Hour)
+
+// revokedSessions — проверка сессий, для которой действует только версия 1 (пароль уже сбрасывали).
+type revokedSessions struct{}
+
+func (revokedSessions) SessionActive(_ context.Context, _ string, version int64) (bool, error) {
+	return version == 1, nil
+}
+
 // testRouter собирает API без базы: обработчики без сервисов годятся, потому что
 // тесты проверяют только то, что срабатывает до обращения к сервису (middleware,
 // разбор тела, маршрутизация).
@@ -25,7 +34,8 @@ func testRouter(t *testing.T, trusted []string, health func(context.Context) err
 	gin.SetMode(gin.TestMode)
 	cfg := &config.Config{Env: config.EnvProduction, TrustedProxies: trusted}
 	r, err := NewRouter(cfg, Deps{
-		Tokens:   auth.NewTokenService(strings.Repeat("k", 32)+"0123456789", time.Hour),
+		Tokens:   testTokens,
+		Sessions: revokedSessions{},
 		Auth:     handlers.NewAuthHandler(nil),
 		Projects: handlers.NewProjectHandler(nil),
 		Folders:  handlers.NewFolderHandler(nil),
@@ -106,13 +116,31 @@ func TestProtectedRoutesRequireToken(t *testing.T) {
 	}
 }
 
+// Токен со старой версией сессий (до сброса пароля) не открывает защищённые маршруты.
+func TestProtectedRoutesRejectRevokedSessions(t *testing.T) {
+	r := testRouter(t, nil, nil)
+	old, _ := testTokens.Generate("u1", 0)
+	for _, path := range []string{"/api/projects", "/api/folders", "/api/layouts", "/api/auth/me"} {
+		w := request(r, http.MethodGet, path, "", map[string]string{"Authorization": "Bearer " + old})
+		if w.Code != http.StatusUnauthorized || errorText(t, w) != "invalid or expired token" {
+			t.Errorf("GET %s with a revoked session: expected 401, got %d %s", path, w.Code, w.Body.String())
+		}
+	}
+}
+
+// codePaths — маршруты с кодами подтверждения: у них общий лимит на IP.
+var codePaths = []string{
+	"/api/auth/send-code", "/api/auth/verify-code",
+	"/api/auth/password/send-code", "/api/auth/password/reset",
+}
+
 // sendCodes шлёт n заведомо некорректных запросов кода (до сервиса они не доходят)
-// с разными X-Forwarded-For и возвращает коды ответов.
+// с разными X-Forwarded-For по маршрутам с кодами и возвращает коды ответов.
 func sendCodes(r http.Handler, n int) []int {
 	codes := make([]int, n)
 	for i := range codes {
 		header := map[string]string{"X-Forwarded-For": fmt.Sprintf("203.0.113.%d", i+1)}
-		codes[i] = request(r, http.MethodPost, "/api/auth/send-code", `{}`, header).Code
+		codes[i] = request(r, http.MethodPost, codePaths[i%len(codePaths)], `{}`, header).Code
 	}
 	return codes
 }
@@ -135,6 +163,12 @@ func TestCodeLimitTrustsConfiguredProxy(t *testing.T) {
 		if code != http.StatusBadRequest {
 			t.Fatalf("request %d: distinct clients behind a trusted proxy must not share a limit, got %d", i+1, code)
 		}
+	}
+}
+
+func TestNewRouterRequiresSessionChecker(t *testing.T) {
+	if _, err := NewRouter(&config.Config{}, Deps{Tokens: testTokens}); err == nil {
+		t.Fatal("without a session checker revoked tokens would pass — startup must fail")
 	}
 }
 

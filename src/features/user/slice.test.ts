@@ -56,9 +56,51 @@ describe('user slice', () => {
     expect(state.form.name).toBe('');
   });
 
+  it('«Забыли пароль?» оставляет почту и очищает пароли', () => {
+    let state = reducer(initial(), actions.openAuthModal('login'));
+    state = reducer(state, actions.setFormField({ field: 'email', value: 'anna@example.com' }));
+    state = reducer(state, actions.setFormField({ field: 'password', value: 'wrong-guess' }));
+    state = reducer(state, actions.setError('Неверная почта или пароль'));
+
+    state = reducer(state, actions.setAuthMode('reset'));
+    expect(state).toMatchObject({ authMode: 'reset', authStep: 'form', error: undefined });
+    expect(state.form).toMatchObject({ email: 'anna@example.com', password: '', passwordRepeat: '', code: '' });
+
+    state = reducer(state, actions.setFormField({ field: 'password', value: 'new-password' }));
+    state = reducer(state, actions.setAuthMode('login'));
+    expect(state.form.password).toBe('');
+  });
+
+  it('логин администратора не подставляется в почту для сброса', () => {
+    let state = reducer(initial(), actions.setFormField({ field: 'email', value: 'execada' }));
+    state = reducer(state, actions.setAuthMode('reset'));
+    expect(state.form.email).toBe('');
+  });
+
+  it('после смены пароля — вход с той же почтой и сообщением', () => {
+    let state = reducer(initial(), actions.openAuthModal('login'));
+    state = reducer(state, actions.setAuthMode('reset'));
+    state = reducer(state, actions.setFormField({ field: 'email', value: 'anna@example.com' }));
+    state = reducer(state, actions.setCodeSent(true));
+    state = reducer(state, actions.setFormField({ field: 'code', value: '123456' }));
+    state = reducer(state, actions.setFormField({ field: 'password', value: 'new-password' }));
+    state = reducer(state, actions.setFormField({ field: 'passwordRepeat', value: 'new-password' }));
+
+    state = reducer(state, actions.passwordResetSucceeded('Пароль изменён'));
+    expect(state).toMatchObject({ authMode: 'login', authStep: 'form', codeSent: false, successMessage: 'Пароль изменён', isAuth: false });
+    expect(state.form).toEqual({ name: '', email: 'anna@example.com', password: '', passwordRepeat: '', code: '' });
+  });
+
   it('запросы для саг не меняют состояние', () => {
     const state = initial();
-    for (const action of [actions.loginRequested(), actions.sendCodeRequested(), actions.verifyCodeRequested(), actions.restoreSessionRequested()]) {
+    for (const action of [
+      actions.loginRequested(),
+      actions.sendCodeRequested(),
+      actions.verifyCodeRequested(),
+      actions.restoreSessionRequested(),
+      actions.sendResetCodeRequested(),
+      actions.resetPasswordRequested(),
+    ]) {
       expect(reducer(state, action)).toBe(state);
     }
   });

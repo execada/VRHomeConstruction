@@ -11,6 +11,8 @@ var ErrInvalidToken = errors.New("invalid token")
 
 type Claims struct {
 	UserID string `json:"userId"`
+	// Version — версия сессий пользователя на момент выпуска (растёт при сбросе пароля).
+	Version int64 `json:"ver,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -26,10 +28,12 @@ func NewTokenService(secret string, ttl time.Duration) *TokenService {
 	}
 }
 
-func (s *TokenService) Generate(userID string) (string, error) {
+// Generate выпускает токен пользователя с текущей версией его сессий.
+func (s *TokenService) Generate(userID string, version int64) (string, error) {
 	now := time.Now()
 	claims := Claims{
-		UserID: userID,
+		UserID:  userID,
+		Version: version,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID,
 			IssuedAt:  jwt.NewNumericDate(now),

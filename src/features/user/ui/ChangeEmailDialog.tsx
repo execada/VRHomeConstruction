@@ -5,7 +5,7 @@
  * @module user/ui/ChangeEmailDialog
  */
 
-import React, { useEffect, useId, useState } from 'react';
+import React, { useId, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { authApi } from '@/app/api';
 import { ApiRequestError } from '@/app/api/client';
@@ -14,27 +14,15 @@ import { toast } from '@/shared/lib/toast';
 import { Button, TextField } from '@/shared/ui/controls';
 import { Dialog } from '@/shared/ui/overlay/Dialog';
 import { checkField, emailSchema, verificationCodeSchema } from '../lib/profileSchemas';
+import { useCountdown } from '../lib/useCountdown';
 import { actions } from '../slice';
 import styles from './authModal.module.scss';
-
-const RESEND_DELAY_S = 30;
 
 type Field = 'email' | 'password' | 'code';
 type FieldError = { field: Field; text: string } | null;
 
 /** Ответы сервера, относящиеся к паролю, показываются под полем пароля. */
 const PASSWORD_ERRORS = new Set(['invalid password', 'too many login attempts, try again later']);
-
-/** Обратный отсчёт до повторной отправки кода. */
-function useCountdown(): [number, () => void] {
-  const [left, setLeft] = useState(0);
-  useEffect(() => {
-    if (left <= 0) return undefined;
-    const timer = window.setTimeout(() => setLeft((value) => value - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [left]);
-  return [left, () => setLeft(RESEND_DELAY_S)];
-}
 
 function errorField(err: unknown, fallback: Field): Field {
   return err instanceof ApiRequestError && PASSWORD_ERRORS.has(err.message.trim().toLowerCase()) ? 'password' : fallback;

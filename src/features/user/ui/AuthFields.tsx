@@ -1,5 +1,6 @@
 /**
  * Поля окна входа/регистрации: почта и пароль (и имя при регистрации) или код из письма.
+ * При входе — ссылка «Забыли пароль?».
  * @module user/ui/AuthFields
  */
 
@@ -10,13 +11,16 @@ import styles from './authModal.module.scss';
 
 type FieldChange = (field: keyof AuthForm, value: string) => void;
 
-export const CredentialsFields: React.FC<{ form: AuthForm; isRegister: boolean; disabled: boolean; onChange: FieldChange; onSwitchMode: () => void }> = ({
-  form,
-  isRegister,
-  disabled,
-  onChange,
-  onSwitchMode,
-}) => (
+interface CredentialsFieldsProps {
+  form: AuthForm;
+  isRegister: boolean;
+  disabled: boolean;
+  onChange: FieldChange;
+  onSwitchMode: () => void;
+  onForgotPassword: () => void;
+}
+
+export const CredentialsFields: React.FC<CredentialsFieldsProps> = ({ form, isRegister, disabled, onChange, onSwitchMode, onForgotPassword }) => (
   <>
     {isRegister && (
       <TextField label="Имя" value={form.name} onChange={(v) => onChange('name', v)} placeholder="Ваше имя" autoComplete="name" maxLength={60} disabled={disabled} autoFocus />
@@ -43,6 +47,11 @@ export const CredentialsFields: React.FC<{ form: AuthForm; isRegister: boolean; 
       hint={isRegister ? 'На почту придёт 6-значный код для подтверждения' : undefined}
       disabled={disabled}
     />
+    {!isRegister && (
+      <button type="button" className={styles.link} onClick={onForgotPassword}>
+        Забыли пароль?
+      </button>
+    )}
     <p className={styles.switchMode}>
       {isRegister ? 'Уже есть аккаунт?' : 'Нет аккаунта?'}
       <button type="button" className={styles.link} onClick={onSwitchMode}>
