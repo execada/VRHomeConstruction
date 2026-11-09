@@ -47,8 +47,8 @@ const AUTOSAVE_DELAY_MS = 1500;
 const BACKUP_DELAY_MS = 400;
 const THUMBNAIL_INTERVAL_MS = 60_000;
 const RETRY_DELAYS_MS = [1000, 3000];
-/** Правки сцены и отмена/повтор — поводы для автосохранения. */
-const AUTOSAVE_TRIGGERS = [...SCENE_EDIT_ACTION_TYPES, HistoryFeature.actions.stepBack.type, HistoryFeature.actions.stepForward.type];
+/** Правки сцены, отмена/повтор и сцена из файла — поводы для автосохранения. */
+const AUTOSAVE_TRIGGERS = [...SCENE_EDIT_ACTION_TYPES, HistoryFeature.actions.stepBack.type, HistoryFeature.actions.stepForward.type, actions.sceneImported.type];
 
 /** Ошибка, которую имеет смысл повторить (нет связи, перегрузка, сбой сервера). */
 function isRetryable(error: unknown): boolean {

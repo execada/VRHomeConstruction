@@ -18,6 +18,7 @@ import { selectSceneDocument } from '@/features/editor-3d/sceneSelectors';
 import { NotificationsFeature } from '@/features/notifications';
 import { buildProjectFile, dataUrlToBlob, downloadBlob, downloadProjectFile, readProjectFile, safeFileName } from '@/shared/lib/projectFile';
 import { toast } from '@/shared/lib/toast';
+import { actions } from '../slice';
 
 /** Название открытого проекта. */
 function projectName(state: RootState): string {
@@ -42,6 +43,8 @@ export function useProjectFileActions() {
         const parsed = parseSceneDocument((await readProjectFile(file)).roomData);
         if (!parsed.ok) throw new Error(parsed.error);
         sceneLoadActions(parsed.doc).forEach((a) => dispatch(a));
+        // Сцена из файла — несохранённая правка, иначе статус «Сохранено» и импорт теряется при перезагрузке
+        dispatch(actions.sceneImported());
         toast.success(parsed.dropped ? `Файл загружен, пропущено объектов: ${parsed.dropped}` : 'Сцена загружена из файла');
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Не удалось прочитать файл');

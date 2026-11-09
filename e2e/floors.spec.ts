@@ -1,10 +1,11 @@
 /**
  * Этажи и лестницы: второй этаж, лестница из каталога, мебель наверху и всё на месте после
  * перезагрузки; подъём по лестнице от первого лица; режим «Улица» — здание целиком;
- * старый проект (документ v3) открывается как одноэтажный.
+ * старый проект (документ v3) из файла открывается как одноэтажный, сохраняется на сервер
+ * и остаётся после перезагрузки.
  */
 import { expect, test, type Page } from '@playwright/test';
-import { deleteProject, projectIdFromUrl, readStore, useLowGraphics, waitForScene } from './support/app';
+import { deleteProject, fetchRoomData, projectIdFromUrl, readStore, useLowGraphics, waitForScene } from './support/app';
 
 /** Новый пустой проект в редакторе (низкие настройки графики задаёт сам сценарий). */
 async function createBlankProject(page: Page): Promise<string> {
@@ -131,7 +132,15 @@ function sceneV3() {
   };
 }
 
-test('старый одноэтажный проект открывается как один этаж без потерь', async ({ page }) => {
+/** Ширина первого этажа в сцене, сохранённой на сервере. */
+async function savedWidth(page: Page, id: string): Promise<number | undefined> {
+  const room = (await fetchRoomData(page, id)) as { floors?: Array<{ dimensions?: { width?: number } }> } | null;
+  return room?.floors?.[0]?.dimensions?.width;
+}
+
+test('старый одноэтажный проект из файла открывается как один этаж без потерь и сохраняется', async ({ page }) => {
+  // Две загрузки сцены (новый проект и перезагрузка): на CI без видеокарты кадры редкие
+  test.slow();
   await useLowGraphics(page);
   const id = await createBlankProject(page);
   try {
@@ -144,6 +153,14 @@ test('старый одноэтажный проект открывается к
     expect(await readStore<Array<{ name: string }>>(page, 'editor.rooms').then((r) => r[0].name)).toBe('Кухня');
     await expect(floors(page).getByRole('radio')).toHaveText(['1 этаж']);
     await expect.poll(() => readStore<string>(page, 'projectSession.saveState'), { timeout: 30_000 }).toBe('saved');
+
+    // Сцена из файла — правка: она на сервере и остаётся после перезагрузки
+    await expect.poll(() => savedWidth(page, id), { timeout: 30_000 }).toBe(5);
+    await page.reload();
+    await waitForScene(page);
+    expect(await readStore<number>(page, 'editor.dimensions.width')).toBe(5);
+    expect(await readStore<unknown[]>(page, 'furniture.items')).toHaveLength(1);
+    expect(await readStore<Array<{ name: string }>>(page, 'editor.rooms').then((r) => r[0].name)).toBe('Кухня');
   } finally {
     await deleteProject(page, id);
   }

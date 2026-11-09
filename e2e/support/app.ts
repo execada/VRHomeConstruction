@@ -77,6 +77,16 @@ export async function deleteProject(page: Page, id: string): Promise<void> {
   expect([200, 204, 404]).toContain(status);
 }
 
+/** Документ сцены проекта, как он сохранён на сервере (через API). */
+export function fetchRoomData(page: Page, id: string): Promise<unknown> {
+  return page.evaluate(async (projectId) => {
+    const token = localStorage.getItem('auth_token');
+    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error(`Проект ${projectId} не прочитан: HTTP ${res.status}`);
+    return ((await res.json()) as { roomData?: unknown }).roomData ?? null;
+  }, id);
+}
+
 /** id проекта из адреса редактора. */
 export function projectIdFromUrl(page: Page): string {
   const match = /\/project\/([\w-]+)/.exec(page.url());
