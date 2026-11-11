@@ -15,17 +15,26 @@ import { CAMERA_FAR, streetView } from '../lib/views';
 import { reportCameraPose, takeRestorePose } from '../model/cameraSession';
 import { useCameraTransition } from './useCameraTransition';
 import { useControlsLock } from './useControlsLock';
+import { EnvironmentFeature } from '@/features/environment';
+import { STOREY_HEIGHT, storeyElevation } from '@/features/editor-3d/lib/site';
 
 type OrbitControlsImpl = React.ComponentRef<typeof OrbitControls>;
 
 export const StreetRig: React.FC = () => {
-  const bounds = useSelector(buildingSelectors.selectBuildingBounds);
-  const height = useSelector(buildingSelectors.selectBuildingHeight);
+  const apartment = useSelector(buildingSelectors.selectBuildingBounds);
+  const lot = useSelector(buildingSelectors.selectBuildingLot);
+  const apartmentHeight = useSelector(buildingSelectors.selectBuildingHeight);
+  const residence = useSelector(EnvironmentFeature.selectors.selectResidence);
+  // Квартира в многоэтажке: в кадре весь дом — от земли до крыши (см. editor-3d/lib/site).
+  const frame = residence.enabled
+    ? { bounds: lot, height: (residence.storeys - residence.storey + 1) * STOREY_HEIGHT, base: -storeyElevation(residence.storey) }
+    : { bounds: apartment, height: apartmentHeight, base: 0 };
+  const { bounds, height, base } = frame;
   const viewRequest = useSelector(selectors.selectViewRequest);
   const camera = useThree((s) => s.camera);
   const controls = useRef<OrbitControlsImpl>(null);
   const flyTo = useCameraTransition(controls);
-  const view = useMemo(() => streetView(bounds, height), [bounds, height]);
+  const view = useMemo(() => streetView(bounds, Math.max(height, apartmentHeight), base), [bounds, height, apartmentHeight, base]);
   const initialRequest = useRef(viewRequest);
   useControlsLock(controls);
 

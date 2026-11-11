@@ -7,10 +7,13 @@
  */
 
 import React, { memo, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import { useLoader } from '@react-three/fiber';
 import { ClampToEdgeWrapping, RepeatWrapping, SRGBColorSpace, TextureLoader, type Texture } from 'three';
 import type { PanoramaSite as PanoramaSiteSpec } from '@/features/assets';
-import { LAWN_PHOTO_FADE, dimmedColor, fogRange, lawnTint, resolveSite } from '../../../lib/site';
+import { selectors as environmentSelectors } from '@/features/environment/selectors';
+import { buildingSelectors } from '../../../building/selectors';
+import { LAWN_PHOTO_FADE, dimmedColor, fogRange, lawnTint, residenceSite } from '../../../lib/site';
 import { GroundSite } from './GroundSite';
 import { PanoramaBackdrop } from './PanoramaBackdrop';
 import { TowerSite } from './TowerSite';
@@ -45,7 +48,9 @@ export const PanoramaSite: React.FC<PanoramaSiteProps> = memo(({ id, backplate, 
   const loaded = useLoader(TextureLoader, backplate);
   const texture = useMemo(() => configureBackplate(loaded), [loaded]);
   const { colors, envMap } = usePanoramaPreview(texture, id);
-  const spec = useMemo(() => resolveSite(site), [site]);
+  const residence = useSelector(environmentSelectors.selectResidence);
+  const apartmentHeight = useSelector(buildingSelectors.selectBuildingHeight);
+  const spec = useMemo(() => residenceSite(site, residence, apartmentHeight), [site, residence, apartmentHeight]);
   const { near, far } = fogRange(spec.kind);
   const horizon = useMemo(() => dimmedColor(colors.horizon, intensity), [colors, intensity]);
   const lawn = useMemo(() => lawnTint(colors.ground), [colors]);
@@ -55,14 +60,21 @@ export const PanoramaSite: React.FC<PanoramaSiteProps> = memo(({ id, backplate, 
     <>
       <color attach="background" args={[horizon]} />
       <PanoramaBackdrop texture={texture} intensity={intensity} rotation={rotation} />
-      {spec.kind === 'elevated' ? (
+      {spec.kind === 'elevated' && (
         <>
           <fog attach="fog" args={[horizon, near, far]} />
-          <TowerSite elevation={spec.elevation} envMap={envMap} rotation={rotation} daylight={daylight} />
+          <TowerSite elevation={spec.elevation} above={spec.above} envMap={envMap} rotation={rotation} daylight={daylight} />
         </>
-      ) : (
-        <GroundSite surface={spec.surface} tint={lawn} photo={photo} />
       )}
+      {spec.kind === 'ground' && spec.tower && (
+        <>
+          <TowerSite elevation={spec.elevation} above={spec.above} city={false} envMap={envMap} rotation={rotation} daylight={daylight} />
+          <group position={[0, -spec.elevation, 0]}>
+            <GroundSite surface={spec.surface} tint={lawn} photo={photo} />
+          </group>
+        </>
+      )}
+      {spec.kind === 'ground' && !spec.tower && <GroundSite surface={spec.surface} tint={lawn} photo={photo} />}
     </>
   );
 });

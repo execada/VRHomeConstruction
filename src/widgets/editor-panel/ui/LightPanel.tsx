@@ -13,7 +13,8 @@ import { LIGHT_LIMITS } from '@/features/editor-3d/constants';
 import { formatHour } from '@/features/editor-3d/lib/sun';
 import { useSceneCommands } from '@/features/editor-3d/model/useSceneCommands';
 import { selectors as editorSelectors } from '@/features/editor-3d/selectors';
-import { ColorField, Section, Segmented, Slider, Toggle } from '@/shared/ui/controls';
+import { ColorField, FieldRow, NumberField, Section, Segmented, Slider, Toggle } from '@/shared/ui/controls';
+import { RESIDENCE_LIMITS } from '@/features/environment/constants';
 import styles from './EditorPanel.module.scss';
 
 const RoomLightSection: React.FC = () => {
@@ -104,11 +105,36 @@ const SkySection: React.FC = () => {
   );
 };
 
+/** Квартира в многоэтажке: этаж и этажность дома — вид из окна и дом вокруг с этой высоты. */
+const ResidenceSection: React.FC = () => {
+  const dispatch = useDispatch();
+  const residence = useSelector(EnvironmentFeature.selectors.selectResidence);
+  const set = (patch: Parameters<typeof EnvironmentFeature.actions.setResidence>[0]) => dispatch(EnvironmentFeature.actions.setResidence(patch));
+  return (
+    <Section title="Квартира в доме" action={<Toggle label={residence.enabled ? 'Вкл' : 'Выкл'} checked={residence.enabled} onChange={(enabled) => set({ enabled })} />}>
+      {residence.enabled ? (
+        <>
+          <FieldRow>
+            <NumberField label="Этаж квартиры" min={RESIDENCE_LIMITS.minStorey} max={residence.storeys} step={1} precision={0} value={residence.storey} onChange={(storey) => set({ storey })} />
+            <NumberField label="Этажей в доме" min={residence.storey} max={RESIDENCE_LIMITS.maxStoreys} step={1} precision={0} value={residence.storeys} onChange={(storeys) => set({ storeys })} />
+          </FieldRow>
+          <span className={styles.muted}>
+            Квартира стоит на этом этаже дома: вид из окна, соседние дома и земля внизу — с его высоты. Весь дом видно в режиме «Улица» и от первого лица.
+          </span>
+        </>
+      ) : (
+        <span className={styles.muted}>Включите, чтобы поставить квартиру на нужный этаж многоэтажного дома и смотреть из окна с этой высоты.</span>
+      )}
+    </Section>
+  );
+};
+
 export const LightPanel: React.FC = () => (
   <>
     <h2 className={styles.panelTitle}>Свет и окружение</h2>
     <RoomLightSection />
     <SunSection />
     <SkySection />
+    <ResidenceSection />
   </>
 );

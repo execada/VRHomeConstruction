@@ -77,12 +77,14 @@ export interface StreetView {
  * здания; ближе определённого расстояния не подлететь — камера остаётся снаружи.
  * @param bounds - габариты здания на плане (по внешним граням стен)
  * @param height - высота здания до крыши
+ * @param base - высота низа здания (квартира в многоэтажке — земля ниже её пола), м
  */
-export function streetView(bounds: Rect, height: number): StreetView {
+export function streetView(bounds: Rect, height: number, base = 0): StreetView {
   const width = bounds.maxX - bounds.minX;
   const depth = bounds.maxZ - bounds.minZ;
-  const target: Vec3 = [(bounds.minX + bounds.maxX) / 2, height * 0.45, (bounds.minZ + bounds.maxZ) / 2];
-  const distance = Math.max(width, depth, height) * 1.35 + 6;
+  const tall = height - base;
+  const target: Vec3 = [(bounds.minX + bounds.maxX) / 2, base + tall * 0.45, (bounds.minZ + bounds.maxZ) / 2];
+  const distance = Math.max(width, depth, tall) * 1.35 + 6;
   const dir = [0.55, 0.42, 0.72];
   const len = Math.hypot(dir[0], dir[1], dir[2]);
   const position: Vec3 = [target[0] + (dir[0] / len) * distance, target[1] + (dir[1] / len) * distance, target[2] + (dir[2] / len) * distance];

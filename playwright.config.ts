@@ -37,7 +37,7 @@ export default defineConfig({
     { name: 'guest', testMatch: /guest\.spec\.ts/ },
     // Сброс пароля и конец сессии — на своих новых аккаунтах, без сохранённой сессии общего тестового аккаунта.
     { name: 'account', testMatch: /(password-reset|session-revoked)\.spec\.ts/ },
-    { name: 'app', testMatch: /(dashboard|editor|floors|cushions|mounts|hints)\.spec\.ts/, dependencies: ['setup'], use: { storageState: 'e2e/.auth/user.json' } },
+    { name: 'app', testMatch: /(dashboard|editor|floors|cushions|mounts|hints|residence)\.spec\.ts/, dependencies: ['setup'], use: { storageState: 'e2e/.auth/user.json' } },
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined

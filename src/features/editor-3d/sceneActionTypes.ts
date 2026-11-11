@@ -48,6 +48,7 @@ export const SCENE_EDIT_ACTION_TYPES: string[] = [
   furnitureActions.replaceFurniture,
   environmentActions.setSun,
   environmentActions.setSky,
+  environmentActions.setResidence,
 ].map((a) => a.type);
 
 /** Загрузка или сброс сцены целиком. */

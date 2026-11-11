@@ -11,7 +11,9 @@
   display: flex;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+
+  /* clip, а не hidden: фокус на поле внизу длинной панели не должен прокручивать весь редактор */
+  overflow: clip;
 }
 
 .state {

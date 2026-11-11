@@ -4,7 +4,7 @@
  */
 
 import { createSelector } from '@reduxjs/toolkit';
-import { DEFAULT_ENVIRONMENT } from './constants';
+import { DEFAULT_ENVIRONMENT, DEFAULT_RESIDENCE } from './constants';
 import { name, EnvironmentState } from './slice';
 
 type State = {
@@ -20,8 +20,12 @@ const selectSun = createSelector(root, (state) => state?.sun ?? DEFAULT_ENVIRONM
 /** Настройки неба */
 const selectSky = createSelector(root, (state) => state?.sky ?? DEFAULT_ENVIRONMENT.sky);
 
+/** Квартира в доме (у старых проектов — выключено) */
+const selectResidence = createSelector(root, (state) => state?.residence ?? DEFAULT_RESIDENCE);
+
 export const selectors = {
   selectEnvironment,
   selectSun,
   selectSky,
+  selectResidence,
 };

@@ -189,7 +189,13 @@ export const stairSchema = z.object({
   width: z.number().min(STAIR_WIDTH_LIMITS[0]).max(STAIR_WIDTH_LIMITS[1]),
 });
 
-const environmentSchema = z.object({ sun: sunSchema, sky: skySchema });
+export const residenceSchema = z.object({
+  enabled: z.boolean(),
+  storey: z.number().int().min(1).max(60),
+  storeys: z.number().int().min(1).max(60),
+});
+
+const environmentSchema = z.object({ sun: sunSchema, sky: skySchema, residence: residenceSchema.optional() });
 
 /** Содержимое одного этажа (оно же — квартира документа v3). */
 const storeyShape = {

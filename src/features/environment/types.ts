@@ -36,8 +36,23 @@ export interface SkySettings {
   exposure: number;
 }
 
+/**
+ * Квартира в многоэтажном доме: на каком этаже она и сколько этажей в доме. Вид из окна,
+ * соседние дома и корпус дома вокруг квартиры строятся с высоты этого этажа.
+ */
+export interface ResidenceSettings {
+  /** Квартира в многоэтажке (иначе — как задано пейзажем: дом на земле или высотка) */
+  enabled: boolean;
+  /** Этаж квартиры, 1 — первый */
+  storey: number;
+  /** Этажей в доме */
+  storeys: number;
+}
+
 /** Состояние окружения (Redux slice). */
 export interface EnvironmentState {
   sun: SunSettings;
   sky: SkySettings;
+  /** Квартира в доме (старые проекты — без неё) */
+  residence?: ResidenceSettings;
 }

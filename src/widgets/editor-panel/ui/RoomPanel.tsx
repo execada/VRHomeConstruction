@@ -186,6 +186,7 @@ export const RoomPanel: React.FC = () => {
             onChange={(t) => commands.room.setWallThickness(t)}
           />
         </FieldRow>
+        <span className={styles.muted}>Высота этажа — это высота потолка. На каком этаже дома квартира (вид из окна) — вкладка «Свет», раздел «Квартира в доме».</span>
       </Section>
       <Section title="Стены">
         <WallsList />

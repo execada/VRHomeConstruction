@@ -3,11 +3,14 @@
  * по которому можно ходить от первого лица) с плиткой и стеклянным ограждением, стеклянный фасад башни
  * с отражением города и вечерними огнями, а внизу — город (см. CitySite). Он закрывает низ
  * снимка (крышу, с которой его снимали), и вид из окна смотрит на кварталы под башней.
+ * Квартира в многоэтажке (см. lib/site, residenceSite): корпус от земли до её этажа и этажи над ней —
+ * их видно с улицы и от первого лица, а в облёте они скрыты, чтобы не закрывать квартиру.
  * @module editor-3d/ui/scene/site/TowerSite
  */
 
 import React, { Suspense, memo, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { CameraFeature } from '@/features/camera';
 import { Color, MeshStandardMaterial, type Texture } from 'three';
 import { buildingSelectors } from '../../../building/selectors';
 import { FACADE_MODULE_METERS } from '../../../lib/facade';
@@ -93,9 +96,8 @@ interface TowerBodyProps {
   daylight: number;
 }
 
-const TowerBody: React.FC<TowerBodyProps> = ({ box, elevation, maps, envMap, rotation, daylight }) => {
-  const height = elevation - SLAB;
-  const centerY = TERRACE_Y - SLAB - height / 2;
+/** Стеклянный фасад башни: материал с отражениями и вечерними огнями. */
+function useFacadeMaterial(maps: FacadeMaps, envMap: Texture | null, rotation: number, daylight: number): MeshStandardMaterial {
   const material = useMemo(
     () =>
       new MeshStandardMaterial({
@@ -115,8 +117,12 @@ const TowerBody: React.FC<TowerBodyProps> = ({ box, elevation, maps, envMap, rot
   useEffect(() => {
     material.envMapRotation.set(0, rotation, 0);
   }, [material, rotation]);
+  return material;
+}
 
-  const faces = useMemo(() => {
+/** Четыре грани коробки фасада высотой height с центром на высоте centerY. */
+function useFacadeFaces(box: Box, height: number, centerY: number) {
+  return useMemo(() => {
     const [cx, cz] = box.center;
     const { width: mw, height: mh } = FACADE_MODULE_METERS;
     return [
@@ -126,6 +132,13 @@ const TowerBody: React.FC<TowerBodyProps> = ({ box, elevation, maps, envMap, rot
       { key: 'left', geometry: tiledPlane(box.depth, height, mw, mh), position: [cx - box.width / 2, centerY, cz], rotation: -Math.PI / 2 },
     ] as const;
   }, [box, height, centerY]);
+}
+
+const TowerBody: React.FC<TowerBodyProps> = ({ box, elevation, maps, envMap, rotation, daylight }) => {
+  const height = Math.max(0.01, elevation - SLAB);
+  const centerY = TERRACE_Y - SLAB - height / 2;
+  const material = useFacadeMaterial(maps, envMap, rotation, daylight);
+  const faces = useFacadeFaces(box, height, centerY);
   useEffect(() => () => faces.forEach((f) => f.geometry.dispose()), [faces]);
 
   return (
@@ -134,9 +147,32 @@ const TowerBody: React.FC<TowerBodyProps> = ({ box, elevation, maps, envMap, rot
         <boxGeometry args={[box.width + 0.04, SLAB, box.depth + 0.04]} />
         <meshStandardMaterial color={CONCRETE} roughness={0.85} />
       </mesh>
+      {elevation > SLAB &&
+        faces.map((f) => (
+          <mesh key={f.key} geometry={f.geometry} material={material} position={[...f.position]} rotation={[0, f.rotation, 0]} raycast={NO_RAYCAST} />
+        ))}
+    </group>
+  );
+};
+
+/** Этажи дома над квартирой: перекрытие над ней и фасад до крыши дома. */
+const UpperTower: React.FC<Omit<TowerBodyProps, 'elevation'> & { bottom: number; height: number }> = ({ box, bottom, height, maps, envMap, rotation, daylight }) => {
+  const material = useFacadeMaterial(maps, envMap, rotation, daylight);
+  const faces = useFacadeFaces(box, height, bottom + SLAB + height / 2);
+  useEffect(() => () => faces.forEach((f) => f.geometry.dispose()), [faces]);
+  return (
+    <group>
+      <mesh position={[box.center[0], bottom + SLAB / 2, box.center[1]]} castShadow receiveShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[box.width + 0.04, SLAB, box.depth + 0.04]} />
+        <meshStandardMaterial color={CONCRETE} roughness={0.85} />
+      </mesh>
       {faces.map((f) => (
         <mesh key={f.key} geometry={f.geometry} material={material} position={[...f.position]} rotation={[0, f.rotation, 0]} raycast={NO_RAYCAST} />
       ))}
+      <mesh position={[box.center[0], bottom + SLAB + height + SLAB / 2, box.center[1]]} castShadow raycast={NO_RAYCAST}>
+        <boxGeometry args={[box.width + 0.04, SLAB, box.depth + 0.04]} />
+        <meshStandardMaterial color={CONCRETE} roughness={0.85} />
+      </mesh>
     </group>
   );
 };
@@ -150,10 +186,19 @@ interface TowerSiteProps {
   rotation: number;
   /** Дневной свет 0..1 (ночью в окнах башни и города горит свет) */
   daylight: number;
+  /** Город вокруг (за городом дом стоит на газоне, его рисует вызывающий) */
+  city?: boolean;
+  /** Высота этажей дома над квартирой, м (0 — квартира на последнем этаже) */
+  above?: number;
 }
 
-export const TowerSite: React.FC<TowerSiteProps> = memo(({ elevation, envMap, rotation, daylight }) => {
+/** Этажи над квартирой видны с улицы и от первого лица; в облёте и на плане они закрыли бы её. */
+const SHOW_ABOVE = new Set(['fps', 'street']);
+
+export const TowerSite: React.FC<TowerSiteProps> = memo(({ elevation, envMap, rotation, daylight, city = true, above = 0 }) => {
   const lot = useSelector(buildingSelectors.selectBuildingLot);
+  const apartmentHeight = useSelector(buildingSelectors.selectBuildingHeight);
+  const mode = useSelector(CameraFeature.selectors.selectCameraMode);
   const box = useMemo(() => terraceBox(lot), [lot]);
   const maps = useFacadeMaps();
   return (
@@ -163,7 +208,10 @@ export const TowerSite: React.FC<TowerSiteProps> = memo(({ elevation, envMap, ro
       </Suspense>
       <Railing box={box} envMap={envMap} rotation={rotation} />
       <TowerBody box={box} elevation={elevation} maps={maps.curtain} envMap={envMap} rotation={rotation} daylight={daylight} />
-      <CitySite elevation={elevation} maps={maps} envMap={envMap} rotation={rotation} daylight={daylight} />
+      {above > 0.5 && SHOW_ABOVE.has(mode) && (
+        <UpperTower box={box} bottom={apartmentHeight} height={above} maps={maps.curtain} envMap={envMap} rotation={rotation} daylight={daylight} />
+      )}
+      {city && <CitySite elevation={elevation} maps={maps} envMap={envMap} rotation={rotation} daylight={daylight} />}
     </group>
   );
 });

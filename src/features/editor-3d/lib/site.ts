@@ -152,3 +152,45 @@ export function dimmedColor(rgb: Rgb, intensity: number): Color {
 export function lawnTint(ground: Rgb): Color {
   return dimmedColor(ground, LAWN_ALBEDO);
 }
+
+/** Высота этажа многоэтажного дома (от пола до пола), м. */
+export const STOREY_HEIGHT = 3;
+
+/** Квартира в доме для участка: на каком этаже и сколько этажей. */
+export interface ResidenceSpec {
+  enabled: boolean;
+  storey: number;
+  storeys: number;
+}
+
+/** Участок с домом вокруг квартиры. */
+export interface ResidenceSite extends SiteSpec {
+  /** Корпус дома под квартирой и над ней (а не только терраса на крыше высотки) */
+  tower: boolean;
+  /** Высота корпуса над полом квартиры, м (0 — квартира на последнем этаже) */
+  above: number;
+}
+
+/**
+ * Высота пола квартиры над землёй по этажу.
+ * @param storey - этаж, 1 — первый
+ */
+export function storeyElevation(storey: number): number {
+  return Math.max(0, storey - 1) * STOREY_HEIGHT;
+}
+
+/**
+ * Участок с учётом квартиры в доме. Без неё — как задано пейзажем. С ней — дом стоит на земле
+ * пейзажа (в городе — среди кварталов, за городом — на газоне), квартира на своём этаже, этажи
+ * выше — над ней.
+ * @param site - участок из манифеста панорамы
+ * @param residence - квартира в доме
+ * @param apartmentHeight - высота квартиры от пола до крыши, м
+ */
+export function residenceSite(site: PanoramaSite | undefined, residence: ResidenceSpec, apartmentHeight: number): ResidenceSite {
+  const base = resolveSite(site);
+  if (!residence.enabled) return { ...base, tower: base.kind === 'elevated', above: 0 };
+  const top = residence.storeys * STOREY_HEIGHT;
+  const floor = storeyElevation(residence.storey);
+  return { ...base, elevation: floor, tower: true, above: Math.max(0, top - floor - apartmentHeight) };
+}
