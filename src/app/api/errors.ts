@@ -95,6 +95,17 @@ export function isSessionEnded(error: unknown): boolean {
 }
 
 /**
+ * Сервер временно недоступен: нет связи, таймаут, перегрузка или сбой на его стороне. Это не
+ * ответ о самом запросе или сессии, поэтому запрос можно повторить позже, ничего не сбрасывая.
+ * @param error - пойманная ошибка (любой тип)
+ */
+export function isServerUnavailable(error: unknown): boolean {
+  if (!(error instanceof ApiRequestError) || error.sessionEnded) return false;
+  const { status } = error;
+  return status === 0 || status === 408 || status === 429 || status >= 500;
+}
+
+/**
  * Текст ошибки для интерфейса.
  * @param error - пойманная ошибка (любой тип)
  * @param fallback - текст по умолчанию для неизвестных ошибок

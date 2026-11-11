@@ -31,10 +31,23 @@ export interface AuthForm {
   code: string;
 }
 
+/**
+ * Восстановление входа по сохранённому токену: 'pending' — ждём ответ сервера,
+ * 'offline' — сервер недоступен (токен сохранён, попытки повторяются), 'idle' — не идёт.
+ */
+export type SessionRestore = 'idle' | 'pending' | 'offline';
+
+/** Параметры выхода из аккаунта. */
+export interface LogoutOptions {
+  /** Не стирать токен из localStorage: он уже стёрт или принадлежит новой сессии из другой вкладки. */
+  keepToken?: boolean;
+}
+
 export interface UserState {
   authData?: User;
   isAuth: boolean;
   isLoading: boolean;
+  restore: SessionRestore;
   error?: string;
   isAuthModalOpen: boolean;
   authMode: AuthMode;

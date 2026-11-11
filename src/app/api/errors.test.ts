@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiRequestError } from './client';
-import { apiErrorText, isSessionEnded, knownErrorText, SESSION_ENDED_TEXT } from './errors';
+import { apiErrorText, isServerUnavailable, isSessionEnded, knownErrorText, SESSION_ENDED_TEXT } from './errors';
 
 describe('конец сессии', () => {
   it('отказ сервера в сессии — одно сообщение для всех запросов', () => {
@@ -21,6 +21,26 @@ describe('конец сессии', () => {
     expect(isSessionEnded(new ApiRequestError(0, 'Нет связи с сервером'))).toBe(false);
     expect(isSessionEnded(new Error('invalid or expired token'))).toBe(false);
     expect(isSessionEnded(undefined)).toBe(false);
+  });
+});
+
+describe('isServerUnavailable', () => {
+  it('нет связи, таймаут, перегрузка и сбой сервера — повторить позже', () => {
+    expect(isServerUnavailable(new ApiRequestError(0, 'Нет связи с сервером'))).toBe(true);
+    expect(isServerUnavailable(new ApiRequestError(408, 'HTTP 408'))).toBe(true);
+    expect(isServerUnavailable(new ApiRequestError(429, 'too many requests, slow down'))).toBe(true);
+    expect(isServerUnavailable(new ApiRequestError(500, 'internal server error'))).toBe(true);
+    expect(isServerUnavailable(new ApiRequestError(502, 'HTTP 502'))).toBe(true);
+    expect(isServerUnavailable(new ApiRequestError(504, 'HTTP 504'))).toBe(true);
+  });
+
+  it('ответ сервера о запросе и чужие ошибки — не временный сбой', () => {
+    expect(isServerUnavailable(new ApiRequestError(401, 'invalid or expired token', true))).toBe(false);
+    expect(isServerUnavailable(new ApiRequestError(401, 'HTTP 401'))).toBe(false);
+    expect(isServerUnavailable(new ApiRequestError(404, 'user not found'))).toBe(false);
+    expect(isServerUnavailable(new ApiRequestError(400, 'invalid json body'))).toBe(false);
+    expect(isServerUnavailable(new Error('Нет связи'))).toBe(false);
+    expect(isServerUnavailable(undefined)).toBe(false);
   });
 });
 

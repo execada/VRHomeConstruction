@@ -22,6 +22,16 @@ describe('user slice', () => {
     expect(state.authData).toBeUndefined();
   });
 
+  it('восстановление входа: ожидание ответа и «нет связи» снимаются входом и выходом', () => {
+    let state = reducer(initial(), actions.setRestore('pending'));
+    expect(state).toMatchObject({ restore: 'pending', isLoading: false, isAuth: false });
+    state = reducer(state, actions.setRestore('offline'));
+    expect(state.restore).toBe('offline');
+    expect(reducer(state, actions.setUser(user)).restore).toBe('idle');
+    expect(reducer(state, actions.logout()).restore).toBe('idle');
+    expect(reducer(state, actions.setRestore('idle')).restore).toBe('idle');
+  });
+
   it('ошибка снимает индикатор загрузки', () => {
     let state = reducer(initial(), actions.setLoading(true));
     state = reducer(state, actions.setError('Неверный код'));
