@@ -3,7 +3,8 @@
  *
  * Открытие: сервер → (если есть более свежие несохранённые правки — локальная копия)
  * → разбор и миграция документа → загрузка сцены → восстановление камеры.
- * Без связи открывается локальная копия.
+ * Без связи открывается локальная копия — только своя: копия хранит id владельца, и чужая
+ * (другой аккаунт, гость, старый формат) игнорируется, но не удаляется.
  * Автосохранение: через 1.5 с после последней правки; локальная копия — через 0.4 с.
  * Сохранения идут по одному; правки, сделанные во время запроса, отправляет следующее.
  * Ошибки сети повторяются с паузой; правки при этом не теряются (локальная копия).
@@ -35,9 +36,10 @@ import { actions as furnitureActions } from '@/features/furniture/slice';
 import { actions as environmentActions } from '@/features/environment/slice';
 import { HistoryFeature } from '@/features/history';
 import { SelectionFeature } from '@/features/selection';
+import { selectors as userSelectors } from '@/features/user/selectors';
 import { actions as userActions } from '@/features/user/slice';
 import { toast } from '@/shared/lib/toast';
-import { hasUnsyncedBackup, markBackupSynced, readBackup, shouldPreferBackup, writeBackup } from './lib/localBackup';
+import { hasUnsyncedBackup, isOwnBackup, markBackupSynced, readBackup, shouldPreferBackup, unsyncedBackup, writeBackup } from './lib/localBackup';
 import { buildSavePayload, cameraFromProject, payloadKey } from './lib/payload';
 import { selectors } from './selectors';
 import { actions } from './slice';
@@ -47,6 +49,11 @@ const AUTOSAVE_DELAY_MS = 1500;
 const BACKUP_DELAY_MS = 400;
 const THUMBNAIL_INTERVAL_MS = 60_000;
 const RETRY_DELAYS_MS = [1000, 3000];
+/** Сколько ждать, пока страница восстановит пользователя по токену (шаг и предел). */
+const USER_WAIT_STEP_MS = 50;
+const USER_WAIT_MAX_STEPS = 100;
+/** Id пользователя, чей вход последним видела эта вкладка (после выхода данные пользователя стёрты). */
+let rememberedUserId: string | null = null;
 /** Правки сцены, отмена/повтор и сцена из файла — поводы для автосохранения. */
 const AUTOSAVE_TRIGGERS = [...SCENE_EDIT_ACTION_TYPES, HistoryFeature.actions.stepBack.type, HistoryFeature.actions.stepForward.type, actions.sceneImported.type];
 
@@ -62,6 +69,19 @@ function isOffline(error: unknown): boolean {
 /** Сервер не пускает без входа: токена нет или сессия закончилась. */
 function isUnauthorized(error: unknown): boolean {
   return error instanceof ApiRequestError && error.status === 401;
+}
+
+/** Id вошедшего пользователя (null — гость). */
+function* currentUserId() {
+  return (yield* select(userSelectors.selectUserAuthData))?.id ?? null;
+}
+
+/** Id пользователя, дождавшись окончания восстановления входа по токену (при загрузке страницы). */
+function* settledUserId() {
+  for (let step = 0; step < USER_WAIT_MAX_STEPS && (yield* select(userSelectors.selectUserIsLoading)); step += 1) {
+    yield* delay(USER_WAIT_STEP_MS);
+  }
+  return yield* currentUserId();
 }
 
 /** Понятное сообщение об ошибке открытия. */
@@ -105,12 +125,13 @@ function toMeta(details: ProjectDetails): Project {
 function* openSaga(action: ReturnType<typeof actions.openRequested>) {
   const id = action.payload;
   const backup = readBackup(id);
+  const userId = yield* settledUserId();
   try {
     const project = yield* call(projectsApi.fetchProject, id);
     // Пока шёл запрос, проект закрыли или вышли из аккаунта — сцену не загружаем.
     if (!(yield* sessionIs(id, 'loading'))) return;
     yield* put(CreateProjectFeature.actions.upsertProject(toMeta(project)));
-    const preferBackup = shouldPreferBackup(backup, project.updatedAt);
+    const preferBackup = shouldPreferBackup(backup, project.updatedAt, userId);
     yield* loadRoomData(preferBackup && backup ? backup.roomData : project.roomData);
     setRestorePose(preferBackup && backup ? backup.camera : cameraFromProject(project.roomData, project.playerPosition, project.playerRotation));
     if (preferBackup) toast.info('Восстановлены несохранённые изменения — сохраняем на сервер');
@@ -119,10 +140,11 @@ function* openSaga(action: ReturnType<typeof actions.openRequested>) {
   } catch (error) {
     if (!(yield* sessionIs(id, 'loading'))) return;
     if (isUnauthorized(error)) {
-      yield* put(actions.signedOut({ unsavedKept: hasUnsyncedBackup(id) }));
+      // Сессия кончилась: пользователя уже нет — копия «своя», если она от последнего вошедшего.
+      yield* put(actions.signedOut({ unsavedKept: hasUnsyncedBackup(id, userId ?? rememberedUserId) }));
       return;
     }
-    if (isOffline(error) && backup) {
+    if (isOffline(error) && isOwnBackup(backup, userId)) {
       try {
         yield* loadRoomData(backup.roomData);
         setRestorePose(backup.camera);
@@ -155,7 +177,7 @@ function* backupSaga() {
   const status = yield* select(selectors.selectSessionStatus);
   if (!id || status !== 'ready') return;
   const doc = yield* select(selectSceneDocument);
-  writeBackup(id, { roomData: doc, camera: cameraSession.getState().pose, savedAt: new Date().toISOString(), synced: false });
+  writeBackup(id, unsyncedBackup(doc, cameraSession.getState().pose, yield* currentUserId()));
   yield* put(actions.setSaveState('dirty'));
 }
 
@@ -168,6 +190,8 @@ interface SaveDraft {
   /** Время сборки (мс) */
   at: number;
   revision: number;
+  /** Владелец локальной копии (null — гость) */
+  userId: string | null;
 }
 
 /** Открыт ли ещё проект id: сохранение могло ждать очереди или ответа, пока открыли другой. */
@@ -228,7 +252,7 @@ function createSaver() {
     const at = Date.now();
     const thumbnail = force || at - lastThumbnailAt > THUMBNAIL_INTERVAL_MS ? sceneBridge.capture(480) : null;
     const payload = buildSavePayload({ project, doc, camera: cameraSession.getState().pose, thumbnail });
-    return { id, payload, key: `${id} ${payloadKey(payload)}`, thumbnail, at, revision: draftRevision };
+    return { id, payload, key: `${id} ${payloadKey(payload)}`, thumbnail, at, revision: draftRevision, userId: yield* currentUserId() };
   }
 
   /** Отправить с повторами при сбоях сети; null — не удалось (статус и предупреждение уже показаны). */
@@ -262,7 +286,7 @@ function createSaver() {
       return;
     }
     yield* putIfOpen(draft.id, actions.setSaveState('saving'));
-    writeBackup(draft.id, { roomData: draft.payload.roomData, camera: cameraSession.getState().pose, savedAt: new Date(draft.at).toISOString(), synced: false });
+    writeBackup(draft.id, unsyncedBackup(draft.payload.roomData, cameraSession.getState().pose, draft.userId, new Date(draft.at)));
     const updated = yield* send(draft.id, draft.payload);
     if (!updated) return;
     // Пока шёл запрос, вышли из аккаунта: копия на устройстве может быть новее этого сохранения —
@@ -346,10 +370,15 @@ function* signOutSaga() {
   const saveState = yield* select(selectors.selectSaveState);
   if (status === 'ready' && saveState !== 'saved') {
     const doc = yield* select(selectSceneDocument);
-    writeBackup(id, { roomData: doc, camera: cameraSession.getState().pose, savedAt: new Date().toISOString(), synced: false });
+    writeBackup(id, unsyncedBackup(doc, cameraSession.getState().pose, rememberedUserId));
   }
   yield* clearScene();
-  yield* put(actions.signedOut({ unsavedKept: hasUnsyncedBackup(id) }));
+  yield* put(actions.signedOut({ unsavedKept: hasUnsyncedBackup(id, rememberedUserId) }));
+}
+
+/** Запомнить вошедшего пользователя: при выходе слайс пользователя уже очищен, а копии нужен владелец. */
+function rememberUser(action: ReturnType<typeof userActions.setUser>) {
+  rememberedUserId = action.payload.id;
 }
 
 /** Вход после выхода на странице проекта: открыть его снова (свежая локальная копия подхватится). */
@@ -387,6 +416,7 @@ export function* initSaga() {
   yield* takeEvery(actions.saveNowRequested.type, () => save(true));
   yield* takeLatest(actions.thumbnailRequested.type, thumbnailSaga);
   yield* takeEvery(actions.closeRequested.type, closeSaga);
+  yield* takeEvery(userActions.setUser.type, rememberUser);
   yield* takeLatest(userActions.logout.type, signOutSaga);
   yield* takeLatest(userActions.setUser.type, reopenSaga);
 }

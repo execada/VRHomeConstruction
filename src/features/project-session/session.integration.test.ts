@@ -12,9 +12,9 @@ import { HistoryFeature } from '@/features/history';
 import { SelectionFeature } from '@/features/selection';
 import { createEmptyScene } from '@/features/editor-3d/lib/scene/build';
 import type { FurnitureItem } from '@/features/furniture/types';
-import { actions as userActions } from '@/features/user/slice';
+import { actions as userActions, name as userSliceName, reducer as userReducer } from '@/features/user/slice';
 import { ProjectSessionFeature } from './index';
-import { readBackup, removeBackup, writeBackup } from './lib/localBackup';
+import { readBackup, removeBackup, writeBackup, type LocalBackup } from './lib/localBackup';
 import { sceneBridgeStore } from '@/features/editor-3d/model/sceneBridge';
 
 const api = vi.hoisted(() => ({
@@ -52,10 +52,25 @@ function memoryStorage(): Storage {
   };
 }
 
-function setup() {
+const anna = { id: 'u1', name: 'Анна', email: 'anna@example.com' };
+const boris = { id: 'u2', name: 'Борис', email: 'boris@example.com' };
+
+/** Локальная копия проекта p1 (по умолчанию — несинхронизированная, владелец — Анна). */
+const backupOf = (roomData: unknown, extra: Partial<LocalBackup> = {}): LocalBackup => ({
+  roomData,
+  camera: null,
+  savedAt: '2026-02-01T00:00:00Z',
+  synced: false,
+  userId: anna.id,
+  ...extra,
+});
+
+/** Хранилище с сагами; пользователь по умолчанию уже вошёл (`null` — гость). */
+function setup(user: typeof anna | null = anna) {
   const saga = createSagaMiddleware();
   const store = configureStore({
     reducer: {
+      [userSliceName]: userReducer,
       editor: editorReducer,
       building: buildingReducer,
       furniture: furnitureReducer,
@@ -70,6 +85,7 @@ function setup() {
   saga.run(function* root() {
     yield all([fork(ProjectSessionFeature.sagas.init), fork(HistoryFeature.sagas.init), fork(SelectionFeature.sagas.init)]);
   });
+  if (user) store.dispatch(userActions.setUser(user));
   return store;
 }
 
@@ -131,7 +147,7 @@ describe('project session saga', () => {
   });
 
   it('opens the local copy when the server is unreachable', async () => {
-    writeBackup('p1', { roomData: createEmptyScene({ width: 7, height: 3, depth: 3 }), camera: null, savedAt: '2026-01-02T00:00:00Z', synced: true });
+    writeBackup('p1', backupOf(createEmptyScene({ width: 7, height: 3, depth: 3 }), { savedAt: '2026-01-02T00:00:00Z', synced: true }));
     api.fetchProject.mockRejectedValue(new ApiRequestError(0, 'offline'));
     const store = setup();
     store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
@@ -142,7 +158,7 @@ describe('project session saga', () => {
   });
 
   it('prefers newer unsynced local edits and syncs them to the server', async () => {
-    writeBackup('p1', { roomData: createEmptyScene({ width: 6, height: 3, depth: 3 }), camera: null, savedAt: '2026-02-01T00:00:00Z', synced: false });
+    writeBackup('p1', backupOf(createEmptyScene({ width: 6, height: 3, depth: 3 })));
     api.fetchProject.mockResolvedValue(serverProject(createEmptyScene(), '2026-01-01T00:00:00Z'));
     api.updateProject.mockImplementation(async (id: string, payload: { name: string }) => ({ ...serverProject(null), id, name: payload.name }));
     const store = setup();
@@ -390,7 +406,7 @@ describe('project session saga', () => {
 });
 
 describe('выход из аккаунта на странице проекта', () => {
-  const user = { id: 'u1', name: 'Анна', email: 'anna@example.com' };
+  const user = anna;
   const stool = { id: 'f1', name: 'Стул', modelPath: 'primitive:stool', position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], scale: 1 };
   const backupFurniture = () => (readBackup('p1')?.roomData as { floors: Array<{ furniture: unknown[] }> } | undefined)?.floors[0].furniture;
 
@@ -492,7 +508,7 @@ describe('выход из аккаунта на странице проекта'
   });
 
   it('проект без входа (401) просит войти и помнит о локальной копии', async () => {
-    writeBackup('p1', { roomData: createEmptyScene(), camera: null, savedAt: '2026-02-01T00:00:00Z', synced: false });
+    writeBackup('p1', backupOf(createEmptyScene()));
     api.fetchProject.mockRejectedValue(new ApiRequestError(401, 'authorization required'));
     const store = setup();
 
@@ -575,5 +591,152 @@ describe('выход из аккаунта на странице проекта'
     expect(store.getState().projectSession.status).toBe('idle');
     expect(api.updateProject).not.toHaveBeenCalled();
     expect(readBackup('p1')?.synced).toBe(false);
+  });
+});
+
+describe('локальная копия принадлежит пользователю', () => {
+  const smallRoom = () => createEmptyScene({ width: 6, height: 3, depth: 3 });
+
+  beforeEach(() => {
+    vi.stubGlobal('window', { localStorage: memoryStorage() });
+    api.fetchProject.mockReset();
+    api.updateProject.mockReset();
+    api.patchProject.mockReset();
+    Object.values(toast).forEach((fn) => fn.mockReset());
+    sceneBridgeStore.setState({ screenToFloor: null, capture: null, fps: 0 });
+  });
+  afterEach(() => {
+    removeBackup('p1');
+    vi.useRealTimers();
+  });
+
+  it('своя копия восстанавливается и досохраняется', async () => {
+    writeBackup('p1', backupOf(smallRoom()));
+    api.fetchProject.mockResolvedValue(serverProject(createEmptyScene(), '2026-01-01T00:00:00Z'));
+    api.updateProject.mockImplementation(async () => serverProject(null, new Date().toISOString()));
+    const store = setup(anna);
+
+    store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+    await flush();
+    await flush();
+
+    expect(store.getState().editor.dimensions.width).toBe(6);
+    expect(api.updateProject).toHaveBeenCalledTimes(1);
+    expect(readBackup('p1')).toMatchObject({ synced: true, userId: 'u1' });
+  });
+
+  it('копия другого аккаунта при связи не открывается: берётся версия сервера, копия остаётся на месте', async () => {
+    writeBackup('p1', backupOf(smallRoom()));
+    api.fetchProject.mockResolvedValue(serverProject(createEmptyScene({ width: 9, height: 3, depth: 3 }), '2026-01-01T00:00:00Z'));
+    const store = setup(boris);
+
+    store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+    await flush();
+    await flush();
+
+    expect(store.getState().projectSession).toMatchObject({ status: 'ready', fromLocalBackup: false });
+    expect(store.getState().editor.dimensions.width).toBe(9);
+    expect(api.updateProject).not.toHaveBeenCalled();
+    expect(readBackup('p1')).toMatchObject({ synced: false, userId: 'u1' });
+  });
+
+  it('копия старого формата (без владельца) при связи по-прежнему подхватывается', async () => {
+    writeBackup('p1', backupOf(smallRoom(), { userId: undefined }));
+    api.fetchProject.mockResolvedValue(serverProject(createEmptyScene(), '2026-01-01T00:00:00Z'));
+    api.updateProject.mockImplementation(async () => serverProject(null, new Date().toISOString()));
+    const store = setup(anna);
+
+    store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+    await flush();
+    await flush();
+
+    expect(store.getState().editor.dimensions.width).toBe(6);
+    expect(api.updateProject).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['чужой аккаунт', boris, backupOf(createEmptyScene())],
+    ['гость', null, backupOf(createEmptyScene())],
+    ['копия старого формата', anna, backupOf(createEmptyScene(), { userId: undefined })],
+  ])('без связи: %s копию не видит — ошибка открытия', async (_name, user, backup) => {
+    writeBackup('p1', backup);
+    api.fetchProject.mockRejectedValue(new ApiRequestError(0, 'offline'));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const store = setup(user);
+
+    store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+    await flush();
+
+    expect(store.getState().projectSession.status).toBe('error');
+    expect(store.getState().editor.dimensions.width).toBe(4);
+  });
+
+  it('без связи своя копия открывается', async () => {
+    writeBackup('p1', backupOf(smallRoom()));
+    api.fetchProject.mockRejectedValue(new ApiRequestError(0, 'offline'));
+    const store = setup(anna);
+
+    store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+    await flush();
+
+    expect(store.getState().projectSession).toMatchObject({ status: 'ready', saveState: 'offline' });
+    expect(store.getState().editor.dimensions.width).toBe(6);
+  });
+
+  it('401 при открытии: строка о несохранённых правках — только если копия принадлежит запомнившемуся пользователю', async () => {
+    writeBackup('p1', backupOf(smallRoom(), { userId: 'u2' }));
+    api.fetchProject.mockRejectedValue(new ApiRequestError(401, 'authorization required'));
+    const store = setup(anna);
+
+    store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+    await flush();
+
+    expect(store.getState().projectSession).toMatchObject({ status: 'signedOut', unsavedKept: false });
+  });
+
+  describe('правки записываются с id пользователя', () => {
+    const stool = { id: 'f1', name: 'Стул', modelPath: 'primitive:stool', position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], scale: 1 };
+
+    beforeEach(() => vi.useFakeTimers());
+
+    async function openedProject() {
+      api.fetchProject.mockResolvedValue(serverProject(createEmptyScene(), '2026-01-01T00:00:00Z'));
+      const store = setup(anna);
+      store.dispatch(ProjectSessionFeature.actions.openRequested('p1'));
+      await vi.runAllTimersAsync();
+      return store;
+    }
+
+    it('локальная копия и копия при сохранении', async () => {
+      const store = await openedProject();
+      api.updateProject.mockRejectedValue(new ApiRequestError(0, 'offline'));
+
+      store.dispatch(furnitureActions.addFurniture(stool));
+      await vi.advanceTimersByTimeAsync(500);
+      expect(readBackup('p1')).toMatchObject({ synced: false, userId: 'u1' });
+
+      removeBackup('p1');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(readBackup('p1')).toMatchObject({ synced: false, userId: 'u1' });
+    });
+
+    it('при выходе пользователь уже стёрт — копия пишется с запомненным id, а чужому она не видна', async () => {
+      const store = await openedProject();
+      store.dispatch(furnitureActions.addFurniture(stool));
+
+      store.dispatch(userActions.logout());
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(readBackup('p1')).toMatchObject({ synced: false, userId: 'u1' });
+      expect(store.getState().projectSession).toMatchObject({ status: 'signedOut', unsavedKept: true });
+
+      api.fetchProject.mockRejectedValue(new ApiRequestError(0, 'offline'));
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      store.dispatch(userActions.setUser(boris));
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(store.getState().projectSession.status).toBe('error');
+      expect(readBackup('p1')?.userId, 'копию Анны вход Бориса не стирает').toBe('u1');
+    });
   });
 });

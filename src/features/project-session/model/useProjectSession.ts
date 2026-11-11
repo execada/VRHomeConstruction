@@ -9,7 +9,8 @@ import { useDispatch, useStore } from 'react-redux';
 import type { RootState } from '@/app/store';
 import { cameraSession } from '@/features/camera/model/cameraSession';
 import { selectSceneDocument } from '@/features/editor-3d/sceneSelectors';
-import { writeBackup } from '../lib/localBackup';
+import { selectors as userSelectors } from '@/features/user/selectors';
+import { unsyncedBackup, writeBackup } from '../lib/localBackup';
 import { actions } from '../slice';
 
 /**
@@ -34,12 +35,8 @@ export function useProjectSession(projectId: string | undefined): void {
       const state = store.getState();
       const session = state.projectSession;
       if (!session.projectId || session.status !== 'ready' || session.saveState === 'saved') return;
-      writeBackup(session.projectId, {
-        roomData: selectSceneDocument(state),
-        camera: cameraSession.getState().pose,
-        savedAt: new Date().toISOString(),
-        synced: false,
-      });
+      const userId = userSelectors.selectUserAuthData(state)?.id ?? null;
+      writeBackup(session.projectId, unsyncedBackup(selectSceneDocument(state), cameraSession.getState().pose, userId));
     };
     window.addEventListener('beforeunload', onUnload);
     return () => window.removeEventListener('beforeunload', onUnload);
