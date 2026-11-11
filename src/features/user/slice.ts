@@ -4,7 +4,7 @@
  */
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AuthForm, AuthMode, AuthStep, User, UserState } from './types';
+import { AuthForm, AuthMode, AuthStep, LogoutOptions, SessionRestore, User, UserState } from './types';
 
 const emptyForm: AuthForm = {
   name: '',
@@ -29,6 +29,7 @@ const initialState: UserState = {
   authData: undefined,
   isAuth: false,
   isLoading: false,
+  restore: 'idle',
   error: undefined,
   isAuthModalOpen: false,
   authMode: 'login',
@@ -48,6 +49,7 @@ export const { actions, name, reducer } = createSlice({
       state.authData = action.payload;
       state.isAuth = true;
       state.isLoading = false;
+      state.restore = 'idle';
       state.error = undefined;
       state.isAuthModalOpen = false;
       state.authStep = 'form';
@@ -60,11 +62,12 @@ export const { actions, name, reducer } = createSlice({
     updateAuthData: (state, action: PayloadAction<User>) => {
       state.authData = action.payload;
     },
-    /** Выйти из аккаунта */
-    logout: (state) => {
+    /** Выйти из аккаунта (токен стирает сага, если не передан keepToken) */
+    logout: (state, _action: PayloadAction<LogoutOptions | undefined>) => {
       state.authData = undefined;
       state.isAuth = false;
       state.isLoading = false;
+      state.restore = 'idle';
       state.error = undefined;
       state.authStep = 'form';
       state.codeSent = false;
@@ -75,6 +78,10 @@ export const { actions, name, reducer } = createSlice({
     /** Индикатор загрузки */
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
+    },
+    /** Состояние восстановления входа (ожидание ответа, нет связи, не идёт) */
+    setRestore: (state, action: PayloadAction<SessionRestore>) => {
+      state.restore = action.payload;
     },
     /** Текст ошибки */
     setError: (state, action: PayloadAction<string | undefined>) => {
@@ -148,6 +155,8 @@ export const { actions, name, reducer } = createSlice({
     verifyCodeRequested: () => {},
     /** Восстановить сессию по токену из localStorage */
     restoreSessionRequested: () => {},
+    /** Прекратить восстановление входа (повторы при отсутствии связи) */
+    restoreSessionCancelled: () => {},
     /** Восстановление пароля: запросить код на почту */
     sendResetCodeRequested: () => {},
     /** Восстановление пароля: код и новый пароль */

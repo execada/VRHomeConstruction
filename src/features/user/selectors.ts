@@ -16,6 +16,7 @@ const root = (state: State) => state[name];
 const selectUserAuthData = createSelector(root, (user) => user?.authData);
 const selectUserIsAuth = createSelector(root, (user) => user?.isAuth ?? false);
 const selectUserIsLoading = createSelector(root, (user) => user?.isLoading ?? false);
+const selectSessionRestore = createSelector(root, (user) => user?.restore ?? 'idle');
 const selectUserError = createSelector(root, (user) => user?.error);
 const selectUserName = createSelector(root, (user) => user?.authData?.name);
 const selectUserEmail = createSelector(root, (user) => user?.authData?.email);
@@ -37,6 +38,7 @@ export const selectors = {
   selectUserAuthData,
   selectUserIsAuth,
   selectUserIsLoading,
+  selectSessionRestore,
   selectUserError,
   selectUserName,
   selectUserEmail,

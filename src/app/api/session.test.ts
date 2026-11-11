@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isSessionRejection, rejectSession, subscribeSessionEnd } from './session';
+import { isSessionRejection, rejectSession, subscribeOnline, subscribeSessionEvents } from './session';
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -50,8 +50,8 @@ describe('конец сессии', () => {
     localStorage.setItem('auth_token', 'jwt-1');
     const first = vi.fn();
     const second = vi.fn();
-    const offFirst = subscribeSessionEnd(first);
-    const offSecond = subscribeSessionEnd(second);
+    const offFirst = subscribeSessionEvents(first);
+    const offSecond = subscribeSessionEvents(second);
 
     rejectSession('jwt-1');
     rejectSession('jwt-1');
@@ -66,7 +66,7 @@ describe('конец сессии', () => {
   it('после отписки сообщения не приходят', () => {
     localStorage.setItem('auth_token', 'jwt-1');
     const listener = vi.fn();
-    subscribeSessionEnd(listener)();
+    subscribeSessionEvents(listener)();
 
     rejectSession('jwt-1');
     window.dispatchEvent(storageEvent('auth_token'));
@@ -74,25 +74,25 @@ describe('конец сессии', () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
-  it('токен, стёртый в другой вкладке, — конец сессии и здесь', () => {
+  it('токен, стёртый или записанный в другой вкладке, приходит событием elsewhere', () => {
     const listener = vi.fn();
-    const off = subscribeSessionEnd(listener);
+    const off = subscribeSessionEvents(listener);
 
+    window.dispatchEvent(storageEvent('auth_token'));
+    localStorage.setItem('auth_token', 'jwt-new');
     window.dispatchEvent(storageEvent('auth_token'));
     window.dispatchEvent(storageEvent(null));
 
-    expect(listener.mock.calls).toEqual([['elsewhere'], ['elsewhere']]);
+    expect(listener.mock.calls).toEqual([['elsewhere'], ['elsewhere'], ['elsewhere']]);
     off();
   });
 
-  it('вход в другой вкладке и чужие ключи сессию не закрывают', () => {
+  it('чужие ключи событий не дают', () => {
     const listener = vi.fn();
-    const off = subscribeSessionEnd(listener);
+    const off = subscribeSessionEvents(listener);
 
-    localStorage.setItem('auth_token', 'jwt-new');
-    window.dispatchEvent(storageEvent('auth_token'));
-    localStorage.removeItem('auth_token');
     window.dispatchEvent(storageEvent('vrhc:backup:p1'));
+    window.dispatchEvent(storageEvent('vrhc:graphics'));
 
     expect(listener).not.toHaveBeenCalled();
     off();
@@ -102,11 +102,41 @@ describe('конец сессии', () => {
     vi.stubGlobal('window', undefined);
     localStorage.setItem('auth_token', 'jwt-1');
     const listener = vi.fn();
-    const off = subscribeSessionEnd(listener);
+    const off = subscribeSessionEvents(listener);
 
     rejectSession('jwt-1');
 
     expect(listener.mock.calls).toEqual([['rejected']]);
     off();
+  });
+});
+
+describe('возврат сети', () => {
+  let window: EventTarget;
+
+  beforeEach(() => {
+    window = new EventTarget();
+    vi.stubGlobal('window', window);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('событие online приходит подписчику до отписки', () => {
+    const listener = vi.fn();
+    const off = subscribeOnline(listener);
+
+    window.dispatchEvent(new Event('online'));
+    window.dispatchEvent(new Event('offline'));
+    off();
+    window.dispatchEvent(new Event('online'));
+
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('без window подписка ничего не делает', () => {
+    vi.stubGlobal('window', undefined);
+    const listener = vi.fn();
+
+    expect(() => subscribeOnline(listener)()).not.toThrow();
+    expect(listener).not.toHaveBeenCalled();
   });
 });

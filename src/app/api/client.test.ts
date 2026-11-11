@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, ApiRequestError } from './client';
-import { subscribeSessionEnd } from './session';
+import { subscribeSessionEvents } from './session';
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -46,7 +46,7 @@ describe('клиент API: конец сессии по ответу серве
     vi.stubGlobal('fetch', fetchMock);
     fetchMock.mockReset();
     ended = [];
-    unsubscribe = subscribeSessionEnd((source) => ended.push(source));
+    unsubscribe = subscribeSessionEvents((source) => ended.push(source));
   });
   afterEach(() => {
     unsubscribe();

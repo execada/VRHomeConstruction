@@ -27,6 +27,18 @@ const TABS: Array<{ id: BoardTab; label: string }> = [
   { id: 'folders', label: 'Папки' },
 ];
 
+const OfflineState: React.FC = () => {
+  const dispatch = useDispatch();
+  return (
+    <EmptyState
+      illustration={<IsometricRoom />}
+      title="Нет связи с сервером"
+      text="Вы вошли в аккаунт, но проекты пока не загрузить. Входить заново не нужно: как только связь вернётся, проекты появятся сами."
+      actions={<Button variant="primary" onClick={() => dispatch(UserFeature.actions.restoreSessionRequested())}>Повторить</Button>}
+    />
+  );
+};
+
 const GuestState: React.FC = () => {
   const dispatch = useDispatch();
   return (
@@ -50,6 +62,7 @@ export const MyProjectsPage: React.FC = () => {
   const dispatch = useDispatch();
   const isAuth = useSelector(UserFeature.selectors.selectUserIsAuth);
   const restoring = useSelector(UserFeature.selectors.selectUserIsLoading);
+  const restore = useSelector(UserFeature.selectors.selectSessionRestore);
   const { tab, folderId, setTab, openFolder } = useBoardParams();
   const [query, setQuery] = useState('');
   const [view, setView] = useStoredState('board-view', viewModeSchema, 'grid');
@@ -58,6 +71,7 @@ export const MyProjectsPage: React.FC = () => {
   const onAdd = () => (tab === 'folders' ? dispatch(ModalsFeature.actions.openCreateFolderModal()) : setPickerOpen(true));
 
   const content = () => {
+    if (!isAuth && restore === 'offline') return <OfflineState />;
     if (!isAuth) return restoring ? <CardSkeletonGrid /> : <GuestState />;
     if (tab === 'folders') return <FoldersContent folderId={folderId} query={query} view={view} onOpenFolder={openFolder} />;
     return <ProjectsContent favoritesOnly={tab === 'favorites'} query={query} view={view} onCreate={() => setPickerOpen(true)} />;
