@@ -1,4 +1,7 @@
 # CI на каждый push и pull request; CD — выкатка на сервер после зелёного CI в main.
+# Релиз собирается GitHub Actions и передаётся на сервер по SSH через принудительную
+# команду /opt/vrhome/bin/remote-deploy, поэтому сервер не клонирует репозиторий и не
+# получает GitHub-токен.
 name: CI/CD
 
 on:
@@ -142,15 +145,20 @@ jobs:
       - run: npm ci
       - name: Архив релиза
         run: echo "BUNDLE=$(./deploy/server/bundle.sh)" >>"$GITHUB_ENV"
-      - name: Выкатка (только приложение, с проверкой здоровья и откатом)
+      - name: Выкатка приложения из текущего commit (с проверкой здоровья и откатом)
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
+          set -euo pipefail
+          test -n "$DEPLOY_SSH_KEY"
+          test -n "$DEPLOY_KNOWN_HOSTS"
+          test -n "$DEPLOY_HOST"
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" >~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_SSH_KEY" >~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" >~/.ssh/known_hosts
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$DEPLOY_HOST" <"$BUNDLE"
       - name: Проверка сайта
-        run: curl -fsS --retry 5 --retry-delay 3 "https://$DOMAIN/api/health"
+        run: curl --fail-with-body --retry 10 --retry-delay 5 --retry-all-errors "https://$DOMAIN/api/health"
