@@ -114,8 +114,9 @@ export const SettingsDrawer: React.FC<{ onClose: () => void }> = ({ onClose }) =
           </a>
         </div>
       </div>
-      {dialog === 'name' && <ChangeNameDialog currentName={name} onClose={closeDialog} />}
-      {dialog === 'email' && <ChangeEmailDialog currentEmail={email} onClose={closeDialog} />}
+      {/* Сессия могла закончиться при открытом окне — окна профиля закрываются вместе с ней. */}
+      {isAuth && dialog === 'name' && <ChangeNameDialog currentName={name} onClose={closeDialog} />}
+      {isAuth && dialog === 'email' && <ChangeEmailDialog currentEmail={email} onClose={closeDialog} />}
     </Drawer>
   );
 };

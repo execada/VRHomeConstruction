@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { projectsApi } from '@/app/api';
+import { isSessionEnded } from '@/app/api/errors';
 import type { RootState } from '@/app/store';
 import { CreateProjectFeature } from '@/features/create-project';
 import { ProjectSessionFeature } from '@/features/project-session';
@@ -27,6 +28,8 @@ export const ProjectTitle: React.FC = () => {
     try {
       dispatch(CreateProjectFeature.actions.upsertProject(await projectsApi.patchProject(project.id, { name })));
     } catch (error) {
+      // Конец сессии: выход и сообщение о нём — общие.
+      if (isSessionEnded(error)) return;
       console.error('Не удалось переименовать проект', error);
       toast.error('Не удалось переименовать проект');
     }

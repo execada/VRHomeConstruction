@@ -6,10 +6,16 @@
 
 import { ApiRequestError } from './client';
 
+/**
+ * Единственное сообщение о конце сессии: его показывает сага пользователя при выходе, им же
+ * отвечает apiErrorText на любой запрос, отклонённый из-за конца сессии.
+ */
+export const SESSION_ENDED_TEXT = 'Сессия завершена — войдите снова';
+
 const KNOWN_MESSAGES: Record<string, string> = {
-  unauthorized: 'Сессия истекла — войдите снова',
+  unauthorized: SESSION_ENDED_TEXT,
   'authorization required': 'Войдите в аккаунт, чтобы продолжить',
-  'invalid or expired token': 'Сессия истекла — войдите снова',
+  'invalid or expired token': SESSION_ENDED_TEXT,
   'email already registered': 'Эта почта уже зарегистрирована',
   'user not found': 'Пользователь не найден',
   'invalid email or password': 'Неверная почта или пароль',
@@ -31,6 +37,7 @@ const KNOWN_MESSAGES: Record<string, string> = {
   'password must be at most 72 bytes': 'Пароль слишком длинный',
   'invalid password': 'Неверный пароль',
   'too many login attempts, try again later': 'Слишком много неудачных попыток — попробуйте через 15 минут',
+  'too many password reset attempts, try again later': 'Слишком много неверных кодов — попробуйте через час',
   'name is required': 'Введите имя',
   'invalid email format': 'Введите корректный адрес почты',
   'folder cannot be its own parent': 'Папку нельзя вложить в саму себя',
@@ -79,12 +86,22 @@ export function knownErrorText(message: string): string | undefined {
 }
 
 /**
+ * Запрос отклонён из-за конца сессии: из аккаунта уже вышли и сообщение показали, поэтому
+ * своё сообщение об ошибке фиче показывать не нужно.
+ * @param error - пойманная ошибка (любой тип)
+ */
+export function isSessionEnded(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.sessionEnded;
+}
+
+/**
  * Текст ошибки для интерфейса.
  * @param error - пойманная ошибка (любой тип)
  * @param fallback - текст по умолчанию для неизвестных ошибок
  */
 export function apiErrorText(error: unknown, fallback: string): string {
   if (!(error instanceof ApiRequestError)) return fallback;
+  if (error.sessionEnded) return SESSION_ENDED_TEXT;
   // Сетевые ошибки (status 0) уже сформулированы клиентом по-русски.
   if (error.status === 0) return error.message;
   const known = knownErrorText(error.message);

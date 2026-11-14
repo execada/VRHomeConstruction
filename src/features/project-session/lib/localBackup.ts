@@ -28,6 +28,12 @@ const backupSchema = z.object({
   synced: z.boolean(),
 });
 
+/**
+ * Копии, которые localStorage не принял (переполнен или недоступен): живут в памяти вкладки
+ * до перезагрузки страницы — правки доживают хотя бы до входа или повторного открытия проекта.
+ */
+const inMemory = new Map<string, LocalBackup>();
+
 function storage(): Storage | null {
   try {
     return typeof window !== 'undefined' ? window.localStorage : null;
@@ -36,17 +42,23 @@ function storage(): Storage | null {
   }
 }
 
-/** Записать копию (ошибка квоты не прерывает работу). */
+/** Записать копию (ошибка квоты не прерывает работу: копия остаётся в памяти вкладки). */
 export function writeBackup(projectId: string, backup: LocalBackup): void {
   try {
-    storage()?.setItem(PREFIX + projectId, JSON.stringify(backup));
+    const store = storage();
+    if (!store) throw new Error('localStorage недоступен');
+    store.setItem(PREFIX + projectId, JSON.stringify(backup));
+    inMemory.delete(projectId);
   } catch (error) {
-    console.warn('Не удалось сохранить локальную копию проекта', error);
+    inMemory.set(projectId, backup);
+    console.warn('Не удалось сохранить локальную копию проекта — до перезагрузки страницы она хранится в памяти', error);
   }
 }
 
-/** Прочитать копию (null — нет или повреждена). */
+/** Прочитать копию (null — нет или повреждена). Копия в памяти новее записанной. */
 export function readBackup(projectId: string): LocalBackup | null {
+  const kept = inMemory.get(projectId);
+  if (kept) return kept;
   try {
     const raw = storage()?.getItem(PREFIX + projectId);
     if (!raw) return null;
@@ -63,8 +75,15 @@ export function markBackupSynced(projectId: string): void {
   if (backup) writeBackup(projectId, { ...backup, synced: true });
 }
 
+/** Есть ли копия, которую сервер ещё не подтвердил (правки только на этом устройстве). */
+export function hasUnsyncedBackup(projectId: string): boolean {
+  const backup = readBackup(projectId);
+  return backup !== null && !backup.synced;
+}
+
 /** Удалить копию (проект удалён). */
 export function removeBackup(projectId: string): void {
+  inMemory.delete(projectId);
   try {
     storage()?.removeItem(PREFIX + projectId);
   } catch {

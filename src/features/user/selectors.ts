@@ -26,7 +26,7 @@ const selectIsAuthModalOpen = createSelector(root, (user) => user?.isAuthModalOp
 const selectAuthMode = createSelector(root, (user) => user?.authMode ?? 'login');
 const selectAuthForm = createSelector(
   root,
-  (user) => user?.form ?? { name: '', email: '', password: '', code: '' },
+  (user) => user?.form ?? { name: '', email: '', password: '', passwordRepeat: '', code: '' },
 );
 const selectAuthStep = createSelector(root, (user) => user?.authStep ?? 'form');
 const selectCodeSent = createSelector(root, (user) => user?.codeSent ?? false);

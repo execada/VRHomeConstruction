@@ -9,16 +9,18 @@ import { takeLatest, takeEvery, select, all, call, put } from 'typed-redux-saga'
 import { selectors } from './selectors';
 import { actions } from './slice';
 import { foldersApi } from '@/app/api';
-import { apiErrorText } from '@/app/api/errors';
+import { apiErrorText, isSessionEnded } from '@/app/api/errors';
 import { toast } from '@/shared/lib/toast';
 import type { Folder } from './types';
 
 /**
  * Изменения папок применяются в интерфейсе сразу (оптимистично). Если сервер их не
  * принял, пользователь видит причину, а список перечитывается с сервера — интерфейс
- * не расходится с сохранёнными данными.
+ * не расходится с сохранёнными данными. При конце сессии откатывать нечего: выход
+ * очищает папки, а сообщение о нём уже показано.
  */
 function* rollbackFolders(error: unknown, failure: string) {
+  if (isSessionEnded(error)) return;
   console.error(failure, error);
   yield* call(toast.error, apiErrorText(error, failure));
   try {

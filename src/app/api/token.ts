@@ -1,4 +1,5 @@
-const TOKEN_KEY = 'auth_token';
+/** Ключ JWT в localStorage (общий для всех вкладок). */
+export const TOKEN_KEY = 'auth_token';
 
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);

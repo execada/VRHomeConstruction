@@ -2,11 +2,13 @@ package models
 
 import "time"
 
-// Коды подтверждения нужны для проверки владения почтой: при регистрации и при
-// смене email (код уходит на новый адрес). Вход выполняется сразу по email+паролю.
+// Коды подтверждения нужны для проверки владения почтой: при регистрации, при
+// смене email (код уходит на новый адрес) и при восстановлении пароля.
+// Вход выполняется сразу по email+паролю.
 const (
-	VerificationPurposeRegister    = "register"
-	VerificationPurposeChangeEmail = "change_email"
+	VerificationPurposeRegister      = "register"
+	VerificationPurposeChangeEmail   = "change_email"
+	VerificationPurposeResetPassword = "reset_password"
 )
 
 type SendCodeRequest struct {
@@ -43,6 +45,24 @@ type EmailChangeVerifyRequest struct {
 	Code     string `json:"code" binding:"required,len=6"`
 }
 
+// PasswordResetCodeRequest — тело POST /api/auth/password/send-code (формат почты проверяет сервис).
+type PasswordResetCodeRequest struct {
+	Email string `json:"email" binding:"required,max=254"`
+}
+
+// PasswordResetRequest — тело POST /api/auth/password/reset: код из письма и новый пароль
+// (правила пароля — как при регистрации, их проверяет сервис).
+type PasswordResetRequest struct {
+	Email    string `json:"email" binding:"required,max=254"`
+	Code     string `json:"code" binding:"required,len=6"`
+	Password string `json:"password"`
+}
+
+// MessageResponse — ответ с текстом для пользователя.
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
 type VerificationRecord struct {
 	ID           string    `bson:"_id"`
 	Email        string    `bson:"email"`
@@ -53,7 +73,8 @@ type VerificationRecord struct {
 	Attempts     int       `bson:"attempts"`
 	Name         string    `bson:"name,omitempty"`
 	PasswordHash string    `bson:"passwordHash,omitempty"`
-	// UserID — кто запросил смену email (только для purpose=change_email).
+	// UserID — кто запросил смену email (purpose=change_email) или чей пароль сбрасывается
+	// (purpose=reset_password; пусто — у адреса нет аккаунта, письмо не отправлялось).
 	UserID string `bson:"userId,omitempty"`
 	// TokenHash — SHA-256 токена регистрации (только для purpose=register).
 	TokenHash string `bson:"tokenHash,omitempty"`

@@ -116,7 +116,7 @@ func (s *AuthService) ensureEmailFree(ctx context.Context, email, exceptUserID s
 // checkCurrentPassword подтверждает личность перед сменой почты. Неудачи считаются
 // вместе с входом: перебирать пароль через этот эндпоинт тоже нельзя.
 func (s *AuthService) checkCurrentPassword(user *models.User, password string) error {
-	key := "user:" + user.ID
+	key := userFailureKey(user.ID)
 	if !s.failures.Allow(key) {
 		return ErrTooManyLoginAttempts
 	}

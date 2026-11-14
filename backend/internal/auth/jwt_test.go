@@ -10,7 +10,7 @@ import (
 func TestTokenGenerateAndParse(t *testing.T) {
 	svc := NewTokenService("test-secret", time.Hour)
 
-	token, err := svc.Generate("user-123")
+	token, err := svc.Generate("user-123", 0)
 	if err != nil {
 		t.Fatalf("Generate returned error: %v", err)
 	}
@@ -30,11 +30,27 @@ func TestTokenGenerateAndParse(t *testing.T) {
 	}
 }
 
+// Версия сессий пользователя попадает в токен: после сброса пароля старые токены
+// отличаются от новых и отклоняются (см. middleware.Auth).
+func TestTokenCarriesSessionVersion(t *testing.T) {
+	svc := NewTokenService("test-secret", time.Hour)
+	for _, version := range []int64{0, 1, 42} {
+		token, err := svc.Generate("user-1", version)
+		if err != nil {
+			t.Fatalf("Generate(%d): %v", version, err)
+		}
+		claims, err := svc.Parse(token)
+		if err != nil || claims.Version != version {
+			t.Fatalf("expected version %d, got %+v (%v)", version, claims, err)
+		}
+	}
+}
+
 func TestParseRejectsWrongSecret(t *testing.T) {
 	issuer := NewTokenService("secret-a", time.Hour)
 	verifier := NewTokenService("secret-b", time.Hour)
 
-	token, err := issuer.Generate("user-1")
+	token, err := issuer.Generate("user-1", 0)
 	if err != nil {
 		t.Fatalf("Generate returned error: %v", err)
 	}
@@ -47,7 +63,7 @@ func TestParseRejectsWrongSecret(t *testing.T) {
 func TestParseRejectsTamperedToken(t *testing.T) {
 	svc := NewTokenService("test-secret", time.Hour)
 
-	token, err := svc.Generate("user-1")
+	token, err := svc.Generate("user-1", 0)
 	if err != nil {
 		t.Fatalf("Generate returned error: %v", err)
 	}
@@ -62,7 +78,7 @@ func TestParseRejectsExpiredToken(t *testing.T) {
 	// Отрицательный TTL → токен уже истёк в момент выпуска.
 	svc := NewTokenService("test-secret", -time.Minute)
 
-	token, err := svc.Generate("user-1")
+	token, err := svc.Generate("user-1", 0)
 	if err != nil {
 		t.Fatalf("Generate returned error: %v", err)
 	}
