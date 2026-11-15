@@ -32,8 +32,7 @@ const (
 	mailConcurrency = 8
 
 	purposeLabelRegister = "регистрации"
-	msgCodeInLogs        = "Код готов. Смотрите логи бэкенда (строка [CODE])"
-	msgCodeSent          = "Код отправлен на email. Проверьте входящие и папку «Спам»."
+	msgCodeSent          = "Код отправлен на вашу почту. Проверьте входящие и папку «Спам»."
 )
 
 var (

@@ -20,7 +20,6 @@ const (
 
 	// Ответ на запрос кода одинаковый, есть ли аккаунт с такой почтой или нет.
 	msgResetCodeSent   = "Если аккаунт с этой почтой есть, мы отправили на неё код. Проверьте входящие и папку «Спам»."
-	msgResetCodeInLogs = "Если аккаунт с этой почтой есть, код готов — смотрите логи бэкенда (строка [CODE])."
 	msgPasswordChanged = "Пароль изменён. Войдите с новым паролем."
 )
 
@@ -56,9 +55,6 @@ func (s *AuthService) SendPasswordResetCode(ctx context.Context, req models.Pass
 		s.mail.Send(address, code, purposeLabelResetPassword)
 	}
 
-	if s.sender.LogOnly() {
-		return &models.SendCodeResponse{Message: msgResetCodeInLogs}, nil
-	}
 	return &models.SendCodeResponse{Message: msgResetCodeSent}, nil
 }
 

@@ -1,6 +1,8 @@
 # VR Home Construction
 
-**Проектируй. Визуализируй. Живи.**
+**Проектируйте интерьер, проверяйте его в 3D и исследуйте в VR.**
+
+[Открыть приложение](https://vrhome.80.71.226.126.nip.io) · [Исходный код](https://github.com/execada/VRHomeConstruction) · [CI/CD](https://github.com/execada/VRHomeConstruction/actions/workflows/ci-cd.yml)
 
 [![CI/CD](https://github.com/execada/VRHomeConstruction/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/execada/VRHomeConstruction/actions/workflows/ci-cd.yml)
 
@@ -10,15 +12,7 @@
 ![three.js](https://img.shields.io/badge/three.js-WebXR-000000?logo=threedotjs&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?logo=mongodb&logoColor=white)
 
-VR Home Construction — наш веб-конструктор интерьера. В браузере можно собрать комнату с нуля
-или из шаблона, расставить мебель, подобрать отделку и свет, а потом надеть шлем
-(Meta Quest 3/3+ или PC VR) и пройтись по комнате в виртуальной реальности. Ничего не нужно
-устанавливать: всё работает в браузере, проекты сохраняются на сервере автоматически.
-
-Проект мы делаем вдвоём: бэкенд на Go с MongoDB, безопасность, инфраструктуру и деплой
-веду я ([execada](https://github.com/execada)), а фронтенд на React + three.js — интерфейс,
-3D-редактор и VR — [dineredKo](https://github.com/dineredKo). Ниже рассказываю, как устроен
-проект, как связаны его части и как его запустить.
+VR Home Construction — браузерный редактор интерьеров. Создавайте комнаты и многоэтажные дома, расставляйте мебель, настраивайте материалы и освещение, синхронно работайте в 3D и на плане, а затем исследуйте результат в WebXR. Проекты автоматически сохраняются на сервер; локальная копия позволяет продолжить работу без сети.
 
 ## Содержание
 
@@ -43,7 +37,60 @@ VR Home Construction — наш веб-конструктор интерьера
 - [Управление](#управление)
 - [Авторы](#авторы)
 
-## Что умеет
+## Возможности
+
+- Проекты из пустой комнаты, готовых шаблонов и многоэтажных домов.
+- 3D-сцена, 2D-план и развёртки стен с синхронным редактированием.
+- Каталог мебели, материалов и освещения; автоматическая привязка объектов к стенам, потолку и поверхностям мебели.
+- Этажи, лестницы, окна, двери, подушки на мягкой мебели, отмена и повтор действий.
+- Подсказки и интерактивное обучение редактору.
+- WebXR на Meta Quest и совместимых PC VR-браузерах.
+- Аккаунты, восстановление пароля по коду, автосохранение и локальная работа без сети.
+
+## Технологии
+
+React 19, TypeScript, Redux Toolkit, Redux-Saga, Three.js, React Three Fiber, WebXR и Rsbuild на клиенте; Go 1.26.11, Gin и MongoDB 7 на сервере. Деплой выполняется через Docker Compose, Caddy и GitHub Actions.
+
+## Запуск
+
+Требуются Node.js и npm. Для полноценного приложения также нужны Go, Docker и Docker Compose.
+
+```bash
+npm ci
+npm run dev
+```
+
+Backend расположен в `backend/`; настройка переменных окружения и дополнительные инструкции приведены в [backend/README.md](backend/README.md). Серверный деплой описан в [deploy/server](deploy/server/).
+
+## Проверки
+
+```bash
+npm run lint
+npm run typecheck
+npm run test:coverage
+npm run build
+npm run test:e2e
+```
+
+Backend:
+
+```bash
+cd backend
+gofmt -w .
+go vet ./...
+go test -race ./...
+```
+
+Ручные сценарии проверки: [docs/manual-checklist.md](docs/manual-checklist.md).
+
+## Продакшен и почта
+
+GitHub Actions проверяет проект, запускает E2E-тесты и выкладывает релизы. На сервере деплой проверяет health endpoint и выполняет откат при неудачном запуске. Запрос кода подтверждения показывает пользователю, что код отправлен на почту; проверьте входящие и папку «Спам».
+
+## Авторы
+
+- [execada](https://github.com/execada)
+- [dineredKo](https://github.com/dineredKo)
 
 **Главная («Мои проекты»).** Вкладки «Все / Избранное / Папки», поиск по названию, описанию
 и тегам, плитка или список, превью проектов (снимок сцены), избранное, теги, дублирование,
@@ -656,10 +703,8 @@ cd backend && docker compose up -d --build   # MongoDB и API на 127.0.0.1
 cd .. && npm install && npm run dev          # http://localhost:3000
 ```
 
-Пока почта не настроена, код подтверждения регистрации печатается в логах бэкенда:
-
 ```bash
-docker logs vr-backend 2>&1 | grep '\[CODE\]' | tail -1
+# Для локального запуска без почтового провайдера настройте тестовое окружение отдельно.
 ```
 
 | Сервис | Адрес |
@@ -685,13 +730,12 @@ curl http://localhost/api/health             # {"status":"ok"}
 
 ## Деплой на сервер с Caddy
 
-Если на сервере уже работает Caddy (как у меня), nginx не нужен: Caddy раздаёт фронтенд
-как статику, выпускает HTTPS-сертификат и проксирует `/api` на бэкенд, а бэкенд и MongoDB
-работают в Docker. Всё собирается на машине разработчика — серверу не нужны Node и Go,
-и он почти не тратит место на диске.
+На production-сервере работает Caddy: он раздаёт frontend как статику, выпускает HTTPS-сертификат и проксирует `/api` на backend. Backend и MongoDB работают в Docker Compose. Сборка выполняется локально; устанавливать Node.js или Go на сервер не нужно.
+
+Текущий production-адрес: [vrhome.80.71.226.126.nip.io](https://vrhome.80.71.226.126.nip.io). Ручная полная выкладка из рабочей копии:
 
 ```bash
-SERVER=root@45.12.255.39 DOMAIN=vrhome.45.12.255.39.nip.io ./deploy/server/deploy.sh
+SERVER=root@80.71.226.126 DOMAIN=vrhome.80.71.226.126.nip.io ./deploy/server/deploy.sh
 ```
 
 ```mermaid
@@ -703,16 +747,19 @@ flowchart LR
     backend -.->|"HTTPS API"| brevo["Brevo"]
 ```
 
-Скрипт собирает фронтенд и бэкенд (linux/amd64), загружает их в `/opt/vrhome`, при первом
-запуске создаёт на сервере секреты (пароль MongoDB, `JWT_SECRET`) и подключает сайт в Caddy
-отдельным файлом. Повторный запуск обновляет версию без потери данных.
-`nip.io` превращает IP в имя (`vrhome.45.12.255.39.nip.io` → `45.12.255.39`), поэтому
-HTTPS работает без своего домена; свой домен — это просто другое значение `DOMAIN`.
+Скрипт собирает frontend и backend для `linux/amd64`, передаёт релиз в `/opt/vrhome`, при первом запуске создаёт серверные секреты и подключает отдельную конфигурацию Caddy. Повторный деплой сохраняет данные MongoDB. `nip.io` преобразует имя с IP в адрес сервера и позволяет Caddy выпустить HTTPS-сертификат.
 
-**Почта.** Многие хостинги закрывают исходящий SMTP. Тогда коды отправляются через HTTPS API
-Brevo: в `/opt/vrhome/backend.env` нужны `BREVO_API_KEY` и `BREVO_FROM`, после чего
-`ALLOW_LOG_ONLY_MAIL=true` удаляется и бэкенд перезапускается
-(`cd /opt/vrhome && docker compose up -d`).
+**Почта через Brevo.** На сервере в `/opt/vrhome/backend.env` задаются `BREVO_API_KEY` и `BREVO_FROM`. API-ключ хранится только в защищённом env-файле сервера, не в README, Git, командах shell или CI-логах. После настройки перезапустите backend:
+
+```bash
+ssh root@80.71.226.126
+cd /opt/vrhome
+sudoedit backend.env
+docker compose up -d backend
+docker compose logs --tail=50 backend
+```
+
+`BREVO_FROM` должен быть адресом отправителя, подтверждённым в Brevo. Production использует только настроенный почтовый провайдер.
 
 ### Администратор
 
@@ -720,7 +767,7 @@ Brevo: в `/opt/vrhome/backend.env` нужны `BREVO_API_KEY` и `BREVO_FROM`, 
 одной командой на сервере; пароль вводится скрыто и в истории команд не остаётся:
 
 ```bash
-ssh -t root@45.12.255.39 docker exec -it vrhome-backend /app/server create-admin --login execada
+ssh -t root@80.71.226.126 docker exec -it vrhome-backend /app/server create-admin --login execada
 ```
 
 Почту можно указать сразу (`--email`) или позже в настройках профиля.
@@ -765,10 +812,10 @@ flowchart LR
 | `ALLOWED_ORIGINS` | origin-ы для CORS через запятую (в разработке пусто — `*`) |
 | `TRUSTED_PROXIES` | прокси, которым можно верить в `X-Forwarded-For` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | отправка кодов по SMTP |
-| `SMTP_LOG_ONLY` | не отправлять письма, печатать код в лог (только разработка) |
+| `SMTP_LOG_ONLY` | используется только в автоматизированных тестах |
 | `BREVO_API_KEY`, `BREVO_FROM` | отправка кодов через Brevo (HTTPS, работает при закрытом SMTP) |
 | `RESEND_API_KEY`, `RESEND_FROM` | отправка кодов через Resend |
-| `ALLOW_LOG_ONLY_MAIL` | `true` — запустить production без почты, коды в лог (временно) |
+| `ALLOW_LOG_ONLY_MAIL` | не используется в production |
 | `MONGO_EXPRESS_USER`, `MONGO_EXPRESS_PASSWORD` | вход в mongo-express (только локально) |
 
 ## Безопасность

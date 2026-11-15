@@ -39,9 +39,6 @@ func (s *AuthService) issueCode(ctx context.Context, pending models.Verification
 		return nil, err
 	}
 	s.mail.Send(pending.Email, code, purposeLabel)
-	if s.sender.LogOnly() {
-		return &models.SendCodeResponse{Message: msgCodeInLogs}, nil
-	}
 	return &models.SendCodeResponse{Message: msgCodeSent}, nil
 }
 

@@ -153,8 +153,8 @@ func TestSendPasswordResetCodeMessageInLogOnlyMode(t *testing.T) {
 	svc, _, _, sender := newResetService(t)
 	sender.logOnly = true
 	resp, err := svc.SendPasswordResetCode(context.Background(), models.PasswordResetCodeRequest{Email: "ghost@example.com"})
-	if err != nil || resp.Message != msgResetCodeInLogs {
-		t.Fatalf("expected the log-only hint, got %+v (%v)", resp, err)
+	if err != nil || resp.Message != msgResetCodeSent {
+		t.Fatalf("expected the standard email confirmation, got %+v (%v)", resp, err)
 	}
 }
 
